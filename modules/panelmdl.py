@@ -1,5 +1,5 @@
 import pandas as pd
-from MoDAPy.modules import vcfmgr
+from modules import vcfmgr
 
 
 def panelrun(panel, vcffile):

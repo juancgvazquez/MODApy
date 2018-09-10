@@ -1,7 +1,7 @@
 import argparse
 from sys import argv
 from os import path
-from MoDAPy.modules import panelmdl, duosmdl, output, cfg
+from modules import panelmdl, duosmdl, output, cfg
 
 class Parser(object):
 
@@ -89,7 +89,7 @@ class Parser(object):
 		parser.add_argument("--panel", help="Panel to run on Trios study")
 		parser.add_argument("--filter", nargs=2,
 							help="Filter to apply. This function will filter out every row that includes the given text"
-								 " in the given column", metavar=("COLUMN", "TEXT"))
+								 " in the given column. For filtering Empty data, TEXT keyword is 'Empty'", metavar=("COLUMN", "TEXT"), action='append')
 		# ignore first argument
 		args = parser.parse_args(argv[2:])
 		patient1 = cfg.patientPath + args.Patient1
@@ -101,17 +101,21 @@ class Parser(object):
 		pt3Check = checkFile(patient3, '.vcf')
 		if (pt1Check & pt2Check & pt3Check):
 			print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
+			result = duosmdl.trios(patient1, patient2, patient3)
+			outpath = cfg.resultsPath + 'Trios/' + result.name
 			if args.panel:
 				panel = cfg.panelsPath + args.panel + '.xlsx'
-				trios = duosmdl.trios(patient1, patient2, patient3)
-				result = panelmdl.panelrun(panel, trios)
-				outpath = cfg.resultsPath + 'Trios/' + trios.name + args.panel + '.xlsx'
-			else:
-				result = duosmdl.trios(patient1, patient2, patient3)
-				outpath = cfg.resultsPath + 'Trios/' + result.name + '.xlsx'
-
+				result = panelmdl.panelrun(panel, result)
+				outpath = outpath + '_' + args.panel
 			if args.filter:
-				result = result[~result[args.filter[0]].str.contains(args.filter[1])]
+				for x in args.filter:
+					if x[1] == 'Empty':
+						result = result[result[x[0]] != '']
+					else:
+						result = result[~result[x[0]].str.contains(x[1])]
+					outpath = outpath + '-f' + str(x[0]) + str(x[1])
+
+			outpath = outpath + '.xlsx'
 			output.df_to_excel(result, outpath)
 		else:
 			print("Patient VCF couldn't be found in", cfg.patientPath + args.PatientFile + ".")
