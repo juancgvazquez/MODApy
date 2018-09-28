@@ -1,4 +1,4 @@
-from modules import vcfmgr
+from MoDAPy.modules import vcfmgr
 import pandas as pd
 
 

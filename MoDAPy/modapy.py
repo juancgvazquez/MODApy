@@ -2,7 +2,7 @@
 import argparse
 from sys import argv
 from os import path
-from modules import panelmdl, duosmdl, output, cfg
+from MoDAPy.modules import panelmdl, duosmdl, output, cfg
 
 class Parser(object):
 
