@@ -43,6 +43,7 @@ class Parser(object):
 		pnCheck = checkFile(panel, '.xlsx')
 
 		if (ptCheck & pnCheck):
+			print("Running", args.Panel, "on patient", args.Patient)
 			result =  panelmdl.panelrun(panel, patient)
 		else:
 			return exit(1)
@@ -58,7 +59,7 @@ class Parser(object):
 							help="Patient 1 File Path - It needs to match exactly to the one found inside Patients folder")
 		parser.add_argument("-Patient2", required=True,
 							help="Patient 2 File Path - It needs to match exactly to the one found inside Patients folder")
-		parser.add_argument("-VennPlace", required=True, default='ALL', choices=['A','B','A:B','ALL'],
+		parser.add_argument("--VennPlace", default='ALL', choices=['A','B','A:B','ALL'],
 							help="Place in a Venn Diagram to obtain variants from")
 		parser.add_argument("--Panel", help="Panel to run on Duos study")
 		# ignore first argument
@@ -70,11 +71,11 @@ class Parser(object):
 		pt2Check = checkFile(patient2, '.vcf')
 		if (pt1Check & pt2Check):
 			print("Running Duos Study on", args.Patient1, args.Patient2)
-			if args.panel:
+			if args.Panel:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
 				duos = duosmdl.duos(patient1, patient2)
 				result = panelmdl.panelrun(panel, duos)
-				outpath = cfg.resultsPath + 'Duos/' + duos.name + args.panel + '.xlsx'
+				outpath = cfg.resultsPath + 'Duos/' + duos.name + args.Panel + '.xlsx'
 			else:
 				result = duosmdl.duos(patient1, patient2)
 				outpath = cfg.resultsPath + 'Duos/' + result.name + '.xlsx'
