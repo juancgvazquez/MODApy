@@ -11,6 +11,7 @@ def panelrun(panel, vcffile):
 		vcfdf = vcfmgr.vcf_to_df(vcffile)
 
 	df_final = check_panel(gsymbollist,vcfdf)
+	df_final.name = vcfdf.name
 	return df_final
 
 
