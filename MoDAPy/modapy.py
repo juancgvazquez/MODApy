@@ -43,7 +43,12 @@ class Parser(object):
 		pnCheck = checkFile(panel, '.xlsx')
 
 		if (ptCheck & pnCheck):
-			return panelmdl.panelrun(panel, patient)
+			result =  panelmdl.panelrun(panel, patient)
+		else:
+			return exit(1)
+
+		outpath = cfg.resultsPath + 'Panels/' + result.name + '.xlsx'
+		output.df_to_excel(result, outpath)
 
 
 	def duos(self):
