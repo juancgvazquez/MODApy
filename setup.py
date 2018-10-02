@@ -5,7 +5,7 @@ with open("README.md", "r") as rd:
 
 setuptools.setup(
 	name="MoDAPy",
-	version='0.0.4dev7',
+	version='0.0.4dev8',
 	author='Juan Carlos Vázquez',
 	author_email='juancgvazquez@gmail.com',
 	description='Package to perform several analysis on Multi-Omics Data',
@@ -22,7 +22,9 @@ setuptools.setup(
 		'cyvcf2==0.9.0',
 		'xlrd',
 		'openpyxl',
+		'XlsxWriter',
 	],
+	scripts=['MoDAPy/modapy']
 	classifiers=[
 		"Programming Language :: Python :: 3",
 		"License :: OSI Approved :: GNU General Public License (GPL)",

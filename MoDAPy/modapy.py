@@ -1,4 +1,4 @@
-#!../venv/bin/python
+#!/usr/bin/env python
 import argparse
 from sys import argv
 from os import path
