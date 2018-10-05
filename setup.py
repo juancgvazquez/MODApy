@@ -24,7 +24,7 @@ setuptools.setup(
 		'openpyxl',
 		'XlsxWriter',
 	],
-	scripts=['MoDAPy/modapy'],
+	scripts=['MoDAPy/MoDAPy'],
 	classifiers=[
 		"Programming Language :: Python :: 3",
 		"License :: OSI Approved :: GNU General Public License (GPL)",
