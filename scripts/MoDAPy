@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import argparse
 from sys import argv
-from os import path
-from MoDAPy import output, cfg, duosmdl, panelmdl
+from MoDAPy import filemgr, cfg, duosmdl, panelmdl
 
 
 class Parser(object):
@@ -39,8 +38,8 @@ class Parser(object):
 		args = parser.parse_args(argv[2:])
 		panel = cfg.panelsPath + args.Panel + '.xlsx'
 		patient = cfg.patientPath + args.Patient
-		ptCheck = self.checkFile(patient, '.vcf')
-		pnCheck = self.checkFile(panel, '.xlsx')
+		ptCheck = filemgr.checkFile(patient, '.vcf')
+		pnCheck = filemgr.checkFile(panel, '.xlsx')
 
 		if (ptCheck & pnCheck):
 			print("Running", args.Panel, "on patient", args.Patient)
@@ -49,7 +48,7 @@ class Parser(object):
 			return exit(1)
 
 		outpath = cfg.resultsPath + 'Panels/' + result.name + '.xlsx'
-		output.df_to_excel(result, outpath)
+		filemgr.df_to_excel(result, outpath)
 
 	def duos(self):
 		# Description for duos usage
@@ -66,8 +65,8 @@ class Parser(object):
 		patient1 = cfg.patientPath + args.Patient1
 		patient2 = cfg.patientPath + args.Patient2
 		# Checks file existence and type for patients
-		pt1Check = self.checkFile(patient1, '.vcf')
-		pt2Check = self.checkFile(patient2, '.vcf')
+		pt1Check = filemgr.checkFile(patient1, '.vcf')
+		pt2Check = filemgr.checkFile(patient2, '.vcf')
 		if (pt1Check & pt2Check):
 			print("Running Duos Study on", args.Patient1, args.Patient2)
 			if args.Panel:
@@ -79,7 +78,7 @@ class Parser(object):
 				result = duosmdl.duos(patient1, patient2)
 				outpath = cfg.resultsPath + 'Duos/' + result.name + '.xlsx'
 
-			output.df_to_excel(result, outpath)
+			filemgr.df_to_excel(result, outpath)
 		else:
 			print("Patient VCF couldn't be found in", cfg.patientPath + args.PatientFile + ".",
 				  "Please check that file exists and is a .vcf")
@@ -105,9 +104,9 @@ class Parser(object):
 		patient2 = cfg.patientPath + args.Patient2
 		patient3 = cfg.patientPath + args.Patient3
 		# Checks file existence and type for patients
-		pt1Check = self.checkFile(patient1, '.vcf')
-		pt2Check = self.checkFile(patient2, '.vcf')
-		pt3Check = self.checkFile(patient3, '.vcf')
+		pt1Check = filemgr.checkFile(patient1, '.vcf')
+		pt2Check = filemgr.checkFile(patient2, '.vcf')
+		pt3Check = filemgr.checkFile(patient3, '.vcf')
 		if (pt1Check & pt2Check & pt3Check):
 			print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
 			result = duosmdl.trios(patient1, patient2, patient3)
@@ -143,19 +142,10 @@ class Parser(object):
 					[result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])]
 
 			outpath = outpath + '.xlsx'
-			output.df_to_excel(result, outpath)
+			filemgr.df_to_excel(result, outpath)
 		else:
 			print("Patient VCF couldn't be found in", cfg.patientPath + args.PatientFile + ".")
 
-	def checkFile(filePath, extension):
-		if path.isfile(filePath):
-			fileName, fileExtension = path.splitext(filePath)
-			if extension == fileExtension:
-				return True
-
-		print(filePath, "couldn't be found. Please check if file exists and that it's extension is",
-			  "'" + extension + "'")
-		exit(1)
 
 if __name__ == "__main__":
 	Parser()

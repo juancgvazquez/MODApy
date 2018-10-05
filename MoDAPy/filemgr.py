@@ -1,8 +1,19 @@
 import pandas as pd
+from os import path
 
 '''
 VCF DataFrame to Xlsx
 '''
+
+def checkFile(filePath, extension):
+	if path.isfile(filePath):
+		fileName, fileExtension = path.splitext(filePath)
+		if extension == fileExtension:
+			return True
+
+	print(filePath, "couldn't be found. Please check if file exists and that it's extension is",
+		  "'" + extension + "'")
+	exit(1)
 
 
 def df_to_excel(df1, outpath):
