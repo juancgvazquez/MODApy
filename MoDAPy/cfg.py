@@ -2,7 +2,7 @@ import configparser
 import os
 
 cfg = configparser.ConfigParser()
-cfgpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../config.ini')
+cfgpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.ini')
 cfg.read(cfgpath)
 
 patientPath = cfg['PATHS']['PatientPath']
