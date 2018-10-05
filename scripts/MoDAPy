@@ -39,8 +39,8 @@ class Parser(object):
 		args = parser.parse_args(argv[2:])
 		panel = cfg.panelsPath + args.Panel + '.xlsx'
 		patient = cfg.patientPath + args.Patient
-		ptCheck = checkFile(patient, '.vcf')
-		pnCheck = checkFile(panel, '.xlsx')
+		ptCheck = self.checkFile(patient, '.vcf')
+		pnCheck = self.checkFile(panel, '.xlsx')
 
 		if (ptCheck & pnCheck):
 			print("Running", args.Panel, "on patient", args.Patient)
@@ -66,8 +66,8 @@ class Parser(object):
 		patient1 = cfg.patientPath + args.Patient1
 		patient2 = cfg.patientPath + args.Patient2
 		# Checks file existence and type for patients
-		pt1Check = checkFile(patient1, '.vcf')
-		pt2Check = checkFile(patient2, '.vcf')
+		pt1Check = self.checkFile(patient1, '.vcf')
+		pt2Check = self.checkFile(patient2, '.vcf')
 		if (pt1Check & pt2Check):
 			print("Running Duos Study on", args.Patient1, args.Patient2)
 			if args.Panel:
@@ -105,9 +105,9 @@ class Parser(object):
 		patient2 = cfg.patientPath + args.Patient2
 		patient3 = cfg.patientPath + args.Patient3
 		# Checks file existence and type for patients
-		pt1Check = checkFile(patient1, '.vcf')
-		pt2Check = checkFile(patient2, '.vcf')
-		pt3Check = checkFile(patient3, '.vcf')
+		pt1Check = self.checkFile(patient1, '.vcf')
+		pt2Check = self.checkFile(patient2, '.vcf')
+		pt3Check = self.checkFile(patient3, '.vcf')
 		if (pt1Check & pt2Check & pt3Check):
 			print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
 			result = duosmdl.trios(patient1, patient2, patient3)
