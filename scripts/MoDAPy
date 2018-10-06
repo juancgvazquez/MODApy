@@ -63,7 +63,7 @@ class Parser(object):
 		parser.add_argument("--Filter", nargs='?', const=None,
 							help="Filter to apply. This function will filter out every row that includes the given text"
 								 " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
-							metavar=("COLUMN", "TEXT"), action='append')
+							metavar=("COLUMN TEXT"), action='append')
 		# ignore first argument
 		args = parser.parse_args(argv[2:])
 		patient1 = cfg.patientPath + args.Patient1
@@ -112,7 +112,7 @@ class Parser(object):
 		parser.add_argument("--Filter", nargs='?', const=None,
 							help="Filter to apply. This function will filter out every row that includes the given text"
 								 " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
-							metavar=("COLUMN", "TEXT"), action='append')
+							metavar=("COLUMN TEXT"), action='append')
 		parser.add_argument("--VennPlace", default='ALL', const='ALL', nargs='?',
 							choices=['A', 'B', 'C', 'A:B', 'A:C', 'B:C', 'A:B:C', 'ALL'],
 							help="Place in a Venn Diagram to obtain variants from")
