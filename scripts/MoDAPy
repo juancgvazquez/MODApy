@@ -75,7 +75,7 @@ class Parser(object):
 			print("Running Duos Study on", args.Patient1, args.Patient2)
 			result = duosmdl.duos(patient1, patient2)
 			outpath = cfg.resultsPath + 'Duos/' + result.name + '.xlsx'
-			if args.Panel[0] is not None:
+			if args.Panel is not None:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
 				filemgr.checkFile(panel, '.xlsx')
 				result = panelmdl.panelrun(panel, result)
