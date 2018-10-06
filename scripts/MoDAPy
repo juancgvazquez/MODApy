@@ -57,9 +57,13 @@ class Parser(object):
 							help="Patient 1 File Path - It needs to match exactly to the one found inside Patients folder")
 		parser.add_argument("-Patient2", required=True,
 							help="Patient 2 File Path - It needs to match exactly to the one found inside Patients folder")
-		parser.add_argument("--VennPlace", default='ALL', choices=['A', 'B', 'A:B', 'ALL'],
+		parser.add_argument("--VennPlace", default='ALL', choices=['A', 'B', 'A:B', 'ALL'], const='ALL',
 							help="Place in a Venn Diagram to obtain variants from")
-		parser.add_argument("--Panel", help="Panel to run on Duos study")
+		parser.add_argument("--Panel", const=None, help="Panel to run on Duos study")
+		parser.add_argument("--Filter", nargs=2, const=None,
+							help="Filter to apply. This function will filter out every row that includes the given text"
+								 " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
+							metavar=("COLUMN", "TEXT"), action='append')
 		# ignore first argument
 		args = parser.parse_args(argv[2:])
 		patient1 = cfg.patientPath + args.Patient1
@@ -69,11 +73,19 @@ class Parser(object):
 		pt2Check = filemgr.checkFile(patient2, '.vcf')
 		if (pt1Check & pt2Check):
 			print("Running Duos Study on", args.Patient1, args.Patient2)
+			result = duosmdl.duos(patient1, patient2)
+			outpath = cfg.resultsPath + 'Duos/' + result.name + '.xlsx'
 			if args.Panel:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
-				duos = duosmdl.duos(patient1, patient2)
-				result = panelmdl.panelrun(panel, duos)
-				outpath = cfg.resultsPath + 'Duos/' + duos.name + args.Panel + '.xlsx'
+				result = panelmdl.panelrun(panel, result)
+				outpath = outpath + '_' + args.Panel
+			if args.Filter:
+				for x in args.Filter:
+					if x[1] == 'Empty':
+						result = result[result[x[0]] != '']
+					else:
+						result = result[~result[x[0]].str.contains(x[1])]
+					outpath = outpath + '-f' + str(x[0]) + str(x[1])
 			else:
 				result = duosmdl.duos(patient1, patient2)
 				outpath = cfg.resultsPath + 'Duos/' + result.name + '.xlsx'
@@ -91,12 +103,13 @@ class Parser(object):
 							help="Patient 2 File Path - It needs to match exactly to the one found inside Patients folder")
 		parser.add_argument("-Patient3", required=True,
 							help="Patient 3 File Path - It needs to match exactly to the one found inside Patients folder")
-		parser.add_argument("--Panel", help="Panel to run on Trios study")
-		parser.add_argument("--Filter", nargs=2,
+		parser.add_argument("--Panel", const=None, help="Panel to run on Trios study")
+		parser.add_argument("--Filter", nargs=2, const=None,
 							help="Filter to apply. This function will filter out every row that includes the given text"
 								 " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
 							metavar=("COLUMN", "TEXT"), action='append')
-		parser.add_argument("--VennPlace", default='ALL', choices=['A', 'B', 'C', 'A:B', 'A:C', 'B:C', 'A:B:C', 'ALL'],
+		parser.add_argument("--VennPlace", default='ALL', const='ALL',
+							choices=['A', 'B', 'C', 'A:B', 'A:C', 'B:C', 'A:B:C', 'ALL'],
 							help="Place in a Venn Diagram to obtain variants from")
 		# ignore first argument
 		args = parser.parse_args(argv[2:])
