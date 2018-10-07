@@ -45,7 +45,7 @@ Saving new VCF
 
 
 def df_to_vcf(df1: pd.DataFrame, outpath: str):
-	header = (f"""##fileformat=VCFv4.1
+	header = """##fileformat=VCFv4.1
 ##source=MoDAPy
 ##reference=hg19
 ##INFO=<ID=ZIG,Number=.,Type=String,Description="Indicates Zigosity' ">
@@ -78,7 +78,7 @@ def df_to_vcf(df1: pd.DataFrame, outpath: str):
 ##FILTER=<ID=MG_INDEL_Filter,Description="QD < 2.0  ||  FS > 200.0  ||  ReadPosRankSum < -20.0">
 ##FILTER=<ID=MG_SNP_Filter,Description="QD < 2.0  || FS > 60.0 || MQ < 40.0 ||  MQRankSum < -12.5  ||  ReadPosRankSum < -8.0">
 #CHROM	POS	REF	ALT	ID	QUAL	FILTER	INFO
-""")
+"""
 	output_VCF = outpath
 	with open(output_VCF, 'w') as cyvcf2:
 		cyvcf2.write(header)
