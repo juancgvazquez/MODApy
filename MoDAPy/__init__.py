@@ -3,6 +3,6 @@
 A Package to parse and analyze multiple omics data
 '''
 name="MoDAPy"
-from MoDAPy import cfg, vcfmgr, duosmdl, panelmdl, filemgr
+from MoDAPy import cfg, vcfmgr, duos_trios, panelmdl, filemgr
 
 

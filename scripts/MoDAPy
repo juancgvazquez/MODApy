@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import argparse
 from sys import argv
-from MoDAPy import filemgr, cfg, duosmdl, panelmdl
+from MoDAPy import filemgr, cfg, duos_trios, panelmdl
 
 
 class Parser(object):
@@ -49,6 +49,8 @@ class Parser(object):
 
 		outpath = cfg.resultsPath + 'Panels/' + result.name + '.xlsx'
 		filemgr.df_to_excel(result, outpath)
+		print('Single Analisis Complete')
+		return 0
 
 	def duos(self):
 		# Description for duos usage
@@ -73,7 +75,7 @@ class Parser(object):
 		pt2Check = filemgr.checkFile(patient2, '.vcf')
 		if (pt1Check & pt2Check):
 			print("Running Duos Study on", args.Patient1, args.Patient2)
-			result = duosmdl.duos(patient1, patient2)
+			result = duos_trios.duos(patient1, patient2)
 			outpath = cfg.resultsPath + 'Duos/' + result.name + '.xlsx'
 			if args.Panel is not None:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
@@ -92,11 +94,10 @@ class Parser(object):
 						else:
 							result = result[~result[x[0]].str.contains(x[1])]
 					outpath = outpath + '-f' + str(x[0]) + str(x[1])
-			else:
-				result = duosmdl.duos(patient1, patient2)
-				outpath = cfg.resultsPath + 'Duos/' + result.name + '.xlsx'
 
 			filemgr.df_to_excel(result, outpath)
+			print('Duos Analisis Complete')
+			return 0
 		else:
 			print("Patient VCF couldn't be found in", cfg.patientPath + args.PatientFile + ".",
 				  "Please check that file exists and is a .vcf")
@@ -128,7 +129,7 @@ class Parser(object):
 		pt3Check = filemgr.checkFile(patient3, '.vcf')
 		if (pt1Check & pt2Check & pt3Check):
 			print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
-			result = duosmdl.trios(patient1, patient2, patient3)
+			result = duos_trios.trios(patient1, patient2, patient3)
 			outpath = cfg.resultsPath + 'Trios/' + result.name
 			# check if there is a Panel Requested
 			if args.Panel:
@@ -166,6 +167,8 @@ class Parser(object):
 
 			outpath = outpath + '.xlsx'
 			filemgr.df_to_excel(result, outpath)
+			print('Trios Analisis Complete')
+			return 0
 		else:
 			print("Patient VCF couldn't be found in", cfg.patientPath + args.PatientFile + ".")
 
