@@ -76,6 +76,7 @@ class Parser(object):
 		if (pt1Check & pt2Check):
 			print("Running Duos Study on", args.Patient1, args.Patient2)
 			result = duos_trios.duos(patient1, patient2)
+			resultname = result.name
 			outpath = cfg.resultsPath + 'Duos/' + result.name
 			# check if there is a special Venn Place Requested
 			if args.VennPlace == 'A':
@@ -84,10 +85,12 @@ class Parser(object):
 				result = result[result['Trios'] == result.name.split(':')[1]]
 			if args.VennPlace == 'A:B':
 				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+			result.name = resultname
 			if args.Panel is not None:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
 				filemgr.checkFile(panel, '.xlsx')
 				result = panelmdl.panelrun(panel, result)
+				result.name = resultname
 				outpath = outpath + '_' + args.Panel
 			if args.Filter[0] is not None:
 				for x in args.Filter:
@@ -100,6 +103,7 @@ class Parser(object):
 							result = result[result[x[0]] != '']
 						else:
 							result = result[~result[x[0]].str.contains(x[1])]
+					result.name = resultname
 					outpath = outpath + '-f' + str(x[0]) + str(x[1])
 			outpath =  outpath + '.xlsx'
 			filemgr.df_to_excel(result, outpath)
@@ -137,6 +141,7 @@ class Parser(object):
 		if (pt1Check & pt2Check & pt3Check):
 			print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
 			result = duos_trios.trios(patient1, patient2, patient3)
+			resultname = result.name
 			outpath = cfg.resultsPath + 'Trios/' + result.name
 			# check if there is a special Venn Place Requested
 			if args.VennPlace == 'A':
@@ -154,10 +159,12 @@ class Parser(object):
 			if args.VennPlace == 'A:B:C':
 				result = result[result['Trios'] == ':'.join(
 					[result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])]
+			result.name = resultname
 			# check if there is a Panel Requested
 			if args.Panel:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
 				result = panelmdl.panelrun(panel, result)
+				result.name = resultname
 				outpath = outpath + '_' + args.Panel
 			# check if there is a Filter Requested
 			if args.Filter[0] is not None:
@@ -171,6 +178,7 @@ class Parser(object):
 							result = result[result[x[0]] != '']
 						else:
 							result = result[~result[x[0]].str.contains(x[1])]
+						result.name = resultname
 			outpath = outpath + '.xlsx'
 			filemgr.df_to_excel(result, outpath)
 			print('Trios Analisis Complete')
