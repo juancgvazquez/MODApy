@@ -2,6 +2,14 @@ import pandas as pd
 from os import path
 
 '''
+Helper function to create Hyperlinks
+'''
+def make_hyperlink(value):
+    url = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={}"
+    return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
+
+
+'''
 VCF DataFrame to Xlsx
 '''
 
@@ -17,20 +25,19 @@ def checkFile(filePath, extension):
 
 
 def df_to_excel(df1, outpath):
-	output = pd.ExcelWriter(outpath)
+	#output = pd.ExcelWriter(outpath)
 
 	#	Aca convertiría el campo en enlace, pero todavía hay que evaluar que hacer con los múltiples rs
-	#	if (len(df1) > 65300):
-	#		output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
-	#
-	#	else:
-	#		output = pd.ExcelWriter(outpath)
-	#		print('changing ID to url')
-	#		try:
-	#			df1['ID'] = 'https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=' + dfvcf['ID']
-	#		except:
-	#			print('Cant parse ID Field')
-
+	if (len(df1.index) > 65300):
+		output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
+	else:
+		output = pd.ExcelWriter(outpath)
+	print('changing ID to url')
+	try:
+		df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x))
+	except:
+		print('Cant parse ID Field')
+	df1.sort_values(['CHROM','POS'])
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
 	worksheet = output.sheets['Result']
