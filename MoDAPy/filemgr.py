@@ -28,16 +28,16 @@ def df_to_excel(df1, outpath):
 	#output = pd.ExcelWriter(outpath)
 
 	#	Aca convertiría el campo en enlace, pero todavía hay que evaluar que hacer con los múltiples rs
-	if (len(df1.index) > 65300):
-		output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
-	else:
-		output = pd.ExcelWriter(outpath)
-	print('changing ID to url')
-	try:
-		df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x))
-	except:
-		print('Cant parse ID Field')
-	df1.sort_values(['CHROM','POS'])
+	#if (len(df1.index) > 65300):
+	#	output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
+	#else:
+	output = pd.ExcelWriter(outpath)
+	#print('changing ID to url')
+	#try:
+	#	df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x))
+	#except:
+	#	print('Cant parse ID Field')
+	df1.sort_values(by='CHROM')
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
 	worksheet = output.sheets['Result']
