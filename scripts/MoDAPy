@@ -77,6 +77,13 @@ class Parser(object):
 			print("Running Duos Study on", args.Patient1, args.Patient2)
 			result = duos_trios.duos(patient1, patient2)
 			outpath = cfg.resultsPath + 'Duos/' + result.name
+			# check if there is a special Venn Place Requested
+			if args.VennPlace == 'A':
+				result = result[result['Trios'] == result.name.split(':')[0]]
+			if args.VennPlace == 'B':
+				result = result[result['Trios'] == result.name.split(':')[1]]
+			if args.VennPlace == 'A:B':
+				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
 			if args.Panel is not None:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
 				filemgr.checkFile(panel, '.xlsx')
@@ -131,6 +138,22 @@ class Parser(object):
 			print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
 			result = duos_trios.trios(patient1, patient2, patient3)
 			outpath = cfg.resultsPath + 'Trios/' + result.name
+			# check if there is a special Venn Place Requested
+			if args.VennPlace == 'A':
+				result = result[result['Trios'] == result.name.split(':')[0]]
+			if args.VennPlace == 'B':
+				result = result[result['Trios'] == result.name.split(':')[1]]
+			if args.VennPlace == 'C':
+				result = result[result['Trios'] == result.name.split(':')[2]]
+			if args.VennPlace == 'A:B':
+				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+			if args.VennPlace == 'A:C':
+				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
+			if args.VennPlace == 'B:C':
+				result = result[result['Trios'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
+			if args.VennPlace == 'A:B:C':
+				result = result[result['Trios'] == ':'.join(
+					[result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])]
 			# check if there is a Panel Requested
 			if args.Panel:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
@@ -148,23 +171,6 @@ class Parser(object):
 							result = result[result[x[0]] != '']
 						else:
 							result = result[~result[x[0]].str.contains(x[1])]
-			# check if there is a special Venn Place Requested
-			if args.VennPlace == 'A':
-				result = result[result['Trios'] == result.name.split(':')[0]]
-			if args.VennPlace == 'B':
-				result = result[result['Trios'] == result.name.split(':')[1]]
-			if args.VennPlace == 'C':
-				result = result[result['Trios'] == result.name.split(':')[2]]
-			if args.VennPlace == 'A:B':
-				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
-			if args.VennPlace == 'A:C':
-				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
-			if args.VennPlace == 'B:C':
-				result = result[result['Trios'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
-			if args.VennPlace == 'A:B:C':
-				result = result[result['Trios'] == ':'.join(
-					[result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])]
-
 			outpath = outpath + '.xlsx'
 			filemgr.df_to_excel(result, outpath)
 			print('Trios Analisis Complete')
