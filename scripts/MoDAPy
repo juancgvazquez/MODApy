@@ -80,11 +80,11 @@ class Parser(object):
 			outpath = cfg.resultsPath + 'Duos/' + result.name
 			# check if there is a special Venn Place Requested
 			if args.VennPlace == 'A':
-				result = result[result['Trios'] == result.name.split(':')[0]]
+				result = result[result['Duos'] == result.name.split(':')[0]]
 			if args.VennPlace == 'B':
-				result = result[result['Trios'] == result.name.split(':')[1]]
+				result = result[result['Duos'] == result.name.split(':')[1]]
 			if args.VennPlace == 'A:B':
-				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+				result = result[result['Duos'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
 			result.name = resultname
 			if args.Panel is not None:
 				panel = cfg.panelsPath + args.Panel + '.xlsx'
@@ -104,7 +104,7 @@ class Parser(object):
 						else:
 							result = result[~result[x[0]].str.contains(x[1])]
 					result.name = resultname
-					outpath = outpath + '-f' + str(x[0]) + str(x[1])
+					outpath = outpath + '_f' + str(x[0]) + str(x[1])
 			outpath =  outpath + '.xlsx'
 			filemgr.df_to_excel(result, outpath)
 			print('Duos Analisis Complete')
@@ -179,6 +179,7 @@ class Parser(object):
 						else:
 							result = result[~result[x[0]].str.contains(x[1])]
 						result.name = resultname
+						outpath = outpath + '_f' + str(x[0]) + str(x[1])
 			outpath = outpath + '.xlsx'
 			filemgr.df_to_excel(result, outpath)
 			print('Trios Analisis Complete')
