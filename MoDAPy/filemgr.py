@@ -37,7 +37,7 @@ def df_to_excel(df1:pd.DataFrame, outpath):
 	#	df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x))
 	#except:
 	#	print('Cant parse ID Field')
-	df1.sort_index(by=['CHROM','POS'], sort_remaining=False)
+	df1.sortlevel(level=['CHROM','POS'], sort_remaining=False)
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
 	worksheet = output.sheets['Result']
