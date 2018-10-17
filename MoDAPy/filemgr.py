@@ -24,7 +24,7 @@ def checkFile(filePath, extension):
 	exit(1)
 
 
-def df_to_excel(df1, outpath):
+def df_to_excel(df1:pd.DataFrame, outpath):
 	#output = pd.ExcelWriter(outpath)
 
 	#	Aca convertiría el campo en enlace, pero todavía hay que evaluar que hacer con los múltiples rs
@@ -37,7 +37,7 @@ def df_to_excel(df1, outpath):
 	#	df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x))
 	#except:
 	#	print('Cant parse ID Field')
-	df1.sortlevel(['CHROM','POS'], sort_remaining=False)
+	df1.sort_index(by=['CHROM','POS'], sort_remaining=False)
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
 	worksheet = output.sheets['Result']
