@@ -12,14 +12,13 @@ def panelrun(panel, vcffile):
 
 	df_final = check_panel(gsymbollist,vcfdf)
 	df_final.name = vcfdf.name
+
 	return df_final
 
 
 def check_panel(genelist, vcf: pd.DataFrame):
-	# result=[]
 	result = pd.DataFrame()
 	for gene in genelist:
-		# result = result.append(vcf.loc[vcf['Gene_Name'].str.contains(gene, na=False)])
 		result = result.append(vcf.loc[vcf['Gene_Name'].str.contains(gene)])
-		#result.index = pd.RangeIndex(len(result.index))
+	result.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
 	return result
