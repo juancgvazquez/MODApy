@@ -41,8 +41,8 @@ def df_to_excel(df1:pd.DataFrame, outpath):
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
 	worksheet = output.sheets['Result']
-	format1 = workbook.add_format({'num_format': '###,###,###'})
-	worksheet.set_column('B:B', 18, format1)
+	#format1 = workbook.add_format({'num_format': '###,###,###'})
+	worksheet.set_column('B:B', 18)
 	output.save()
 
 

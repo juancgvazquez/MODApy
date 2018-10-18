@@ -20,5 +20,4 @@ def check_panel(genelist, vcf: pd.DataFrame):
 	result = pd.DataFrame()
 	for gene in genelist:
 		result = result.append(vcf.loc[vcf['Gene_Name'].str.contains(gene)])
-	result.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
 	return result
