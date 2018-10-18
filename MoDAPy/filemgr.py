@@ -37,12 +37,12 @@ def df_to_excel(df1:pd.DataFrame, outpath):
 	#	df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x))
 	#except:
 	#	print('Cant parse ID Field')
-	df1.sort_index(level=['CHROM','POS'], sort_remaining=False)
+	df1.sort_index()
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
 	worksheet = output.sheets['Result']
-	#format1 = workbook.add_format({'num_format': '###,###,###'})
-	worksheet.set_column('B:B', 18)
+	format1 = workbook.add_format({'num_format': '###,###,###'})
+	worksheet.set_column('B:B', 18,format1)
 	output.save()
 
 
