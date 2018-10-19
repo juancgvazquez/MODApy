@@ -4,9 +4,16 @@ from os import path
 '''
 Helper function to create Hyperlinks
 '''
-def make_hyperlink(value):
-    url = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={}"
-    return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
+def make_hyperlink(value,urltype):
+	if urltype == 'RSID':
+		url = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={}"
+		return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
+	elif urltype == 'GENE':
+		url = "https://www.genecards.org/cgi-bin/carddisp.pl?gene={}"
+		return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
+	else:
+		return
+
 
 
 '''
@@ -28,15 +35,20 @@ def df_to_excel(df1:pd.DataFrame, outpath):
 	#output = pd.ExcelWriter(outpath)
 
 	#	Aca convertiría el campo en enlace, pero todavía hay que evaluar que hacer con los múltiples rs
-	#if (len(df1.index) > 65300):
-	#	output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
-	#else:
-	output = pd.ExcelWriter(outpath)
-	#print('changing ID to url')
-	#try:
-	#	df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x))
-	#except:
-	#	print('Cant parse ID Field')
+	if (len(df1.index) > 65300):
+		output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
+	else:
+		output = pd.ExcelWriter(outpath)
+	print('changing ID to url')
+
+	try:
+		df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x,'RSID'))
+		df1['Gene_Name'] = df1['Gene_Name'].apply(lambda x: make_hyperlink(x,'GENE'))
+	except:
+		print('Cant parse ID Field')
+
+	#temp column drop until applied in config
+	df1.drop(columns=['Distance','Gene_ID', 'ERRORS / WARNINGS / INFO'])
 	df1.sort_index(inplace=True)
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book

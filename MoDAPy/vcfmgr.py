@@ -31,15 +31,35 @@ def vcf_to_df(vcf):
 	info_dict = OrderedDict()
 	headers = {'CHROM': [], 'POS': [], 'REF': [], 'ALT': [], 'ID': [], 'QUAL': [], 'FILTER': [], 'ZIGOSITY': []}
 	vcf_dict = OrderedDict(headers.copy())
-	keylist = ['AC', 'SAMPLES_AF', 'AN', 'DP', 'FS', 'MLEAC', 'MLEAF', 'MQ', 'QD', 'SOR', 'dbSNPBuildID', 'ANN']
+	infokeylist = ['AC', 'SAMPLES_AF', 'AN', 'DP', 'FS', 'MLEAC', 'MLEAF', 'MQ', 'QD', 'SOR', 'dbSNPBuildID', 'ANN']
+	milgp3keylist = ['1000Gp3_AF','1000Gp3_AFR_AF','1000Gp3_AMR_AF','1000Gp3_EAS_AF','1000Gp3_EUR_AF','1000Gp3_SAS_AF']
+	esp6500keylist = ['ESP6500_MAF_EA','ESP6500_MAF_AA','ESP6500_MAF_ALL','ESP6500_PH']
+	clinvarkeylist = ['CLINVAR_CLNSIG','CLINVAR_CLNDSDB','CLINVAR_CLNDSDBID','CLINVAR_CLNDBN','CLINVAR_CLNREVSTAT','CLINVAR_CLNACC']
+
 
 	for variant in pvcf:
 		for (key, value) in variant.INFO:
-			if key in keylist:
+			if key in infokeylist:
 				if key in info_dict:
 					info_dict[key].append(value)
 				else:
 					info_dict[key] = [value]
+			elif key in milgp3keylist:
+				if key in info_dict:
+					info_dict[key].append(value)
+				else:
+					info_dict[key] = [value]
+			elif key in esp6500keylist:
+				if key in info_dict:
+					info_dict[key].append(value)
+				else:
+					info_dict[key] = [value]
+			elif key in clinvarkeylist:
+				if key in info_dict:
+					info_dict[key].append(value)
+				else:
+					info_dict[key] = [value]
+
 		zigosity = ''
 		if variant.gt_types == 0:
 			zigosity = 'HOM_REF'
