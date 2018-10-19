@@ -33,7 +33,7 @@ def vcf_to_df(vcf):
 	vcf_dict = OrderedDict(headers.copy())
 	infokeylist = ['AC', 'SAMPLES_AF', 'AN', 'DP', 'FS', 'MLEAC', 'MLEAF', 'MQ', 'QD', 'SOR', 'dbSNPBuildID', 'ANN']
 	milgp3keylist = ['1000Gp3_AF','1000Gp3_AFR_AF','1000Gp3_AMR_AF','1000Gp3_EAS_AF','1000Gp3_EUR_AF','1000Gp3_SAS_AF']
-	esp6500keylist = ['ESP6500_MAF_EA','ESP6500_MAF_AA','ESP6500_MAF_ALL','ESP6500_PH']
+	esp6500keylist = ['ESP6500_MAF','ESP6500_PH']
 	clinvarkeylist = ['CLINVAR_CLNSIG','CLINVAR_CLNDSDB','CLINVAR_CLNDSDBID','CLINVAR_CLNDBN','CLINVAR_CLNREVSTAT','CLINVAR_CLNACC']
 
 
@@ -94,8 +94,9 @@ def vcf_to_df(vcf):
 	else:
 		print('no annotations')
 		anndf = pd.DataFrame({'Variant': []})
-
 	infodf = pd.DataFrame.from_dict(data=info_dict, orient='index').transpose()
+	infodf['ESP6500_MAF'].str.split(',',expand=True)
+	infodf['ESP6500_PH'].str.split(':', expand=True)
 	infodf.index.set_names('Variant', inplace=True)
 	fulldf = maindf.join(infodf, how='inner').join(anndf, how='inner')
 	fulldf.reset_index(inplace=True)
