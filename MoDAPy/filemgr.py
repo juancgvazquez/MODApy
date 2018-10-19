@@ -48,7 +48,7 @@ def df_to_excel(df1:pd.DataFrame, outpath):
 		print('Cant parse ID Field')
 
 	#temp column drop until applied in config
-	df1.drop(columns=['Distance','Gene_ID', 'ERRORS / WARNINGS / INFO'])
+	df1.drop(columns=['Distance','Gene_ID', 'ERRORS / WARNINGS / INFO'], inplace=True)
 	df1.sort_index(inplace=True)
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
