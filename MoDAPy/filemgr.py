@@ -43,12 +43,12 @@ def df_to_excel(df1:pd.DataFrame, outpath):
 
 	try:
 		df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x,'RSID'))
-		df1['Gene_Name'] = df1['Gene_Name'].apply(lambda x: make_hyperlink(x,'GENE'))
+		df1['Gene_ID'] = df1['Gene_ID'].apply(lambda x: make_hyperlink(x,'GENE'))
 	except:
 		print('Cant parse ID Field')
 
 	#temp column drop until applied in config
-	df1.drop(columns=['Distance','Gene_ID', 'ERRORS / WARNINGS / INFO'], inplace=True)
+	df1.drop(columns=['Distance','Gene_Name', 'ERRORS / WARNINGS / INFO'], inplace=True)
 	df1.sort_index(inplace=True)
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
