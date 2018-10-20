@@ -96,7 +96,8 @@ def vcf_to_df(vcf):
 		anndf = pd.DataFrame({'Variant': []})
 	infodf = pd.DataFrame.from_dict(data=info_dict, orient='index').transpose()
 	infodf[['ESP6500_MAF_AA','ESP6500MAF_EA','ESP6500_MAF_ALL']] = infodf['ESP6500_MAF'].str.split(',',expand=True)
-	infodf[['ESP6500_PH_Predict','ESP6500_PH_Score']] = infodf['ESP6500_PH'].str.split(':', expand=True)
+	infodf['ESP6500_PH_Predict'] = infodf['ESP6500_PH'].str.split(':', expand=True)[0]
+	infodf['ESP6500_PH_Score'] = infodf['ESP6500_PH'].str.split(':', expand=True)[1]
 	infodf.drop(columns=['ESP6500_MAF','ESP6500_PH'])
 	infodf.index.set_names('Variant', inplace=True)
 	fulldf = maindf.join(infodf, how='inner').join(anndf, how='inner')
