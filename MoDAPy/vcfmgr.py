@@ -27,15 +27,16 @@ def vcf_to_df(vcf):
 	except:
 		print('error loading vcf')
 
-
 	info_dict = OrderedDict()
 	headers = {'CHROM': [], 'POS': [], 'REF': [], 'ALT': [], 'ID': [], 'QUAL': [], 'FILTER': [], 'ZIGOSITY': []}
 	vcf_dict = OrderedDict(headers.copy())
 	infokeylist = ['AC', 'SAMPLES_AF', 'AN', 'DP', 'FS', 'MLEAC', 'MLEAF', 'MQ', 'QD', 'SOR', 'dbSNPBuildID', 'ANN']
-	milgp3keylist = ['1000Gp3_AF','1000Gp3_AFR_AF','1000Gp3_AMR_AF','1000Gp3_EAS_AF','1000Gp3_EUR_AF','1000Gp3_SAS_AF']
-	esp6500keylist = ['ESP6500_MAF','ESP6500_PH']
-	clinvarkeylist = ['CLINVAR_CLNSIG','CLINVAR_CLNDSDB','CLINVAR_CLNDSDBID','CLINVAR_CLNDBN','CLINVAR_CLNREVSTAT','CLINVAR_CLNACC']
-
+	milgp3keylist = ['1000Gp3_AF', '1000Gp3_AFR_AF', '1000Gp3_AMR_AF', '1000Gp3_EAS_AF', '1000Gp3_EUR_AF',
+					 '1000Gp3_SAS_AF']
+	esp6500keylist = ['ESP6500_MAF', 'ESP6500_PH']
+	clinvarkeylist = ['CLINVAR_CLNSIG', 'CLINVAR_CLNDSDB', 'CLINVAR_CLNDSDBID', 'CLINVAR_CLNDBN', 'CLINVAR_CLNREVSTAT',
+					  'CLINVAR_CLNACC']
+	dbann = OrderedDict()
 
 	for variant in pvcf:
 		for (key, value) in variant.INFO:
@@ -45,20 +46,20 @@ def vcf_to_df(vcf):
 				else:
 					info_dict[key] = [value]
 			elif key in milgp3keylist:
-				if key in info_dict:
-					info_dict[key].append(value)
+				if key in dbann:
+					dbann[key].append(value)
 				else:
-					info_dict[key] = [value]
+					dbann[key] = [value]
 			elif key in esp6500keylist:
-				if key in info_dict:
-					info_dict[key].append(value)
+				if key in dbann:
+					dbann[key].append(value)
 				else:
-					info_dict[key] = [value]
+					dbann[key] = [value]
 			elif key in clinvarkeylist:
-				if key in info_dict:
-					info_dict[key].append(value)
+				if key in dbann:
+					dbann[key].append(value)
 				else:
-					info_dict[key] = [value]
+					dbann[key] = [value]
 
 		zigosity = ''
 		if variant.gt_types == 0:
@@ -94,12 +95,17 @@ def vcf_to_df(vcf):
 	else:
 		print('no annotations')
 		anndf = pd.DataFrame({'Variant': []})
+
 	infodf = pd.DataFrame.from_dict(data=info_dict, orient='index').transpose()
-	infodf[['ESP6500_MAF_AA','ESP6500_MAF_EA','ESP6500_MAF_ALL']] = infodf['ESP6500_MAF'].str.split(',',expand=True)
-	infodf['ESP6500_PH'] = infodf['ESP6500_PH'].str.split(',')
-	infodf.drop(columns=['ESP6500_MAF','ESP6500_PH'], inplace=True)
+	dbanndf = pd.DataFrame.from_dict(data=dbann, orient='index').transpose()
+	dbanndf[['ESP6500_MAF_AA', 'ESP6500_MAF_EA', 'ESP6500_MAF_ALL']] = dbanndf['ESP6500_MAF'].str.split(',',
+																										expand=True)
+	dbanndf['ESP6500_PH_split'] = [c[0] if isinstance(c, list) else c for c in dbanndf['ESP6500_PH'].str.split(',')]
+	dbanndf[['PolyPhen_Predict', 'Polyphen_Score']] = dbanndf['ESP6500_PH_split'].str.split(':', expand=True)
+	dbanndf.drop(columns=['ESP6500_MAF', 'ESP6500_PH', 'ESP6500_PH_split'], inplace=True)
 	infodf.index.set_names('Variant', inplace=True)
-	fulldf = maindf.join(infodf, how='inner').join(anndf, how='inner')
+	dbanndf.index.set_names('Variant', inplace=True)
+	fulldf = maindf.join(infodf, how='inner').join(anndf, how='inner').join(dbanndf, how='inner')
 	fulldf.reset_index(inplace=True)
 	fulldf = fulldf.drop(['Variant', 'Ann_N°'], axis=1)
 	fulldf.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
@@ -109,5 +115,3 @@ def vcf_to_df(vcf):
 	except:
 		fulldf.name = ''
 	return fulldf
-
-
