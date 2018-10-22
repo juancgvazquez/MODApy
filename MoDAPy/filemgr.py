@@ -7,7 +7,10 @@ Helper function to create Hyperlinks
 def make_hyperlink(value,urltype):
 	if urltype == 'RSID':
 		url = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={}"
-		return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
+		if len(value.split(',')) == 0:
+			return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
+		else:
+			return '=HYPERLINK("%s", "%s")' % (url.format(value.split(',')[0]), value.split(',')[0])
 	elif urltype == 'GENE':
 		url = "https://www.genecards.org/cgi-bin/carddisp.pl?gene={}"
 		return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
