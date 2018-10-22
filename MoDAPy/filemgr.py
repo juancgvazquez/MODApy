@@ -8,7 +8,10 @@ def make_hyperlink(value:str,urltype):
 	if urltype == 'RSID':
 		url = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={}"
 		if type(value) == str:
-			return '=HYPERLINK("%s", "%s")' % (url.format(value.split(',')[0]), value.split(',')[0])
+			if value == 'None':
+				return ''
+			else:
+				return '=HYPERLINK("%s", "%s")' % (url.format(value.split(',')[0]), value.split(',')[0])
 		else:
 			return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
 	elif urltype == 'GENE':
