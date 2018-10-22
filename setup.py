@@ -5,7 +5,7 @@ with open("README.md", "r") as rd:
 
 setuptools.setup(
 	name="MoDAPy",
-	version='0.0.6dev1',
+	version='0.0.7dev1',
 	author='Juan Carlos Vázquez',
 	author_email='juancgvazquez@gmail.com',
 	description='Package to perform several analysis on Multi-Omics Data',
