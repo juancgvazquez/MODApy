@@ -1,0 +1,129 @@
+{"INFO":{
+  "name":"WES Pipeline UGP",
+  "url":"www.url.com",
+  "description":"Trying to copy Macrogen",
+  "reference":"./path/to/reference",
+  "required_files":["./refs/b37/Mills_and_1000G_gold_standard.indels.b37.vcf",
+                    "./refs/b37/1000G_phase1.indels.b37.vcf",
+                    "./refs/b37/dbsnp_137.b37.vcf"]
+  },
+  "STEPS": {
+    "1": {
+      "name":"Alignment",
+      "command": "bwa",
+      "subcommand": "mem",
+      "version": "0.17.7",
+      "input": ["patientname_1", "patientname_2"],
+      "output": "patientname_aligned_reads.sam",
+      "args": "-M"
+    },
+    "2": {
+      "name":"Sorting Sam File",
+      "command": "picard",
+      "subcommand": "SortSam",
+      "version": "2.17.1",
+      "input": "INPUT=patientname_aligned_reads.sam",
+      "output": "OUTPUT=patientname_sorted_reads.bam",
+      "args": "VALIDATION_STRINGENCY=LENIENT SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=5000000 CREATE_INDEX=True"
+    },
+    "3": {
+      "name":"Marking Duplicates",
+      "command": "picard",
+      "subcommand": "MarkDuplicates",
+      "version": "2.17.1",
+      "input": "INPUT=patientname_sorted_reads.sam",
+      "output": "OUTPUT=patientname_dedup_reads.bam",
+      "args": "VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=5000000 ASSUME_SORTED=True CREATE_INDEX=True"
+    },
+    "4": {
+      "name":"Setting Realignment Targets",
+      "command": "GATK",
+      "subcommand": "-T RealignerTargetCreator",
+      "version": "3.4.0",
+      "input":"-i patientname_dedup_reads.bam",
+      "output":"-o patientname_realignment_targets.list",
+      "args": "-known ./refs/b37/Mills_and_1000G_gold_standard.indels.b37.vcf -known ./refs/b37/1000G_phase1.indels.b37.vcf"
+    },
+    "5": {
+      "name":"Realigning",
+      "command": "GATK",
+      "subcommand": "-T IndelRealigner",
+      "version": "3.4.0",
+      "input":"-i patientname_dedup_reads.bam",
+      "output":"-o patientname_realigned_reads.bam",
+      "args": "-targetIntervals patientname_realignment_targets.list -known ./refs/b37/Mills_and_1000G_gold_standard.indels.b37.vcf -known ./refs/b37/1000G_phase1.indels.b37.vcf"
+    },
+    "6": {
+      "name":"Setting Base Recalibration Targets",
+      "command": "GATK",
+      "subcommand": "-T BaseRecalibrator",
+      "version": "3.4.0",
+      "input":"-i patientname_realigned_reads.bam",
+      "output":"-o patientname_recal_data.table",
+      "args": "--knownSites ./refs/b37/dbsnp_137.b37.vcf --knownSites ./refs/b37/Mills_and_1000G_gold_standard.indels.b37.vcf --knownSites ./refs/b37/1000G_phase1.indels.b37.vcf"
+    },
+    "7": {
+      "name":"Recalibrating Bases",
+      "command": "GATK",
+      "subcommand": "-T PrintReads",
+      "version": "3.4.0",
+      "input":"-i patientname_realigned_reads.bam",
+      "output":"-o patientname_realigned_reads_recal.bam",
+      "args": "-BQSR patientname_recal_data.table"
+    },
+    "8": {
+      "name":"Calling Variants",
+      "command": "GATK",
+      "subcommand": "-T HaploTypeCaller",
+      "version": "3.4.0",
+      "input":"-i patientname_realigned_reads_recal.bam",
+      "output":"-o patientname_raw_variants.vcf",
+      "args": ""
+    },
+    "9": {
+      "name":"Selecting SNPs",
+      "command": "GATK",
+      "subcommand": "-T SelectVariants",
+      "version": "3.4.0",
+      "input":"-i patientname_raw_variants.vcf",
+      "output":"-o patientname_raw_snps.vcf",
+      "args": "-selectType SNP"
+    },
+    "10": {
+      "name":"Selecting INDELs",
+      "command": "GATK",
+      "subcommand": "-T SelectVariants",
+      "version": "3.4.0",
+      "input":"-i patientname_raw_variants.vcf",
+      "output":"-o patientname_raw_indels.vcf",
+      "args": "-selectType INDEL"
+    },
+    "11": {
+      "name":"Applying standard filter to SNPs",
+      "command": "GATK",
+      "subcommand": "-T VariantFiltration",
+      "version": "3.4.0",
+      "input":"-i patientname_raw_snps.vcf",
+      "output":"-o patientname_filtered_snps.vcf",
+      "args": "--filterExpression 'QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0' --filterName 'basic_snp_filter'"
+    },
+    "12": {
+      "name":"Applying standard filter to INDELs",
+      "command": "GATK",
+      "subcommand": "-T VariantFiltration",
+      "version": "3.4.0",
+      "input":"-i patientname_raw_indels.vcf",
+      "output":"-o patientname_filtered_indels.vcf",
+      "args": "--filterExpression 'QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0' --filterName 'basic_indel_filter'"
+    },
+    "13": {
+      "name":"Joining SNPs and INDELs",
+      "command": "GATK",
+      "subcommand": "-T CombineVariants",
+      "version": "3.4.0",
+      "input":"-V patientname_filtered_snps.vcf -V patientname_filtered_indels.vcf",
+      "output":"-o patientname_filtered_variants.vcf",
+      "args": ""
+    }
+  }
+}
