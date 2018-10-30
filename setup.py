@@ -4,14 +4,14 @@ with open("README.md", "r") as rd:
 	long_description = rd.read()
 
 setuptools.setup(
-	name="cmd_line.py",
+	name="MoDAPy",
 	version='0.0.7.dev3',
 	author='Juan Carlos Vázquez',
 	author_email='juancgvazquez@gmail.com',
 	description='Package to perform several analysis on Multi-Omics Data',
 	long_description=long_description,
 	long_description_content_type="text/markdown",
-	url="https://github.com/juancgvazquez/cmd_line.py",
+	url="https://github.com/juancgvazquez/MoDAPy",
 	packages=setuptools.find_packages(),
 	include_package_data=True,
 	install_requires=[
