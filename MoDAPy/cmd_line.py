@@ -2,13 +2,13 @@
 import argparse
 import os
 from sys import argv
-from MoDAPy import filemgr, cfg, duos_trios, panelmdl
+import filemgr, cfg, duos_trios, panelmdl, pipeline
 
 
 class Parser(object):
 
 	def __init__(self):
-		parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''MoDAPy <command> [<args>]
+		parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''cmd_line.py <command> [<args>]
 
         Commands:
         pipeline Run pipeline on FastQ file/s
@@ -16,7 +16,7 @@ class Parser(object):
         duos     Run Duos analysis on two selected patients
         trios    Run Trios analysis on three selected patients
 
-        For more info on any of these commands, use "MoDAPy <command> -h"''')
+        For more info on any of these commands, use "cmd_line.py <command> -h"''')
 
 		parser.add_argument("command", help="Select command to run")
 
@@ -38,15 +38,28 @@ class Parser(object):
 							help="Patient FastQ1 File Path - It needs to match exactly "
 								 "the filename found inside Patients folder. Only this one is needed for Single End."
 								 "Two FastQs will be needed for Paired End (usage: -FQ Fastq1 -FQ Fastq2",
-								 action='append')
+							action='append')
 		# ignore first argument
 		args = parser.parse_args(argv[2:])
 		pipeline = cfg.pipelinesPath + args.Pipeline + '.json'
-		fqs = cfg.patientPath + args.FQ
-		#ptCheck = filemgr.checkFile(fqs, '.')
+
+		if len(args.FQ) > 2:
+			print('Only Two FASTQ files allowed. The Input for FastQ Files was: ', str(args.FQ))
+			exit(1)
+
+		elif len(args.FQ) == 2:
+			fq1 = cfg.patientPath + args.FQ[0]
+			fq2 = cfg.patientPath + args.FQ[1]
+			ptCheck = (filemgr.checkFile(fq1, fq1.split('.')[-1]) & filemgr.checkFile(fq2, fq2.split('.')[-1]))
+
+		else:
+			fq1 = cfg.patientPath + args.FQ[0]
+			fq2 = ''
+			ptCheck = filemgr.checkFile(fq1, fq1.split('.')[-1])
+
 		pnCheck = filemgr.checkFile(pipeline, '.json')
 
-		print(pipeline,fqs)
+		print(pipeline, fq1, fq2)
 		return 0
 
 	def single(self):
@@ -62,14 +75,9 @@ class Parser(object):
 		ptCheck = filemgr.checkFile(patient, '.vcf')
 		pnCheck = filemgr.checkFile(panel, '.xlsx')
 
-		if (ptCheck & pnCheck):
-			print("Running", args.Panel, "on patient", args.Patient)
-			result = panelmdl.panelrun(panel, patient)
-		else:
-			return exit(1)
-
-
-		outpath = cfg.resultsPath + 'Panels/' + result.name + '/'+ result.name + '_' + args.Panel +'.xlsx'
+		print("Running", args.Panel, "on patient", args.Patient)
+		result = panelmdl.panelrun(panel, patient)
+		outpath = cfg.resultsPath + 'Panels/' + result.name + '/' + result.name + '_' + args.Panel + '.xlsx'
 		os.makedirs(os.path.dirname(outpath), exist_ok=True)
 		filemgr.df_to_excel(result, outpath)
 		print('Single Analisis Complete')
@@ -96,45 +104,41 @@ class Parser(object):
 		# Checks file existence and type for patients
 		pt1Check = filemgr.checkFile(patient1, '.vcf')
 		pt2Check = filemgr.checkFile(patient2, '.vcf')
-		if (pt1Check & pt2Check):
-			print("Running Duos Study on", args.Patient1, args.Patient2)
-			result = duos_trios.duos(patient1, patient2)
-			resultname = result.name
-			outpath = cfg.resultsPath + 'Duos/' + result.name
-			# check if there is a special Venn Place Requested
-			if args.VennPlace == 'A':
-				result = result[result['Duos'] == result.name.split(':')[0]]
-			if args.VennPlace == 'B':
-				result = result[result['Duos'] == result.name.split(':')[1]]
-			if args.VennPlace == 'A:B':
-				result = result[result['Duos'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+		print("Running Duos Study on", args.Patient1, args.Patient2)
+		result = duos_trios.duos(patient1, patient2)
+		resultname = result.name
+		outpath = cfg.resultsPath + 'Duos/' + result.name
+		# check if there is a special Venn Place Requested
+		if args.VennPlace == 'A':
+			result = result[result['Duos'] == result.name.split(':')[0]]
+		if args.VennPlace == 'B':
+			result = result[result['Duos'] == result.name.split(':')[1]]
+		if args.VennPlace == 'A:B':
+			result = result[result['Duos'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+		result.name = resultname
+		if args.Panel is not None:
+			panel = cfg.panelsPath + args.Panel + '.xlsx'
+			filemgr.checkFile(panel, '.xlsx')
+			result = panelmdl.panelrun(panel, result)
 			result.name = resultname
-			if args.Panel is not None:
-				panel = cfg.panelsPath + args.Panel + '.xlsx'
-				filemgr.checkFile(panel, '.xlsx')
-				result = panelmdl.panelrun(panel, result)
-				result.name = resultname
-				outpath = outpath + '_' + args.Panel
-			if args.Filter[0] is not None:
-				for x in args.Filter:
-					if(len(x.split())) != 2:
-						print('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
-						exit(1)
+			outpath = outpath + '_' + args.Panel
+		if args.Filter[0] is not None:
+			for x in args.Filter:
+				if (len(x.split())) != 2:
+					print('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
+					exit(1)
+				else:
+					x = x.split()
+					if x[1] == 'Empty':
+						result = result[result[x[0]] != '']
 					else:
-						x = x.split()
-						if x[1] == 'Empty':
-							result = result[result[x[0]] != '']
-						else:
-							result = result[~result[x[0]].str.contains(x[1])]
-					result.name = resultname
-					outpath = outpath + '_f' + str(x[0]) + str(x[1])
-			outpath =  outpath + '.xlsx'
-			filemgr.df_to_excel(result, outpath)
-			print('Duos Analisis Complete')
-			return 0
-		else:
-			print("Patient VCF couldn't be found in", cfg.patientPath + args.PatientFile + ".",
-				  "Please check that file exists and is a .vcf")
+						result = result[~result[x[0]].str.contains(x[1])]
+				result.name = resultname
+				outpath = outpath + '_f' + str(x[0]) + str(x[1])
+		outpath = outpath + '.xlsx'
+		filemgr.df_to_excel(result, outpath)
+		print('Duos Analisis Complete')
+		return 0
 
 	def trios(self):
 		parser = argparse.ArgumentParser(description="Run Trios Study on two patients")
@@ -161,55 +165,56 @@ class Parser(object):
 		pt1Check = filemgr.checkFile(patient1, '.vcf')
 		pt2Check = filemgr.checkFile(patient2, '.vcf')
 		pt3Check = filemgr.checkFile(patient3, '.vcf')
-		if (pt1Check & pt2Check & pt3Check):
-			print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
-			result = duos_trios.trios(patient1, patient2, patient3)
-			resultname = result.name
-			outpath = cfg.resultsPath + 'Trios/' + result.name
-			# check if there is a special Venn Place Requested
-			if args.VennPlace == 'A':
-				result = result[result['Trios'] == result.name.split(':')[0]]
-			if args.VennPlace == 'B':
-				result = result[result['Trios'] == result.name.split(':')[1]]
-			if args.VennPlace == 'C':
-				result = result[result['Trios'] == result.name.split(':')[2]]
-			if args.VennPlace == 'A:B':
-				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
-			if args.VennPlace == 'A:C':
-				result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
-			if args.VennPlace == 'B:C':
-				result = result[result['Trios'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
-			if args.VennPlace == 'A:B:C':
-				result = result[result['Trios'] == ':'.join(
-					[result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])]
+		print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
+		result = duos_trios.trios(patient1, patient2, patient3)
+		resultname = result.name
+		outpath = cfg.resultsPath + 'Trios/' + result.name
+		# check if there is a special Venn Place Requested
+		if args.VennPlace == 'A':
+			result = result[result['Trios'] == result.name.split(':')[0]]
+		if args.VennPlace == 'B':
+			result = result[result['Trios'] == result.name.split(':')[1]]
+		if args.VennPlace == 'C':
+			result = result[result['Trios'] == result.name.split(':')[2]]
+		if args.VennPlace == 'A:B':
+			result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+		if args.VennPlace == 'A:C':
+			result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
+		if args.VennPlace == 'B:C':
+			result = result[result['Trios'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
+		if args.VennPlace == 'A:B:C':
+			result = result[result['Trios'] == ':'.join(
+				[result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])]
+		result.name = resultname
+		# check if there is a Panel Requested
+		if args.Panel:
+			panel = cfg.panelsPath + args.Panel + '.xlsx'
+			result = panelmdl.panelrun(panel, result)
 			result.name = resultname
-			# check if there is a Panel Requested
-			if args.Panel:
-				panel = cfg.panelsPath + args.Panel + '.xlsx'
-				result = panelmdl.panelrun(panel, result)
-				result.name = resultname
-				outpath = outpath + '_' + args.Panel
-			# check if there is a Filter Requested
-			if args.Filter[0] is not None:
-				for x in args.Filter:
-					if(len(x.split())) != 2:
-						print('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
-						exit(1)
+			outpath = outpath + '_' + args.Panel
+		# check if there is a Filter Requested
+		if args.Filter[0] is not None:
+			for x in args.Filter:
+				if (len(x.split())) != 2:
+					print('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
+					exit(1)
+				else:
+					x = x.split()
+					if x[1] == 'Empty':
+						result = result[result[x[0]] != '']
 					else:
-						x = x.split()
-						if x[1] == 'Empty':
-							result = result[result[x[0]] != '']
-						else:
-							result = result[~result[x[0]].str.contains(x[1])]
-						result.name = resultname
-						outpath = outpath + '_f' + str(x[0]) + str(x[1])
-			outpath = outpath + '.xlsx'
-			filemgr.df_to_excel(result, outpath)
-			print('Trios Analisis Complete')
-			return 0
-		else:
-			print("Patient VCF couldn't be found in", cfg.patientPath + args.PatientFile + ".")
+						result = result[~result[x[0]].str.contains(x[1])]
+					result.name = resultname
+					outpath = outpath + '_f' + str(x[0]) + str(x[1])
+		outpath = outpath + '.xlsx'
+		filemgr.df_to_excel(result, outpath)
+		print('Trios Analisis Complete')
+		return 0
+
+
+def main():
+	Parser()
 
 
 if __name__ == "__main__":
-	Parser()
+	main()

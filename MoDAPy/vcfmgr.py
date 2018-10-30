@@ -98,7 +98,8 @@ def vcf_to_df(vcf):
 
 	infodf = pd.DataFrame.from_dict(data=info_dict, orient='index').transpose()
 	dbanndf = pd.DataFrame.from_dict(data=dbann, orient='index').transpose()
-	dbanndf[['ESP6500_MAF_AA', 'ESP6500_MAF_EA', 'ESP6500_MAF_ALL']] = dbanndf['ESP6500_MAF'].str.split(',',																					expand=True)
+	dbanndf[['ESP6500_MAF_AA', 'ESP6500_MAF_EA', 'ESP6500_MAF_ALL']] = dbanndf['ESP6500_MAF'].str.split(',',
+																										expand=True)
 	dbanndf['ESP6500_PH_split'] = [c[0] if isinstance(c, list) else c for c in dbanndf['ESP6500_PH'].str.split(',')]
 	dbanndf[['PolyPhen_Predict', 'Polyphen_Score']] = dbanndf['ESP6500_PH_split'].str.split(':', expand=True)
 	dbanndf.drop(columns=['ESP6500_MAF', 'ESP6500_PH', 'ESP6500_PH_split'], inplace=True)

@@ -4,7 +4,9 @@ from os import path
 '''
 Helper function to create Hyperlinks
 '''
-def make_hyperlink(value:str,urltype):
+
+
+def make_hyperlink(value: str, urltype):
 	if urltype == 'RSID':
 		url = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={}"
 		if type(value) == str:
@@ -16,10 +18,10 @@ def make_hyperlink(value:str,urltype):
 		return
 
 
-
 '''
 VCF DataFrame to Xlsx
 '''
+
 
 def checkFile(filePath, extension):
 	if path.isfile(filePath):
@@ -32,8 +34,8 @@ def checkFile(filePath, extension):
 	exit(1)
 
 
-def df_to_excel(df1:pd.DataFrame, outpath):
-	#output = pd.ExcelWriter(outpath)
+def df_to_excel(df1: pd.DataFrame, outpath):
+	# output = pd.ExcelWriter(outpath)
 
 	#	Aca convertiría el campo en enlace, pero todavía hay que evaluar que hacer con los múltiples rs
 	if (len(df1.index) > 65300):
@@ -43,19 +45,19 @@ def df_to_excel(df1:pd.DataFrame, outpath):
 	print('changing ID to url')
 
 	try:
-		df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x,'RSID'))
-		df1['Gene_ID'] = df1['Gene_ID'].apply(lambda x: make_hyperlink(x,'GENE'))
+		df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x, 'RSID'))
+		df1['Gene_ID'] = df1['Gene_ID'].apply(lambda x: make_hyperlink(x, 'GENE'))
 	except:
 		print('Cant parse ID Field')
 
-	#temp column drop until applied in config
-	df1.drop(columns=['Distance','Gene_Name', 'ERRORS / WARNINGS / INFO'], inplace=True)
+	# temp column drop until applied in config
+	df1.drop(columns=['Distance', 'Gene_Name', 'ERRORS / WARNINGS / INFO'], inplace=True)
 	df1.sort_index(inplace=True)
 	df1.to_excel(output, sheet_name='Result')
 	workbook = output.book
 	worksheet = output.sheets['Result']
 	format1 = workbook.add_format({'num_format': '###,###,###'})
-	worksheet.set_column('B:B', 18,format1)
+	worksheet.set_column('B:B', 18, format1)
 	output.save()
 
 
@@ -66,7 +68,7 @@ Saving new VCF
 
 def df_to_vcf(df1: pd.DataFrame, outpath: str):
 	header = """##fileformat=VCFv4.1
-##source=MoDAPy
+##source=cmd_line.py
 ##reference=hg19
 ##INFO=<ID=ZIG,Number=.,Type=String,Description="Indicates Zigosity' ">
 ##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO' ">

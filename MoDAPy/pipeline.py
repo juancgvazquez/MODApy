@@ -1,15 +1,16 @@
 import json
-import cfg
 import datetime
 from subprocess import run
 import shlex
-
+import cfg
 
 '''
 Class defined for each step of the Pipeline
 '''
+
+
 class PipeStep(object):
-	def __init__(self,name,command,subcommand,version,inputfile,outputfile,args):
+	def __init__(self, name, command, subcommand, version, inputfile, outputfile, args):
 		self.name = name
 		self.command = command
 		self.subcommand = subcommand
@@ -26,14 +27,16 @@ class PipeStep(object):
 
 	def stepInfo(self):
 		print('Name:', self.name)
-		print('Command', self.command+self.version, self.subcommand, self.args)
-		print('Input File:',self.inputfile)
-		print('Output File:',self.outputfile)
+		print('Command', self.command + self.version, self.subcommand, self.args)
+		print('Input File:', self.inputfile)
+		print('Output File:', self.outputfile)
 
 
 '''
 General Class for Pipelines
 '''
+
+
 class Pipeline(object):
 	def __init__(self, name, referencepath, url='', description=''):
 		self.name = name
@@ -46,12 +49,13 @@ class Pipeline(object):
 	def add_steps(self, step):
 		self.steps.append(step)
 
-	def add_req_files(self,path):
+	def add_req_files(self, path):
 		self.required_files.append(path)
 
 	'''
 	Class Method to create Pipeline from Json
 	'''
+
 	@classmethod
 	def from_json(cls, jsonpath):
 		with open(jsonpath) as f:
@@ -75,7 +79,7 @@ class Pipeline(object):
 			inputfile = jsf['STEPS'][x]['input']
 			outputfile = jsf['STEPS'][x]['output']
 			args = jsf['STEPS'][x]['args']
-			newstep = PipeStep(name,command,subcommand,version,inputfile,outputfile,args)
+			newstep = PipeStep(name, command, subcommand, version, inputfile, outputfile, args)
 			newpipe.add_steps(newstep)
 
 		return newpipe
@@ -83,9 +87,10 @@ class Pipeline(object):
 	'''
 	Method to run selected Pipeline on fastq files
 	'''
-	def runPipeline(self,fastq1:str,fastq2=None):
+
+	def runPipeline(self, fastq1: str, fastq2=None):
 		patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
-		print('Running',self.name, 'pipeline on patient:', patientname)
+		print('Running', self.name, 'pipeline on patient:', patientname)
 		# bool to check if first step
 		first = True
 		for step in self.steps:
@@ -108,28 +113,28 @@ class Pipeline(object):
 					return 'Error Parsing input file. It should be a string or list of strings.'
 			# If it's not first step, input depends on output of previous step + patientname
 			else:
-				inputfile = step.inputfile.replace('patientname',patientname)
+				inputfile = step.inputfile.replace('patientname', patientname)
 
-			#replaces patient name in outputfiles
+			# replaces patient name in outputfiles
 			if type(step.outputfile) == str:
 				outputfile = step.outputfile.replace('patientname', patientname)
 			else:
 				return 'Error Parsing output file. It should be a string.'
 
 			print(step.name)
-			args = step.args.replace('patientname',patientname)
+			args = step.args.replace('patientname', patientname)
 			cmd = step.command + ' ' + step.subcommand
 			cmd = cmd + ' ' + inputfile + ' ' + outputfile + ' ' + args
 			cmd = shlex.split(cmd)
 			logfile = 'log.txt' + datetime.datetime.now().strftime("%Y_%m_%d__%H_%M")
-			run(cmd, stderr=logfile, stdout=logfile,encoding='utf-8',bufsize=4096)
-		
+			run(cmd, stderr=logfile, stdout=logfile, encoding='utf-8', bufsize=4096)
 
 	'''
 	Method to print Pipeline Info
 	'''
+
 	def pipelineInfo(self):
-		print('Name:',self.name)
+		print('Name:', self.name)
 		print('Reference:', self.referencepath)
 		print('URL:', self.url)
 		print('Description:', self.description)

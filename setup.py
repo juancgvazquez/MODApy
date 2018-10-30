@@ -4,14 +4,14 @@ with open("README.md", "r") as rd:
 	long_description = rd.read()
 
 setuptools.setup(
-	name="MoDAPy",
+	name="cmd_line.py",
 	version='0.0.7dev2',
 	author='Juan Carlos Vázquez',
 	author_email='juancgvazquez@gmail.com',
 	description='Package to perform several analysis on Multi-Omics Data',
 	long_description=long_description,
 	long_description_content_type="text/markdown",
-	url="https://github.com/juancgvazquez/MoDAPy",
+	url="https://github.com/juancgvazquez/cmd_line.py",
 	packages=setuptools.find_packages(),
 	include_package_data=True,
 	install_requires=[
@@ -24,7 +24,10 @@ setuptools.setup(
 		'openpyxl',
 		'XlsxWriter',
 	],
-	scripts=['scripts/MoDAPy'],
+	entry_points={
+		# Command line scripts
+		'console_scripts': ['MoDAPy=MoDAPy.cmd_line:main']
+	},
 	classifiers=[
 		"Programming Language :: Python :: 3",
 		"License :: OSI Approved :: GNU General Public License (GPL)",
