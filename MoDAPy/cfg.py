@@ -9,6 +9,7 @@ patientPath = cfg['PATHS']['PatientPath']
 panelsPath = cfg['PATHS']['PanelsPath']
 reportsPath = cfg['PATHS']['ReportsPath']
 resultsPath = cfg['PATHS']['ResultsPath']
+pipelinesPath = cfg['PATHS']['PipelinesPath']
 
 def setcfg(cfgdict:dict):
 	#for x in cfgdict:

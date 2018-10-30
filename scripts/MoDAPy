@@ -11,9 +11,10 @@ class Parser(object):
 		parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''MoDAPy <command> [<args>]
 
         Commands:
-        single  Run study on a single patient
-        duos    Run Duos analysis on two selected patients
-        trios   Run Trios analysis on three selected patients
+        pipeline Run pipeline on FastQ file/s
+        single   Run study on a single patient
+        duos     Run Duos analysis on two selected patients
+        trios    Run Trios analysis on three selected patients
 
         For more info on any of these commands, use "MoDAPy <command> -h"''')
 
@@ -28,6 +29,25 @@ class Parser(object):
 
 		# goes to each command
 		getattr(self, args.command)()
+
+	def pipeline(self):
+		# Description for panel usage
+		parser = argparse.ArgumentParser(description="Run a Pipeline from FASTQ to VCF")
+		parser.add_argument("-Pipeline", required=True, help="File name of the Pipeline inside Pipelines folder")
+		parser.add_argument("-FQ", required=True,
+							help="Patient FastQ1 File Path - It needs to match exactly "
+								 "the filename found inside Patients folder. Only this one is needed for Single End."
+								 "Two FastQs will be needed for Paired End (usage: -FQ Fastq1 -FQ Fastq2",
+								 action='append')
+		# ignore first argument
+		args = parser.parse_args(argv[2:])
+		pipeline = cfg.pipelinesPath + args.Pipeline + '.json'
+		fqs = cfg.patientPath + args.FQ
+		#ptCheck = filemgr.checkFile(fqs, '.')
+		pnCheck = filemgr.checkFile(pipeline, '.json')
+
+		print(pipeline,fqs)
+		return 0
 
 	def single(self):
 		# Description for panel usage
