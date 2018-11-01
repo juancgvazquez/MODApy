@@ -2,13 +2,14 @@
 import argparse
 import os
 from sys import argv
-import filemgr, cfg, duos_trios, panelmdl, pipeline
+from MoDAPy import filemgr, cfg, duos_trios, panelmdl, pipeline
+from MoDAPy.version import __version__
 
 
 class Parser(object):
 
 	def __init__(self):
-		parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''cmd_line.py <command> [<args>]
+		parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''MoDAPy <command> [<args>]
 
         Commands:
         pipeline Run pipeline on FastQ file/s
@@ -16,10 +17,12 @@ class Parser(object):
         duos     Run Duos analysis on two selected patients
         trios    Run Trios analysis on three selected patients
 
-        For more info on any of these commands, use "cmd_line.py <command> -h"''')
+        For more info on any of these commands, use "cmd_line.py <command> -h
+        
+        You can check the package version using -v or --version"''')
 
 		parser.add_argument("command", help="Select command to run")
-
+		parser.add_argument("-v", "--version", action='version', version='MoDAPy ' + __version__)
 		# exclude all arguments but the first one
 		args = parser.parse_args(argv[1:2])
 		if not hasattr(self, args.command):
@@ -55,7 +58,7 @@ class Parser(object):
 		else:
 			fq1 = cfg.patientPath + args.FQ[0]
 			fq2 = ''
-			ptCheck = filemgr.checkFile(fq1, fq1.split('.')[-1])
+			ptCheck = filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
 
 		pnCheck = filemgr.checkFile(pipeline, '.json')
 

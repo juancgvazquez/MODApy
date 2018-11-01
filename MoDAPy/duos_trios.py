@@ -1,5 +1,5 @@
 import pandas as pd
-import vcfmgr
+from MoDAPy import vcfmgr
 
 
 def duos(vcf1, vcf2):

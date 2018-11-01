@@ -3,9 +3,12 @@ import setuptools
 with open("README.md", "r") as rd:
 	long_description = rd.read()
 
+version = {}
+with open('./MoDAPy/version.py') as v:
+	exec(v.read(), version)
 setuptools.setup(
 	name="MoDAPy",
-	version='0.0.7.dev3',
+	version=version['__version__'],
 	author='Juan Carlos Vázquez',
 	author_email='juancgvazquez@gmail.com',
 	description='Package to perform several analysis on Multi-Omics Data',

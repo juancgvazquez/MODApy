@@ -2,7 +2,6 @@ import json
 import datetime
 from subprocess import run
 import shlex
-import cfg
 
 '''
 Class defined for each step of the Pipeline
