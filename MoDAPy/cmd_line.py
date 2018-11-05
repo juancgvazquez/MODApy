@@ -44,7 +44,11 @@ class Parser(object):
 							action='append')
 		# ignore first argument
 		args = parser.parse_args(argv[2:])
-		pipeline = cfg.pipelinesPath + args.Pipeline + '.json'
+		pipe = cfg.pipelinesPath + args.Pipeline + '.json'
+
+		filemgr.checkFile(pipe, '.json')
+
+		newpipe = pipeline.Pipeline.from_json(pipe)
 
 		if len(args.FQ) > 2:
 			print('Only Two FASTQ files allowed. The Input for FastQ Files was: ', str(args.FQ))
@@ -53,16 +57,14 @@ class Parser(object):
 		elif len(args.FQ) == 2:
 			fq1 = cfg.patientPath + args.FQ[0]
 			fq2 = cfg.patientPath + args.FQ[1]
-			ptCheck = (filemgr.checkFile(fq1, fq1.split('.')[-1]) & filemgr.checkFile(fq2, fq2.split('.')[-1]))
-
+			(filemgr.checkFile(fq1, fq1.split('.')[-1]) & filemgr.checkFile(fq2, fq2.split('.')[-1]))
+			newpipe.runPipeline(fq1, fq2)
 		else:
 			fq1 = cfg.patientPath + args.FQ[0]
 			fq2 = ''
-			ptCheck = filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
+			filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
+			newpipe.runPipeline(fq1)
 
-		pnCheck = filemgr.checkFile(pipeline, '.json')
-
-		print(pipeline, fq1, fq2)
 		return 0
 
 	def single(self):
