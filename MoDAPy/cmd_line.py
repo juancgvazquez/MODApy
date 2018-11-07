@@ -34,7 +34,7 @@ class Parser(object):
 		getattr(self, args.command)()
 
 	def pipeline(self):
-		# Description for panel usage
+		# Description for pipeline usage
 		parser = argparse.ArgumentParser(description="Run a Pipeline from FASTQ to VCF")
 		parser.add_argument("-Pipeline", required=True, help="File name of the Pipeline inside Pipelines folder")
 		parser.add_argument("-FQ", required=True,
@@ -52,20 +52,21 @@ class Parser(object):
 
 		if len(args.FQ) > 2:
 			print('Only Two FASTQ files allowed. The Input for FastQ Files was: ', str(args.FQ))
-			exit(1)
+			return exit(1)
 
 		elif len(args.FQ) == 2:
 			fq1 = cfg.patientPath + args.FQ[0]
 			fq2 = cfg.patientPath + args.FQ[1]
-			(filemgr.checkFile(fq1, fq1.split('.')[-1]) & filemgr.checkFile(fq2, fq2.split('.')[-1]))
-			newpipe.runPipeline(fq1, fq2)
+			filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
+			filemgr.checkFile(fq2, '.' + fq2.split('.')[-1])
+			newpipe.runpipeline(fq1, fq2)
+			return 0
 		else:
 			fq1 = cfg.patientPath + args.FQ[0]
 			fq2 = ''
 			filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
-			newpipe.runPipeline(fq1)
-
-		return 0
+			newpipe.runpipeline(fq1)
+			return 0
 
 	def single(self):
 		# Description for panel usage

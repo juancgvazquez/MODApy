@@ -1,6 +1,8 @@
-import json, datetime, shlex, logging
-from subprocess import Popen, STDOUT, PIPE, CalledProcessError
-from os import path
+import json
+import shlex
+import logging
+import subprocess
+from MoDAPy import cfg
 
 '''
 Class defined for each step of the Pipeline
@@ -23,7 +25,7 @@ class PipeStep(object):
 	def __repr__(self):
 		return self.name
 
-	def stepInfo(self):
+	def stepinfo(self):
 		print('Name:', self.name)
 		print('Command', self.command + self.version, self.subcommand, self.args)
 		print('Input File:', self.inputfile)
@@ -36,11 +38,11 @@ General Class for Pipelines
 
 
 class Pipeline(object):
-	def __init__(self, name, referencepath, url='', description=''):
+	def __init__(self, name, reference, url='', description=''):
 		self.name = name
 		self.url = url
 		self.description = description
-		self.referencepath = referencepath
+		self.reference = reference
 		self.required_files = []
 		self.steps = []
 
@@ -69,14 +71,14 @@ class Pipeline(object):
 		for x in jsf['INFO']['required_files']:
 			newpipe.add_req_files(x)
 
-		for x in jsf['STEPS']:
-			name = jsf['STEPS'][x]['name']
-			command = jsf['STEPS'][x]['command']
-			subcommand = jsf['STEPS'][x]['subcommand']
-			version = jsf['STEPS'][x]['version']
-			inputfile = jsf['STEPS'][x]['input']
-			outputfile = jsf['STEPS'][x]['output']
-			args = jsf['STEPS'][x]['args']
+		for x in range(1, len(jsf['STEPS']) + 1):
+			name = jsf['STEPS'][str(x)]['name']
+			command = jsf['STEPS'][str(x)]['command']
+			subcommand = jsf['STEPS'][str(x)]['subcommand']
+			version = jsf['STEPS'][str(x)]['version']
+			inputfile = jsf['STEPS'][str(x)]['input']
+			outputfile = jsf['STEPS'][str(x)]['output']
+			args = jsf['STEPS'][str(x)]['args']
 			newstep = PipeStep(name, command, subcommand, version, inputfile, outputfile, args)
 			newpipe.add_steps(newstep)
 
@@ -86,26 +88,26 @@ class Pipeline(object):
 	Method to run selected Pipeline on fastq files
 	'''
 
-	def runPipeline(self, fastq1: str, fastq2=None):
+	def runpipeline(self, fastq1: str, fastq2=None):
 		patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
-		ref = self.referencepath
+		ref = cfg.referencesPath + self.reference + '/' + self.reference + '.fa'
 		print('Running', self.name, 'pipeline on patient:', patientname)
 		# bool to check if first step
 		first = True
 		for step in self.steps:
 			# Checks if first step, we should input the exact input as inputfiles
-			if first == True:
+			if first is True:
 				first = False
 				if type(step.inputfile) == list:
-					if (fastq1 != None) & (fastq2 != None):
-						inputfile = fastq1 + fastq2
+					if (fastq1 is not None) & (fastq2 is not None):
+						inputfile = fastq1 + ' ' + fastq2
 					else:
 						print('WARNING: This pipeline was designed for Pair End and you are running it as Single End')
 						inputfile = fastq1
 				elif type(step.inputfile) == str:
-					if (fastq1 != None) & (fastq2 != None):
+					if (fastq1 is not None) & (fastq2 is not None):
 						print('WARNING: This pipeline was designed for Single End and you are running it as Pair End')
-						inputfile = fastq1 + fastq2
+						inputfile = fastq1 + ' ' + fastq2
 					else:
 						inputfile = fastq1
 				else:
@@ -121,12 +123,19 @@ class Pipeline(object):
 				return 'Error Parsing output file. It should be a string.'
 
 			print(step.name)
-			rootdir = path.dirname(path.abspath(__file__))
 			args = step.args.replace('patientname', patientname).replace('reference', ref)
 			cmdver = step.version.replace('.', '_')
-			cmd = rootdir + '/bin/' + step.command + '/' + step.command + '_' + cmdver + ' ' + step.subcommand
+			if 'GATK' in step.command or 'picard' in step.command:
+				cmd = 'java -jar ' + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
+					  + '.jar ' + step.subcommand
+			else:
+				cmd = cfg.binPath + step.command + '/' + step.command + '_' + cmdver + ' ' + step.subcommand
+
 			cmdstr = cmd + ' ' + args + ' ' + ' ' + inputfile + ' ' + outputfile
+
 			cmd = shlex.split(cmdstr)
+
+			# logging stuff
 			formatter2 = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 			logging.basicConfig(level=logging.DEBUG, filename='log', format=formatter2)
 			console = logging.StreamHandler()
@@ -134,15 +143,28 @@ class Pipeline(object):
 			formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
 			console.setFormatter(formatter)
 			logging.getLogger('').addHandler(console)
-			logging.info('Subprocess: "' + cmdstr)
+			# done logging config
+			logging.info('Subprocess: ' + cmdstr)
 			try:
-				cmdrun = Popen(cmd, stderr=PIPE, stdout=PIPE, universal_newlines=True)
-			except (OSError, CalledProcessError) as exception:
+				if any("bwa" in s for s in cmd):
+					output = cmd[-1]
+					del cmd[-1]
+					with open(output, 'w+') as bwaout:
+						cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=bwaout, universal_newlines=True)
+				else:
+					cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+											  universal_newlines=True)
 				out, err = cmdrun.communicate()
-				if out != '':
+				if out is not None:
 					logging.debug('Output: ' + out.strip())
-				if err != '':
+				if err is not None:
 					logging.debug('Stderr: ' + err.strip())
+				if cmdrun.returncode != 0:
+					logging.error('Subprocess failed with error code: ' + str(cmdrun.returncode))
+					logging.error('Check log for more details')
+					exit(cmdrun.returncode)
+
+			except (OSError, subprocess.CalledProcessError) as exception:
 				logging.debug('Subprocess failed')
 				logging.debug('Exception ocurred: ' + str(exception))
 				logging.info('There was an error when running the pipeline. Please check logs for more info')
@@ -154,9 +176,9 @@ class Pipeline(object):
 	Method to print Pipeline Info
 	'''
 
-	def pipelineInfo(self):
+	def pipelineinfo(self):
 		print('Name:', self.name)
-		print('Reference:', self.referencepath)
+		print('Reference:', self.reference)
 		print('URL:', self.url)
 		print('Description:', self.description)
 		print('Additional Files Required:', self.required_files)
