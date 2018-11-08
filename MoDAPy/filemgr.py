@@ -52,8 +52,16 @@ def df_to_excel(df1: pd.DataFrame, outpath):
 
 	# temp column drop until applied in config
 	df1.drop(columns=['Distance', 'Gene_Name', 'ERRORS / WARNINGS / INFO'], inplace=True)
+	# reordering columns so ID and GENE ID are first
+	firstcolslist = ['ID', 'Gene_ID']
+	collist = [x for x in df1.columns if x not in firstcolslist]
 	df1.sort_index(inplace=True)
-	df1.to_excel(output, sheet_name='Result')
+	df1 = df1[firstcolslist + collist]
+	# removing qual column if duos or trios
+	singlecols = ['QUAL']
+	if df1.columns[-1] == 'Trios' or df1.columns[-1] == 'Duos':
+		df1 = df1.drop(columns=singlecols)
+	df1.to_excel(output, sheet_name='Result', merge_cells=False)
 	workbook = output.book
 	worksheet = output.sheets['Result']
 	format1 = workbook.add_format({'num_format': '###,###,###'})
@@ -68,7 +76,7 @@ Saving new VCF
 
 def df_to_vcf(df1: pd.DataFrame, outpath: str):
 	header = """##fileformat=VCFv4.1
-##source=cmd_line.py
+##source=MoDAPy
 ##reference=hg19
 ##INFO=<ID=ZIG,Number=.,Type=String,Description="Indicates Zigosity' ">
 ##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO' ">
