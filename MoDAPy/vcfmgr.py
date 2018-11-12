@@ -2,116 +2,51 @@ from collections import OrderedDict
 import cyvcf2
 import pandas as pd
 
-'''
-Simple parser, Uses cyvcf2 Returns a Reader Object
-'''
 
+class ParsedVCF(pd.DataFrame):
+	def getstats(self):
+		vcfdfstats = self.groupby(['ZIGOSITY', 'VARTYPE', 'Annotation_Impact', 'Annotation']).size().to_frame(
+			name='count')
 
-def simple_parser(vcf):
-	try:
-		pvcf = cyvcf2.Reader(vcf)
-	except:
-		print('error loading vcf')
+	@classmethod
+	def from_vcf(cls, vcf):
+		try:
+			pVCF = cyvcf2.Reader(vcf)
+		except:
+			print('error loading vcf')
+			exit(1)
 
-	return pvcf
+		variantsDict = OrderedDict()
+		for variant in pVCF:
+			variantsDict[variant.CHROM + '_' + str(variant.POS) + '_' + variant.REF + '_' + ','.join(variant.ALT)] = {
+				'ID': variant.ID, 'QUAL': variant.QUAL, 'FILTER': variant.FILTER}
+			variantsDict[
+				variant.CHROM + '_' + str(variant.POS) + '_' + variant.REF + '_' + ','.join(variant.ALT)].update(
+				{k: v for (k, v) in variant.INFO})
 
+		df1 = pd.DataFrame.from_dict(variantsDict, orient='index')
+		if 'ANN' in df1.columns:
+			anndf = df1['ANN']
+			annhead = pVCF.get_header_type('ANN')['Description'].strip('"Functional annotations: \'"')
+			annheaderlist = [x.strip() for x in annhead.split('|')]
+			anndf = anndf.str.split(',', expand=True).stack()
+			anndf = anndf.str.split('|', expand=True)
+			anndf.columns = annheaderlist
+			df1.drop(columns=['ANN'], inplace=True)
+			anndf.index = anndf.index.droplevel(1)
+			vcfdf = df1.join(anndf, how='inner')
+		else:
+			vcfdf = df1
 
-'''
-Detailed parser, Uses cyvcf2 and returns a DataFrame containing all info.
-'''
+		vcfdf.index = vcfdf.index.str.split('_', expand=True)
+		vcfdf.index.names = ['CHROM', 'POS', 'REF', 'ALT']
+		if 'HOM' in vcfdf.columns:
+			vcfdf['HOM'] = vcfdf['HOM'].map({True: 'HOM'})
+			vcfdf.HOM.fillna('HET', inplace=True)
+			vcfdf.rename(columns={'HOM': 'ZIGOSITY'}, inplace=True)
+		try:
+			vcfdf.name = pVCF.samples[0]
+		except:
+			vcfdf.name = vcf.split('/')[-1]
 
-
-def vcf_to_df(vcf):
-	try:
-		pvcf = cyvcf2.Reader(vcf)
-	except:
-		print('error loading vcf')
-
-	info_dict = OrderedDict()
-	headers = {'CHROM': [], 'POS': [], 'REF': [], 'ALT': [], 'ID': [], 'QUAL': [], 'FILTER': [], 'ZIGOSITY': []}
-	vcf_dict = OrderedDict(headers.copy())
-	infokeylist = ['AC', 'SAMPLES_AF', 'AN', 'DP', 'FS', 'MLEAC', 'MLEAF', 'MQ', 'QD', 'SOR', 'dbSNPBuildID', 'ANN']
-	milgp3keylist = ['1000Gp3_AF', '1000Gp3_AFR_AF', '1000Gp3_AMR_AF', '1000Gp3_EAS_AF', '1000Gp3_EUR_AF',
-					 '1000Gp3_SAS_AF']
-	esp6500keylist = ['ESP6500_MAF', 'ESP6500_PH']
-	clinvarkeylist = ['CLINVAR_CLNSIG', 'CLINVAR_CLNDSDB', 'CLINVAR_CLNDSDBID', 'CLINVAR_CLNDBN', 'CLINVAR_CLNREVSTAT',
-					  'CLINVAR_CLNACC']
-	dbann = OrderedDict()
-
-	for variant in pvcf:
-		for (key, value) in variant.INFO:
-			if key in infokeylist:
-				if key in info_dict:
-					info_dict[key].append(value)
-				else:
-					info_dict[key] = [value]
-			elif key in milgp3keylist:
-				if key in dbann:
-					dbann[key].append(value)
-				else:
-					dbann[key] = [value]
-			elif key in esp6500keylist:
-				if key in dbann:
-					dbann[key].append(value)
-				else:
-					dbann[key] = [value]
-			elif key in clinvarkeylist:
-				if key in dbann:
-					dbann[key].append(value)
-				else:
-					dbann[key] = [value]
-
-		zigosity = ''
-		if variant.gt_types == 0:
-			zigosity = 'HOM_REF'
-		elif variant.gt_types == 1:
-			zigosity = 'HET'
-		elif variant.gt_types == 2:
-			zigosity = 'UNKNOWN'
-		elif variant.gt_types == 3:
-			zigosity = 'HOM_ALT'
-		for header in vcf_dict:
-			if header != 'ZIGOSITY':
-				vcf_dict[header].append(getattr(variant, header))
-			else:
-				vcf_dict['ZIGOSITY'].append(zigosity)
-
-	maindf = pd.DataFrame.from_dict(data=vcf_dict, orient='index').transpose()
-	try:
-		maindf['ALT'] = maindf['ALT'].str.join(',')
-	except:
-		pass
-	maindf.index.set_names('Variant', inplace=True)
-	if info_dict['ANN']:
-		annlist = info_dict.pop('ANN')
-		# Preparo lista de cabeceras
-		annhead = pvcf.get_header_type('ANN')['Description'].strip('"Functional annotations:"')
-		annheaderlist = [x.strip() for x in annhead.split('|')]
-		annlsplit = [x.split(',') for x in annlist]
-		anndf = pd.DataFrame(annlsplit).stack()
-		anndf = anndf.str.split('|', expand=True)
-		anndf.columns = annheaderlist
-		anndf.index.set_names(['Variant', 'Ann_N°'], inplace=True)
-	else:
-		print('no annotations')
-		anndf = pd.DataFrame({'Variant': []})
-
-	infodf = pd.DataFrame.from_dict(data=info_dict, orient='index').transpose()
-	dbanndf = pd.DataFrame.from_dict(data=dbann, orient='index').transpose()
-	dbanndf[['ESP6500_MAF_AA', 'ESP6500_MAF_EA', 'ESP6500_MAF_ALL']] = dbanndf['ESP6500_MAF'].str.split(',',
-																										expand=True)
-	dbanndf['ESP6500_PH_split'] = [c[0] if isinstance(c, list) else c for c in dbanndf['ESP6500_PH'].str.split(',')]
-	dbanndf[['PolyPhen_Predict', 'Polyphen_Score']] = dbanndf['ESP6500_PH_split'].str.split(':', expand=True)
-	dbanndf.drop(columns=['ESP6500_MAF', 'ESP6500_PH', 'ESP6500_PH_split'], inplace=True)
-	infodf.index.set_names('Variant', inplace=True)
-	dbanndf.index.set_names('Variant', inplace=True)
-	fulldf = maindf.join(infodf, how='inner').join(anndf, how='inner').join(dbanndf, how='inner')
-	fulldf.reset_index(inplace=True)
-	fulldf = fulldf.drop(['Variant', 'Ann_N°'], axis=1)
-	fulldf.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
-	fulldf.columns = fulldf.columns.str.strip("'")
-	try:
-		fulldf.name = pvcf.samples[0]
-	except:
-		fulldf.name = ''
-	return fulldf
+		return vcfdf

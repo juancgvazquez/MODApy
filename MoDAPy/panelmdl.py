@@ -1,5 +1,5 @@
 import pandas as pd
-from MoDAPy import vcfmgr
+from MoDAPy.vcfmgr import ParsedVCF
 
 
 def panelrun(panel, vcffile):
@@ -8,7 +8,7 @@ def panelrun(panel, vcffile):
 	if type(vcffile) == pd.DataFrame:
 		vcfdf = vcffile
 	elif type(vcffile) == str:
-		vcfdf = vcfmgr.vcf_to_df(vcffile)
+		vcfdf = ParsedVCF.from_vcf(vcffile)
 
 	df_final = check_panel(gsymbollist, vcfdf)
 	df_final.name = vcfdf.name

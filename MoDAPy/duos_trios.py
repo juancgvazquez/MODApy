@@ -1,10 +1,10 @@
 import pandas as pd
-from MoDAPy import vcfmgr
+from MoDAPy.vcfmgr import ParsedVCF
 
 
 def duos(vcf1, vcf2):
-	vcf1df = vcfmgr.vcf_to_df(vcf1)  # type:pd.DataFrame
-	vcf2df = vcfmgr.vcf_to_df(vcf2)  # type:pd.DataFrame
+	vcf1df = ParsedVCF.from_vcf(vcf1)
+	vcf2df = ParsedVCF.from_vcf(vcf2)
 	AyB = vcf1df.loc[vcf1df.index.isin(vcf2df.index)].copy()
 	A = vcf1df.loc[~vcf1df.index.isin(vcf2df.index)].copy()
 	B = vcf2df.loc[~vcf2df.index.isin(vcf1df.index)].copy()
@@ -19,9 +19,9 @@ def duos(vcf1, vcf2):
 
 
 def trios(vcf1, vcf2, vcf3):
-	vcf1df = vcfmgr.vcf_to_df(vcf1)  # type:pd.DataFrame
-	vcf2df = vcfmgr.vcf_to_df(vcf2)  # type:pd.DataFrame
-	vcf3df = vcfmgr.vcf_to_df(vcf3)  # type:pd.DataFrame
+	vcf1df = ParsedVCF.from_vcf(vcf1)
+	vcf2df = ParsedVCF.from_vcf(vcf2)
+	vcf3df = ParsedVCF.from_vcf(vcf3)
 	A = vcf1df.loc[(~vcf1df.index.isin(vcf2df.index)) & (~vcf1df.index.isin(vcf3df.index))].copy()
 	A['Trios'] = vcf1df.name
 	B = vcf2df.loc[(~vcf2df.index.isin(vcf1df.index)) & (~vcf2df.index.isin(vcf3df.index))].copy()
