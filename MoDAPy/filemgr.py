@@ -1,5 +1,11 @@
 import pandas as pd
-from os import path
+from os import path, remove
+from MoDAPy.vcfmgr import ParsedVCF
+import matplotlib
+
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import matplotlib_venn as venn
 
 '''
 Helper function to create Hyperlinks
@@ -10,12 +16,51 @@ def make_hyperlink(value: str, urltype):
 	if urltype == 'RSID':
 		url = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={}"
 		if type(value) == str:
-			return '=HYPERLINK("%s", "%s")' % (url.format(value.split(',')[0]), value.split(',')[0])
+			return '=HYPERLINK("%s", "%s")' % (
+				url.format(value.replace(';', ',').split(',')[0]), value.replace(';', ',').split(',')[0])
 	if urltype == 'GENE':
 		url = "https://www.genecards.org/cgi-bin/carddisp.pl?gene={}"
 		return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
 	else:
 		return
+
+
+'''
+Helper function to get statisticts out of vcfs
+'''
+
+
+def getstats(self, type=0):
+	stats = {}
+	if (type == 0):
+		if all(col in self.columns for col in ['ZIGOSITY', 'VARTYPE', 'ANNOTATION_IMPACT', 'ANNOTATION']):
+			vcfstats = self.groupby([self.index.get_level_values(0), 'ZIGOSITY', 'VARTYPE', 'ANNOTATION_IMPACT',
+									 'ANNOTATION']).size().to_frame(name='count')
+			vcfstats.name = 'stats'
+			stats['df'] = []
+			stats['df'].append(vcfstats)
+			plt.pie(vcfstats.groupby(level=0).count(), labels=vcfstats.groupby(level=0).count().index.values)
+			my_circle = plt.Circle((0, 0), 0.7, color='white')
+			chromVars = plt.gcf()
+			chromVars.gca().add_artist(my_circle)
+			stats['graphs'] = []
+			stats['graphs'].append(chromVars)
+	elif (type == 1):
+		if 'TRIOS' in self.columns:
+			trios = self.groupby('TRIOS', sort=False).size()
+			A, B, C = self.name.split(':')
+			triosgraph = plt.figure()
+			venn.venn3(trios, set_labels=[A, B, C], set_colors=['b', 'r', 'g'])
+			triosgraph.savefig('./triostmp.png', dpi=triosgraph.dpi)
+			triosgraph.clf()
+		elif 'DUOS' in self.columns:
+			duos = self.groupby('DUOS', sort=False).size()
+			A, B = self.name.split(':')
+			duosgraph = plt.figure()
+			venn.venn2(duos, set_labels=[A, B], set_colors=['b', 'r'])
+			duosgraph.savefig('./duostmp.png', dpi=duosgraph.dpi)
+			duosgraph.clf()
+	return stats
 
 
 '''
@@ -34,10 +79,7 @@ def checkFile(filePath, extension):
 	exit(1)
 
 
-def df_to_excel(df1: pd.DataFrame, outpath):
-	# output = pd.ExcelWriter(outpath)
-
-	#	Aca convertiría el campo en enlace, pero todavía hay que evaluar que hacer con los múltiples rs
+def df_to_excel(df1: ParsedVCF, outpath):
 	if (len(df1.index) > 65300):
 		output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
 	else:
@@ -46,31 +88,57 @@ def df_to_excel(df1: pd.DataFrame, outpath):
 
 	try:
 		df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x, 'RSID'))
-		df1['Gene_ID'] = df1['Gene_ID'].apply(lambda x: make_hyperlink(x, 'GENE'))
+		df1['GENE_ID'] = df1['GENE_ID'].apply(lambda x: make_hyperlink(x, 'GENE'))
 	except:
 		print('Cant parse ID Field')
 
 	# temp column drop until applied in config
-	df1.drop(columns=['Distance', 'Gene_Name', 'ERRORS / WARNINGS / INFO'], inplace=True)
+	df1.drop(columns=['DISTANCE', 'GENE_NAME', 'ERRORS / WARNINGS / INFO'], inplace=True)
 	# reordering columns so ID and GENE ID are first
-	firstcolslist = ['ID', 'Gene_ID']
+	firstcolslist = ['ID', 'GENE_ID']
 	collist = [x for x in df1.columns if x not in firstcolslist]
 	df1.sort_index(inplace=True)
 	df1 = df1[firstcolslist + collist]
 	# removing qual column if duos or trios
 	singlecols = ['QUAL']
-	if df1.columns[-1] == 'Trios' or df1.columns[-1] == 'Duos':
+	if df1.columns[-1] == 'TRIOS' or df1.columns[-1] == 'DUOS':
 		df1 = df1.drop(columns=singlecols)
-	df1.to_excel(output, sheet_name='Result', merge_cells=False)
 	workbook = output.book
-	worksheet = output.sheets['Result']
+	datasheet = workbook.add_worksheet('DATA')
+	statsheet = workbook.add_worksheet('STATISTICS')
+	output.sheets['DATA'] = datasheet
 	format1 = workbook.add_format({'num_format': '###,###,###'})
-	worksheet.set_column('B:B', 18, format1)
+	datasheet.set_column('B:B', 18, format1)
+	df1.to_excel(output, sheet_name='DATA', merge_cells=False)
+	stats = getstats(df1)
+	output.sheets['STATISTICS'] = statsheet
+	for i in range(len(stats['df'])):
+		stats['df'][i].to_excel(output, sheet_name='STATISTICS', startcol=i + len(stats['df'][i].columns))
+	for i in range(len(stats['graphs'])):
+		stats['graphs'][i].savefig('./tempgraph.png')
+		statsheet.insert_image('H2', './tempgraph.png')
+	if path.isfile('./duostmp.png'):
+		statsheet.insert_image('H25', './duostmp.png')
+	elif path.isfile('./triostmp.png'):
+		statsheet.insert_image('H25', './triostmp.png')
 	output.save()
+	try:
+		remove('./tempgraph.png')
+	except:
+		print('couldnt remove tempgraph.png')
+	try:
+		remove('./triostmp.png')
+	except:
+		print('couldnt remove triostmp.png')
+
+	try:
+		remove('./duostmp.png')
+	except:
+		print('couldnt remove duostmp.png')
 
 
 '''
-Saving new VCF
+Saving new VCF (WIP)
 '''
 
 

@@ -2,7 +2,7 @@
 import argparse
 import os
 from sys import argv
-from MoDAPy import filemgr, cfg, duos_trios, panelmdl, pipeline
+from MoDAPy import filemgr, cfg, panelmdl, pipeline, vcfmgr
 from MoDAPy.version import __version__
 
 
@@ -111,16 +111,17 @@ class Parser(object):
 		pt1Check = filemgr.checkFile(patient1, '.vcf')
 		pt2Check = filemgr.checkFile(patient2, '.vcf')
 		print("Running Duos Study on", args.Patient1, args.Patient2)
-		result = duos_trios.duos(patient1, patient2)
+		result = vcfmgr.ParsedVCF.from_vcf(patient1).duos(patient2)
 		resultname = result.name
 		outpath = cfg.resultsPath + 'Duos/' + result.name
+		filemgr.getstats(result, 1)
 		# check if there is a special Venn Place Requested
 		if args.VennPlace == 'A':
-			result = result[result['Duos'] == result.name.split(':')[0]]
+			result = result[result['DUOS'] == result.name.split(':')[0]]
 		if args.VennPlace == 'B':
-			result = result[result['Duos'] == result.name.split(':')[1]]
+			result = result[result['DUOS'] == result.name.split(':')[1]]
 		if args.VennPlace == 'A:B':
-			result = result[result['Duos'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+			result = result[result['DUOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
 		result.name = resultname
 		if args.Panel is not None:
 			panel = cfg.panelsPath + args.Panel + '.xlsx'
@@ -172,24 +173,25 @@ class Parser(object):
 		pt2Check = filemgr.checkFile(patient2, '.vcf')
 		pt3Check = filemgr.checkFile(patient3, '.vcf')
 		print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
-		result = duos_trios.trios(patient1, patient2, patient3)
+		result = vcfmgr.ParsedVCF.from_vcf(patient1).trios(patient2, patient3)
 		resultname = result.name
 		outpath = cfg.resultsPath + 'Trios/' + result.name
+		filemgr.getstats(result, 1)
 		# check if there is a special Venn Place Requested
 		if args.VennPlace == 'A':
-			result = result[result['Trios'] == result.name.split(':')[0]]
+			result = result[result['TRIOS'] == result.name.split(':')[0]]
 		if args.VennPlace == 'B':
-			result = result[result['Trios'] == result.name.split(':')[1]]
+			result = result[result['TRIOS'] == result.name.split(':')[1]]
 		if args.VennPlace == 'C':
-			result = result[result['Trios'] == result.name.split(':')[2]]
+			result = result[result['TRIOS'] == result.name.split(':')[2]]
 		if args.VennPlace == 'A:B':
-			result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+			result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
 		if args.VennPlace == 'A:C':
-			result = result[result['Trios'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
+			result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
 		if args.VennPlace == 'B:C':
-			result = result[result['Trios'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
+			result = result[result['TRIOS'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
 		if args.VennPlace == 'A:B:C':
-			result = result[result['Trios'] == ':'.join(
+			result = result[result['TRIOS'] == ':'.join(
 				[result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])]
 		result.name = resultname
 		# check if there is a Panel Requested
