@@ -53,36 +53,46 @@ class Pipeline(object):
 		self.required_files.append(path)
 
 	'''
+	Class Method to build pipeline from loaded json,xml or yaml
+	'''
+
+	@staticmethod
+	def _buildpipe(pipefile):
+		name = pipefile['INFO']['name']
+		url = pipefile['INFO']['url']
+		description = pipefile['INFO']['description']
+		reference = pipefile['INFO']['reference']
+
+		newpipe = Pipeline(name, reference, url, description)
+
+		for x in pipefile['INFO']['required_files']:
+			newpipe.add_req_files(x)
+
+		for x in range(1, len(pipefile['STEPS']) + 1):
+			name = pipefile['STEPS'][str(x)]['name']
+			command = pipefile['STEPS'][str(x)]['command']
+			subcommand = pipefile['STEPS'][str(x)]['subcommand']
+			version = pipefile['STEPS'][str(x)]['version']
+			inputfile = pipefile['STEPS'][str(x)]['input']
+			outputfile = pipefile['STEPS'][str(x)]['output']
+			args = pipefile['STEPS'][str(x)]['args']
+			newstep = PipeStep(name, command, subcommand, version, inputfile, outputfile, args)
+			newpipe.add_steps(newstep)
+
+		return newpipe
+
+	'''
 	Class Method to create Pipeline from Json
 	'''
 
 	@classmethod
 	def from_json(cls, jsonpath):
 		with open(jsonpath) as f:
-			jsf = json.load(f)
+			pipefile = json.load(f)
 
-		name = jsf['INFO']['name']
-		url = jsf['INFO']['url']
-		description = jsf['INFO']['description']
-		reference = jsf['INFO']['reference']
+		builtpipe = cls._buildpipe(pipefile)
 
-		newpipe = Pipeline(name, reference, url, description)
-
-		for x in jsf['INFO']['required_files']:
-			newpipe.add_req_files(x)
-
-		for x in range(1, len(jsf['STEPS']) + 1):
-			name = jsf['STEPS'][str(x)]['name']
-			command = jsf['STEPS'][str(x)]['command']
-			subcommand = jsf['STEPS'][str(x)]['subcommand']
-			version = jsf['STEPS'][str(x)]['version']
-			inputfile = jsf['STEPS'][str(x)]['input']
-			outputfile = jsf['STEPS'][str(x)]['output']
-			args = jsf['STEPS'][str(x)]['args']
-			newstep = PipeStep(name, command, subcommand, version, inputfile, outputfile, args)
-			newpipe.add_steps(newstep)
-
-		return newpipe
+		return builtpipe
 
 	'''
 	Method to run selected Pipeline on fastq files

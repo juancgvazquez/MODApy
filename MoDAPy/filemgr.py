@@ -33,9 +33,9 @@ Helper function to get statisticts out of vcfs
 def getstats(self, type=0):
 	stats = {}
 	if (type == 0):
-		if all(col in self.columns for col in ['ZIGOSITY', 'VARTYPE', 'ANNOTATION_IMPACT', 'ANNOTATION']):
-			vcfstats = self.groupby([self.index.get_level_values(0), 'ZIGOSITY', 'VARTYPE', 'ANNOTATION_IMPACT',
-									 'ANNOTATION']).size().to_frame(name='count')
+		if all(col in self.columns for col in ['ZIGOSITY', 'VARTYPE', 'PUTATIVE_IMPACT', 'EFFECT']):
+			vcfstats = self.groupby([self.index.get_level_values(0), 'ZIGOSITY', 'VARTYPE', 'PUTATIVE_IMPACT',
+									 'EFFECT']).size().to_frame(name='count')
 			vcfstats.name = 'stats'
 			stats['df'] = []
 			stats['df'].append(vcfstats)
@@ -95,14 +95,20 @@ def df_to_excel(df1: ParsedVCF, outpath):
 	# temp column drop until applied in config
 	df1.drop(columns=['DISTANCE', 'GENE_NAME', 'ERRORS / WARNINGS / INFO'], inplace=True)
 	# reordering columns so ID and GENE ID are first
-	firstcolslist = ['ID', 'GENE_ID']
-	collist = [x for x in df1.columns if x not in firstcolslist]
+	cols_selected = ['GENE_ID', 'ID', 'HGVS.P', 'HGVS.C', 'EFFECT', 'PUTATIVE_IMPACT', 'VARTYPE', '1000GP3_AF',
+					 '1000GP3_AFR_AF', '1000GP3_AMR_AF', '1000GP3_EAS_AF', '1000GP3_EUR_AF', '1000GP3_SAS_AF',
+					 'ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL', 'CLINVAR_CLNSIG', 'CLINVAR_CLNDSDB',
+					 'CLINVAR_CLNDSDBID', 'CLINVAR_CLNDBN', 'CLINVAR_CLNREVSTAT', 'CLINVAR_CLNACC', 'ZIGOSITY',
+					 'PolyPhen_Pred', 'PolyPhen_Score']
+	# collist = [x for x in df1.columns if x not in cols_selected]
 	df1.sort_index(inplace=True)
-	df1 = df1[firstcolslist + collist]
+	df1 = df1[cols_selected]
+	# just for fleni, temp until i do it form cfg
+
 	# removing qual column if duos or trios
-	singlecols = ['QUAL']
-	if df1.columns[-1] == 'TRIOS' or df1.columns[-1] == 'DUOS':
-		df1 = df1.drop(columns=singlecols)
+	# singlecols = ['QUAL']
+	# if df1.columns[-1] == 'TRIOS' or df1.columns[-1] == 'DUOS':
+	#	df1.drop(columns=singlecols, inplace=True)
 	workbook = output.book
 	datasheet = workbook.add_worksheet('DATA')
 	statsheet = workbook.add_worksheet('STATISTICS')
