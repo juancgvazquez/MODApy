@@ -26,6 +26,8 @@ setuptools.setup(
 		'xlrd',
 		'openpyxl',
 		'XlsxWriter',
+		'matplotlib',
+		'matplotlib-venn'
 	],
 	entry_points={
 		# Command line scripts

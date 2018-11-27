@@ -6,7 +6,7 @@ import pandas as pd
 class ParsedVCF(pd.DataFrame):
 
 	@staticmethod
-	def _pru(x, y):
+	def _divide(x, y):
 		try:
 			return float(x) / y
 		except:
@@ -56,12 +56,14 @@ class ParsedVCF(pd.DataFrame):
 		if 'ESP6500_MAF' in vcfdf.columns:
 			vcfdf[['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']] = vcfdf['ESP6500_MAF'].str.split(',',
 																											expand=True)
-			vcfdf['ESP6500_MAF_EA'] = vcfdf['ESP6500_MAF_EA'].apply(cls._pru, args=(100,))
-			vcfdf['ESP6500_MAF_AA'] = vcfdf['ESP6500_MAF_AA'].apply(cls._pru, args=(100,))
-			vcfdf['ESP6500_MAF_ALL'] = vcfdf['ESP6500_MAF_ALL'].apply(cls._pru, args=(100,))
+			vcfdf['ESP6500_MAF_EA'] = vcfdf['ESP6500_MAF_EA'].apply(cls._divide, args=(100,))
+			vcfdf['ESP6500_MAF_AA'] = vcfdf['ESP6500_MAF_AA'].apply(cls._divide, args=(100,))
+			vcfdf['ESP6500_MAF_ALL'] = vcfdf['ESP6500_MAF_ALL'].apply(cls._divide, args=(100,))
 			vcfdf.drop(columns=['ESP6500_MAF'], inplace=True)
 		if 'ESP6500_PH' in vcfdf.columns:
 			vcfdf[['PolyPhen_Pred', 'PolyPhen_Score']] = vcfdf['ESP6500_PH'].str.split(':', 1, expand=True)
+			vcfdf['PolyPhen_Pred'] = vcfdf['PolyPhen_Pred'].str.strip('.').str.strip('.,')
+			vcfdf['PolyPhen_Score'] = vcfdf['PolyPhen_Score'].str.split(',').str[0]
 			vcfdf.drop(columns=['ESP6500_PH'], inplace=True)
 		vcfdf.rename(columns={'ANNOTATION': 'EFFECT', 'ANNOTATION_IMPACT': 'PUTATIVE_IMPACT'}, inplace=True)
 		result = vcfdf.pipe(ParsedVCF)

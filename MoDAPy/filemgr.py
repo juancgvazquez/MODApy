@@ -114,12 +114,14 @@ def df_to_excel(df1: ParsedVCF, outpath):
 	statsheet = workbook.add_worksheet('STATISTICS')
 	output.sheets['DATA'] = datasheet
 	format1 = workbook.add_format({'num_format': '###,###,###'})
+	hyper = workbook.add_format({'hyperlink': True})
 	datasheet.set_column('B:B', 18, format1)
+	datasheet.set_column('E:F', 18, hyper)
 	df1.to_excel(output, sheet_name='DATA', merge_cells=False)
 	stats = getstats(df1)
 	output.sheets['STATISTICS'] = statsheet
 	for i in range(len(stats['df'])):
-		stats['df'][i].to_excel(output, sheet_name='STATISTICS', startcol=i + len(stats['df'][i].columns))
+		stats['df'][i].to_excel(output, sheet_name='STATISTICS')
 	for i in range(len(stats['graphs'])):
 		stats['graphs'][i].savefig('./tempgraph.png')
 		statsheet.insert_image('H2', './tempgraph.png')
