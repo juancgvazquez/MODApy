@@ -9,7 +9,7 @@ with open('./MoDAPy/version.py') as v:
 setuptools.setup(
 	name="MoDAPy",
 	version=version['__version__'],
-	author='Juan Carlos Vázquez',
+	author='Juan Carlos Vázquez, Elmer A. Fernández',
 	author_email='juancgvazquez@gmail.com',
 	description='Package to perform several analysis on Multi-Omics Data',
 	long_description=long_description,
