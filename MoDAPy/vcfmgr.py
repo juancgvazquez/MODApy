@@ -68,7 +68,7 @@ class ParsedVCF(pd.DataFrame):
             vcfdf.drop(columns=['ESP6500_PH'], inplace=True)
         vcfdf.rename(columns={'ANNOTATION': 'EFFECT', 'ANNOTATION_IMPACT': 'IMPACT', 'ID': 'RSID'},
                      inplace=True)
-        vcfdf.fillna(inplace=True)
+        vcfdf.fillna(inplace=True, method=None)
         result = vcfdf.pipe(ParsedVCF)
         try:
             result.name = pVCF.samples[0]
