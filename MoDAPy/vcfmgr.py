@@ -66,7 +66,7 @@ class ParsedVCF(pd.DataFrame):
             vcfdf['PolyPhen_Pred'] = vcfdf['PolyPhen_Pred'].str.strip('.').str.strip('.,')
             vcfdf['PolyPhen_Score'] = vcfdf['PolyPhen_Score'].str.split(',').str[0]
             vcfdf.drop(columns=['ESP6500_PH'], inplace=True)
-        vcfdf.rename(columns={'ANNOTATION': 'EFFECT', 'ANNOTATION_IMPACT': 'PUTATIVE_IMPACT', 'ID': 'RSID'},
+        vcfdf.rename(columns={'ANNOTATION': 'EFFECT', 'ANNOTATION_IMPACT': 'IMPACT', 'ID': 'RSID'},
                      inplace=True)
         result = vcfdf.pipe(ParsedVCF)
         try:
