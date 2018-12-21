@@ -3,7 +3,7 @@ import logging
 import shlex
 import subprocess
 
-from MoDAPy import cfg
+from MODApy import cfg
 
 # TODO: restructure pipeline, being less open, so less prone to errors
 '''

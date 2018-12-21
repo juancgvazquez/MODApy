@@ -2,14 +2,14 @@
 import argparse
 import os
 from sys import argv
-from MoDAPy import filemgr, cfg, panelmdl, pipeline, vcfmgr
-from MoDAPy.version import __version__
+from MODApy import filemgr, cfg, panelmdl, pipeline, vcfmgr
+from MODApy.version import __version__
 
 
 class Parser(object):
 
 	def __init__(self):
-		parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''MoDAPy <command> [<args>]
+		parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''MODApy <command> [<args>]
 
         Commands:
         pipeline Run pipeline on FastQ file/s
@@ -22,7 +22,7 @@ class Parser(object):
         You can check the package version using -v or --version"''')
 
 		parser.add_argument("command", help="Select command to run")
-		parser.add_argument("-v", "--version", action='version', version='MoDAPy ' + __version__)
+		parser.add_argument("-v", "--version", action='version', version='MODApy ' + __version__)
 		# exclude all arguments but the first one
 		args = parser.parse_args(argv[1:2])
 		if not hasattr(self, args.command):

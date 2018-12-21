@@ -1,6 +1,6 @@
 import pandas as pd
 from os import path, remove
-from MoDAPy.vcfmgr import ParsedVCF
+from MODApy.vcfmgr import ParsedVCF
 import matplotlib
 
 matplotlib.use('agg')
@@ -152,7 +152,7 @@ Saving new VCF (WIP)
 
 def df_to_vcf(df1: pd.DataFrame, outpath: str):
 	header = """##fileformat=VCFv4.1
-##source=MoDAPy
+##source=MODApy
 ##reference=hg19
 ##INFO=<ID=ZIG,Number=.,Type=String,Description="Indicates Zigosity' ">
 ##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO' ">

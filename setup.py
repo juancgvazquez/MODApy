@@ -4,17 +4,17 @@ with open("README.md", "r") as rd:
 	long_description = rd.read()
 
 version = {}
-with open('./MoDAPy/version.py') as v:
+with open('./MODApy/version.py') as v:
 	exec(v.read(), version)
 setuptools.setup(
-	name="MoDAPy",
+	name="MODApy",
 	version=version['__version__'],
 	author='Juan Carlos Vázquez, Elmer A. Fernández',
 	author_email='juancgvazquez@gmail.com',
 	description='Package to perform several analysis on Multi-Omics Data',
 	long_description=long_description,
 	long_description_content_type="text/markdown",
-	url="https://github.com/juancgvazquez/MoDAPy",
+	url="https://github.com/juancgvazquez/MODApy",
 	packages=setuptools.find_packages(),
 	include_package_data=True,
 	install_requires=[
@@ -31,7 +31,7 @@ setuptools.setup(
 	],
 	entry_points={
 		# Command line scripts
-		'console_scripts': ['MoDAPy=MoDAPy.cmd_line:main']
+		'console_scripts': ['MODApy=MODApy.cmd_line:main']
 	},
 	classifiers=[
 		"Programming Language :: Python :: 3",

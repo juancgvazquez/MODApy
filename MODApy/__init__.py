@@ -2,4 +2,4 @@
 '''
 A Package to parse and analyze multiple omics data
 '''
-name = "MoDAPy"
+name = "MODApy"
