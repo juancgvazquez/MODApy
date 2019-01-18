@@ -122,7 +122,8 @@ class Pipeline(object):
         '''
         patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
         ref = cfg.referencesPath + self.reference + '/' + self.reference + '.fa'
-        os.mkdir('./tmp')
+        tmpdir = cfg.resultsPath + patientname + '/' + self.name + '/tmp'
+        os.mkdir(tmpdir)
         print('Running', self.name, 'pipeline on patient:', patientname)
         # bool to check if first step
         first = True
@@ -150,14 +151,15 @@ class Pipeline(object):
 
             # replaces patient name in outputfiles
             if type(step.outputfile) == str:
-                outputfile = step.outputfile.replace('/tmp/patientname', patientname)
+                outputfile = tmpdir + step.outputfile.replace('patientname', patientname)
             else:
                 return 'Error Parsing output file. It should be a string.'
 
             print(step.name)
             args = step.args.replace('patientname', patientname).replace('reference', ref)
             cmdver = step.version.replace('.', '_')
-            if 'GATK' in step.command or 'picard' in step.command:
+            javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
+            if any(javacmd in step.command for javacmd in javacmds):
                 cmd = 'java -jar ' + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
                       + '.jar ' + step.subcommand
             else:
@@ -177,12 +179,13 @@ class Pipeline(object):
             logging.getLogger('').addHandler(console)
             # done logging config
             logging.info('Subprocess: ' + cmdstr)
+            stdcmds = ['bwa', 'snpEff', 'SnpSift']
             try:
-                if any("bwa" in s for s in cmd):
+                if any(stdcmd in s for s in cmd for stdcmd in stdcmds):
                     output = cmd[-1]
                     del cmd[-1]
-                    with open(output, 'w+') as bwaout:
-                        cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=bwaout, universal_newlines=True)
+                    with open(output, 'w+') as out:
+                        cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=out, universal_newlines=True)
                 else:
                     cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
                                               universal_newlines=True)

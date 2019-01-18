@@ -46,7 +46,8 @@ class Parser(object):
                                  "the filename found inside Patients folder. Only this one is needed for Single End."
                                  "Two FastQs will be needed for Paired End (usage: -FQ Fastq1 -FQ Fastq2",
                             action='append')
-        parser.add_argument("-keeptmp", help="Keep Temp files, otherwise just creates annotated vcf file.")
+        parser.add_argument("-keeptmp", action="store_true", default=False,
+                            help="Keep Temp files, otherwise just creates annotated vcf file.")
         # ignore first argument
         args = parser.parse_args(argv[2:])
         pipe = cfg.pipelinesPath + args.Pipeline + '.json'
