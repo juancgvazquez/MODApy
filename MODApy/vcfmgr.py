@@ -5,9 +5,20 @@ import pandas as pd
 
 
 class ParsedVCF(pd.DataFrame):
+    """ParsedVCF class is an extension of a Pandas DataFrame class"""
 
     @staticmethod
     def _divide(x, y):
+        """
+        Method to divide x on y, needed for dividing freqs.
+        Parameters
+        ----------
+        x
+            The dividend
+        y
+            The divisor
+        Returns result or x.
+        """
         try:
             return float(x) / y
         except:
@@ -15,10 +26,20 @@ class ParsedVCF(pd.DataFrame):
 
     @property
     def _constructor(self):
+        """
+        Method needed to keep the resulting objects as ParsedVCF type.
+        """
         return ParsedVCF
 
     @classmethod
     def from_vcf(cls, vcf):
+        """
+        Method that creates a ParsedVCF (a DataFrame) from a vcf file
+        Parameters
+        ----------
+        vcf
+            Path to the vcf to parse.
+        """
         try:
             pVCF = cyvcf2.Reader(vcf)
         except:
@@ -27,13 +48,14 @@ class ParsedVCF(pd.DataFrame):
 
         variantsDict = OrderedDict()
         for variant in pVCF:
-            variantsDict[variant.CHROM + '_' + str(variant.POS) + '_' + variant.REF + '_' + ','.join(variant.ALT)] = {
+            variantsDict[variant.CHROM + '+' + str(variant.POS) + '+' + variant.REF + '+' + ','.join(variant.ALT)] = {
                 'ID': variant.ID, 'QUAL': variant.QUAL, 'FILTER': variant.FILTER}
             variantsDict[
-                variant.CHROM + '_' + str(variant.POS) + '_' + variant.REF + '_' + ','.join(variant.ALT)].update(
+                variant.CHROM + '+' + str(variant.POS) + '+' + variant.REF + '+' + ','.join(variant.ALT)].update(
                 {k: v for (k, v) in variant.INFO})
 
         df1 = pd.DataFrame.from_dict(variantsDict, orient='index')
+        del variantsDict
         if 'ANN' in df1.columns:
             anndf = df1['ANN']
             annhead = pVCF.get_header_type('ANN')['Description'].strip('"Functional annotations: \'"')
@@ -41,13 +63,15 @@ class ParsedVCF(pd.DataFrame):
             anndf = anndf.str.split(',', expand=True).stack()
             anndf = anndf.str.split('|', expand=True)
             anndf.columns = annheaderlist
+            anndf.drop_duplicates(subset=['Gene_Name', 'Gene_ID', 'Annotation', 'Annotation_Impact', 'HGVS.p'],
+                                  inplace=True)
             df1.drop(columns=['ANN'], inplace=True)
             anndf.index = anndf.index.droplevel(1)
             vcfdf = df1.join(anndf, how='inner')
         else:
             vcfdf = df1
-
-        vcfdf.index = vcfdf.index.str.split('_', expand=True)
+        del anndf
+        vcfdf.index = vcfdf.index.str.split('+', expand=True)
         vcfdf.index.names = ['CHROM', 'POS', 'REF', 'ALT']
         vcfdf.columns = vcfdf.columns.str.upper()
         if 'HOM' in vcfdf.columns:
@@ -78,6 +102,15 @@ class ParsedVCF(pd.DataFrame):
         return result
 
     def duos(self, vcf2):
+        """
+        Method to compare two vcfs, using CHROM, POS, REF and ALT columns as index.
+        Parameters
+        ----------
+        vcf2
+            VCF file to compare to.
+
+        Returns a Dataframe containing a new column 'DUOS', that indicates in which file is the variant.
+        """
         vcf2df = ParsedVCF.from_vcf(vcf2)
         AyB = self.loc[self.index.isin(vcf2df.index)].copy()
         A = self.loc[~self.index.isin(vcf2df.index)].copy()
@@ -92,7 +125,18 @@ class ParsedVCF(pd.DataFrame):
         return df_final
 
     def trios(self, vcf2, vcf3):
+        """
+        Method to compare three vcfs, using CHROM, POS, REF and ALT columns as index.
+        Parameters
+        ----------
+        vcf2
+            VCF file to compare to.
 
+        vcf3
+            VCF file to compare to.
+
+        Returns a Dataframe containing a new column 'DUOS', that indicates in which file is the variant.
+        """
         vcf2df = ParsedVCF.from_vcf(vcf2)
         print(vcf2df.name)
         vcf3df = ParsedVCF.from_vcf(vcf3)

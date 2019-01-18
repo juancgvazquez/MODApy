@@ -1,17 +1,21 @@
 import json
 import logging
+import os
 import shlex
+import shutil
 import subprocess
 
 from MODApy import cfg
 
+
 # TODO: restructure pipeline, being less open, so less prone to errors
-'''
-Class defined for each step of the Pipeline
-'''
 
 
 class PipeStep(object):
+    '''
+    Class defined for each step of the Pipeline
+    '''
+
     def __init__(self, name, command, subcommand, version, inputfile, outputfile, args):
         self.name = name
         self.command = command
@@ -34,12 +38,11 @@ class PipeStep(object):
         print('Output File:', self.outputfile)
 
 
-'''
-General Class for Pipelines
-'''
-
-
 class Pipeline(object):
+    '''
+    General Class for Pipelines
+    '''
+
     def __init__(self, name, reference, url='', description=''):
         self.name = name
         self.url = url
@@ -54,12 +57,14 @@ class Pipeline(object):
     def add_req_files(self, path):
         self.required_files.append(path)
 
-    '''
-    Class Method to build pipeline from loaded json,xml or yaml
-    '''
-
     @staticmethod
     def _buildpipe(pipefile):
+        """
+         Private Class Method to build pipeline from loaded json,xml or yaml
+         Parameters
+         --------------------
+         pipefile File loaded by from_json, from_xml or from_yaml
+        """
         name = pipefile['INFO']['name']
         url = pipefile['INFO']['url']
         description = pipefile['INFO']['description']
@@ -83,12 +88,17 @@ class Pipeline(object):
 
         return newpipe
 
-    '''
-    Class Method to create Pipeline from Json
-    '''
-
     @classmethod
     def from_json(cls, jsonpath):
+        """
+        Class Method to read json and build the Pipeline
+        Parameters
+        ----------
+        jsonpath
+            Path to the json file used to create the Pipeline.
+
+        Returns Pipeline object
+        """
         with open(jsonpath) as f:
             pipefile = json.load(f)
 
@@ -96,13 +106,23 @@ class Pipeline(object):
 
         return builtpipe
 
-    '''
-    Method to run selected Pipeline on fastq files
-    '''
+    def runpipeline(self, fastq1: str, fastq2=None, keeptmp=False):
+        """
+        Method to run the Pipeline
+        Parameters
+        ----------
+        fastq1
+            Path to the first fastq file.
+        fastq2
+            Path to the second fastq file, in case of paired reads.
+        """
 
-    def runpipeline(self, fastq1: str, fastq2=None):
+        '''
+        Method to run selected Pipeline on fastq files
+        '''
         patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
         ref = cfg.referencesPath + self.reference + '/' + self.reference + '.fa'
+        os.mkdir('./tmp')
         print('Running', self.name, 'pipeline on patient:', patientname)
         # bool to check if first step
         first = True
@@ -130,7 +150,7 @@ class Pipeline(object):
 
             # replaces patient name in outputfiles
             if type(step.outputfile) == str:
-                outputfile = step.outputfile.replace('patientname', patientname)
+                outputfile = step.outputfile.replace('/tmp/patientname', patientname)
             else:
                 return 'Error Parsing output file. It should be a string.'
 
@@ -183,15 +203,16 @@ class Pipeline(object):
                 exit(1)
             else:
                 logging.info('Subprocess finished')
+        if keeptmp is False:
+            shutil.rmtree('./tmp')
 
-    '''
-    Method to print Pipeline Info
-    '''
-
-    def pipelineinfo(self):
-        print('Name:', self.name)
-        print('Reference:', self.reference)
-        print('URL:', self.url)
-        print('Description:', self.description)
-        print('Additional Files Required:', self.required_files)
-        print('Steps:', self.steps)
+        def pipelineinfo(self):
+            '''
+            Method to print Pipeline Info
+            '''
+            print('Name:', self.name)
+            print('Reference:', self.reference)
+            print('URL:', self.url)
+            print('Description:', self.description)
+            print('Additional Files Required:', self.required_files)
+            print('Steps:', self.steps)
