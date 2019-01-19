@@ -122,7 +122,8 @@ class Pipeline(object):
         '''
         patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
         ref = cfg.referencesPath + self.reference + '/' + self.reference + '.fa'
-        tmpdir = cfg.resultsPath + patientname + '/' + self.name + '/tmp'
+        pipedir = "".join(x for x in self.name if x.isalnum())
+        tmpdir = cfg.resultsPath + 'Pipelines/' + patientname + '/' + pipedir + '/tmp'
         os.makedirs(tmpdir, exist_ok=True)
         print('Running', self.name, 'pipeline on patient:', patientname)
         # bool to check if first step
