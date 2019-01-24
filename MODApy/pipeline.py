@@ -148,11 +148,11 @@ class Pipeline(object):
                     return 'Error Parsing input file. It should be a string or list of strings.'
             # If it's not first step, input depends on output of previous step + patientname
             else:
-                inputfile = step.inputfile.replace('patientname', patientname)
+                inputfile = step.inputfile.replace('patientname', tmpdir + patientname)
 
             # replaces patient name in outputfiles
             if type(step.outputfile) == str:
-                outputfile = tmpdir + step.outputfile.replace('patientname', tmpdir + patientname)
+                outputfile = step.outputfile.replace('patientname', tmpdir + patientname)
             else:
                 return 'Error Parsing output file. It should be a string.'
 
