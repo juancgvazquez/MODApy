@@ -68,9 +68,9 @@ class ParsedVCF(pd.DataFrame):
             df1.drop(columns=['ANN'], inplace=True)
             anndf.index = anndf.index.droplevel(1)
             vcfdf = df1.join(anndf, how='inner')
+            del anndf
         else:
             vcfdf = df1
-        del anndf
         vcfdf.index = vcfdf.index.str.split('+', expand=True)
         vcfdf.index.names = ['CHROM', 'POS', 'REF', 'ALT']
         vcfdf.columns = vcfdf.columns.str.upper()
@@ -101,6 +101,16 @@ class ParsedVCF(pd.DataFrame):
 
         return result
 
+    def panel(self, panel):
+        pldf = pd.ExcelFile(panel).parse('GeneList')
+        geneSymbolList = list(pldf.GeneSymbol.unique())
+        panel_df = pd.DataFrame()
+        for gene in geneSymbolList:
+            panel_df = panel_df.append(self.loc[self['GENE_ID'].str.contains(gene)])
+        panel_df.name = self.name
+        panel_df = panel_df.pipe(ParsedVCF)
+        return panel_df
+
     def duos(self, vcf2):
         """
         Method to compare two vcfs, using CHROM, POS, REF and ALT columns as index.
@@ -118,11 +128,11 @@ class ParsedVCF(pd.DataFrame):
         AyB['DUOS'] = ':'.join([self.name, vcf2df.name])
         A['DUOS'] = self.name
         B['DUOS'] = vcf2df.name
-        df_final = pd.concat([A, B, AyB], sort=False)
+        duos_df = pd.concat([A, B, AyB], sort=False)
         droplist = ['AC', 'SAMPLES_AF', 'AN', 'DP', 'FS', 'MLEAC', 'MLEAF', 'MQ', 'QD', 'SOR', 'DBSNPBUILDID']
-        df_final = df_final.drop(columns=droplist)
-        df_final.name = ':'.join([self.name, vcf2df.name])
-        return df_final
+        duos_df.drop(columns=droplist, inplace=True, errors='ignore')
+        duos_df.name = ':'.join([self.name, vcf2df.name])
+        return duos_df
 
     def trios(self, vcf2, vcf3):
         """
@@ -156,8 +166,8 @@ class ParsedVCF(pd.DataFrame):
         BC = vcf2df.loc[(vcf2df.index.isin(vcf3df.index)) & (~vcf2df.index.isin(self.index))].copy()
         BC['TRIOS'] = ':'.join([vcf2df.name, vcf3df.name])
         dfs = [A, B, AB, C, AC, BC, ABC]
-        df_final = pd.concat(dfs, sort=False)
+        trios_df = pd.concat(dfs, sort=False)
         droplist = ['AC', 'SAMPLES_AF', 'AN', 'DP', 'FS', 'MLEAC', 'MLEAF', 'MQ', 'QD', 'SOR', 'DBSNPBUILDID']
-        df_final = df_final.drop(columns=droplist)
-        df_final.name = ':'.join([self.name, vcf2df.name, vcf3df.name])
-        return df_final
+        trios_df.drop(columns=droplist, inplace=True, errors='ignore')
+        trios_df.name = ':'.join([self.name, vcf2df.name, vcf3df.name])
+        return trios_df

@@ -159,6 +159,7 @@ class Parser(object):
         print('Duos Analisis Complete')
         return 0
 
+    @property
     def trios(self):
         parser = argparse.ArgumentParser(description="Run Trios Study on two patients")
         parser.add_argument("-Patient1", required=True,
@@ -185,7 +186,7 @@ class Parser(object):
         pt2Check = filemgr.checkFile(patient2, '.vcf')
         pt3Check = filemgr.checkFile(patient3, '.vcf')
         print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
-        result = vcfmgr.ParsedVCF.from_vcf(patient1).trios(patient2, patient3)
+        result = vcfmgr.ParsedVCF.from_vcf(patient1).trios
         resultname = result.name
         outpath = cfg.resultsPath + 'Trios/' + result.name
         filemgr.getstats(result, 1)

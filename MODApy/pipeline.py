@@ -123,7 +123,7 @@ class Pipeline(object):
         patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
         ref = cfg.referencesPath + self.reference + '/' + self.reference + '.fa'
         pipedir = "".join(x for x in self.name if x.isalnum())
-        tmpdir = cfg.resultsPath + 'Pipelines/' + patientname + '/' + pipedir + '/tmp'
+        tmpdir = cfg.resultsPath + 'Pipelines/' + patientname + '/' + pipedir + '/tmp/'
         os.makedirs(tmpdir, exist_ok=True)
         print('Running', self.name, 'pipeline on patient:', patientname)
         # bool to check if first step
@@ -152,12 +152,12 @@ class Pipeline(object):
 
             # replaces patient name in outputfiles
             if type(step.outputfile) == str:
-                outputfile = tmpdir + step.outputfile.replace('patientname', patientname)
+                outputfile = tmpdir + step.outputfile.replace('patientname', tmpdir + patientname)
             else:
                 return 'Error Parsing output file. It should be a string.'
 
             print(step.name)
-            args = step.args.replace('patientname', patientname).replace('reference', ref)
+            args = step.args.replace('patientname', tmpdir + patientname).replace('reference', ref)
             cmdver = step.version.replace('.', '_')
             javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
             if any(javacmd in step.command for javacmd in javacmds):
@@ -208,7 +208,7 @@ class Pipeline(object):
             else:
                 logging.info('Subprocess finished')
         if keeptmp is False:
-            shutil.rmtree('./tmp')
+            shutil.rmtree(tmpdir)
 
         def pipelineinfo(self):
             '''
