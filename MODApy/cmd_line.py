@@ -48,6 +48,8 @@ class Parser(object):
                             action='append')
         parser.add_argument("-keeptmp", action="store_true", default=False,
                             help="Keep Temp files, otherwise just creates annotated vcf file.")
+        parser.add_argument("-startStep", default=0, help="Defines step to start running pipeline.")
+
         # ignore first argument
         args = parser.parse_args(argv[2:])
         pipe = cfg.pipelinesPath + args.Pipeline + '.json'
@@ -66,18 +68,18 @@ class Parser(object):
             filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
             filemgr.checkFile(fq2, '.' + fq2.split('.')[-1])
             if args.keeptmp:
-                newpipe.runpipeline(fq1, fq2, keeptmp=True)
+                newpipe.runpipeline(fq1, fq2, keeptmp=True, startStep=args.startStep)
             else:
-                newpipe.runpipeline(fq1, fq2)
+                newpipe.runpipeline(fq1, fq2, startStep=args.startStep)
             return 0
         else:
             fq1 = cfg.patientPath + args.FQ[0]
             fq2 = ''
             filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
             if args.keeptmp:
-                newpipe.runpipeline(fq1, keeptmp=True)
+                newpipe.runpipeline(fq1, keeptmp=True, startStep=args.startStep)
             else:
-                newpipe.runpipeline(fq1)
+                newpipe.runpipeline(fq1, startStep=args.startStep)
             return 0
 
     def single(self):
@@ -159,7 +161,6 @@ class Parser(object):
         print('Duos Analisis Complete')
         return 0
 
-    @property
     def trios(self):
         parser = argparse.ArgumentParser(description="Run Trios Study on two patients")
         parser.add_argument("-Patient1", required=True,

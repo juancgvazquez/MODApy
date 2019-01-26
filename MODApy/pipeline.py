@@ -106,7 +106,7 @@ class Pipeline(object):
 
         return builtpipe
 
-    def runpipeline(self, fastq1: str, fastq2=None, keeptmp=False):
+    def runpipeline(self, fastq1: str, fastq2=None, keeptmp=False, startStep=0):
         """
         Method to run the Pipeline
         Parameters
@@ -127,8 +127,11 @@ class Pipeline(object):
         os.makedirs(tmpdir, exist_ok=True)
         print('Running', self.name, 'pipeline on patient:', patientname)
         # bool to check if first step
-        first = True
-        for step in self.steps:
+        if startStep == 0:
+            first = True
+        else:
+            first = False
+        for step in self.steps[startStep:]:
             # Checks if first step, we should input the exact input as inputfiles
             if first is True:
                 first = False
