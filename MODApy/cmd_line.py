@@ -48,7 +48,7 @@ class Parser(object):
                             action='append')
         parser.add_argument("-keeptmp", action="store_true", default=False,
                             help="Keep Temp files, otherwise just creates annotated vcf file.")
-        parser.add_argument("-startStep", default=0, help="Defines step to start running pipeline.")
+        parser.add_argument("-startStep", default=0, type=int, help="Defines step to start running pipeline.")
 
         # ignore first argument
         args = parser.parse_args(argv[2:])
