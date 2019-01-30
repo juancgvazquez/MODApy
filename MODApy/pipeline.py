@@ -123,7 +123,11 @@ class Pipeline(object):
         patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
         ref = cfg.referencesPath + self.reference + '/' + self.reference + '.fa'
         pipedir = "".join(x for x in self.name if x.isalnum())
-        tmpdir = cfg.resultsPath + 'Pipelines/' + patientname + '/' + pipedir + '/tmp/'
+        if cfg.testFlag:
+            tmpdir = cfg.testPath + 'Pipelines/' + patientname + '/' + pipedir + '/tmp/'
+        else:
+            tmpdir = cfg.resultsPath + 'Pipelines/' + patientname + '/' + pipedir + '/tmp/'
+
         os.makedirs(tmpdir, exist_ok=True)
         print('Running', self.name, 'pipeline on patient:', patientname)
         # bool to check if first step
@@ -210,6 +214,12 @@ class Pipeline(object):
                 exit(1)
             else:
                 logging.info('Subprocess finished')
+        if cfg.testFlag:
+            shutil.move(tmpdir + patientname + "_MODApy.final.vcf", cfg.testPath + patientname)
+            shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam", cfg.testPath + patientname)
+        else:
+            shutil.move(tmpdir + patientname + "_MODApy.final.vcf", cfg.patientPath + patientname)
+            shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam", cfg.patientPath + patientname)
         if keeptmp is False:
             shutil.rmtree(tmpdir)
 

@@ -1,7 +1,10 @@
+import logging
 from collections import OrderedDict
 
 import cyvcf2
 import pandas as pd
+
+log = logging.getLogger(__name__)
 
 
 class ParsedVCF(pd.DataFrame):
@@ -43,8 +46,7 @@ class ParsedVCF(pd.DataFrame):
         try:
             pVCF = cyvcf2.Reader(vcf)
         except:
-            print('error loading vcf')
-            exit(1)
+            log.error('couldn\'t parse file')
 
         variantsDict = OrderedDict()
         for variant in pVCF:

@@ -1,14 +1,16 @@
+import logging
 from os import path, remove
 
 import matplotlib
 import pandas as pd
-from pyexcelerate import Workbook
 
 from MODApy.vcfmgr import ParsedVCF
 
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib_venn as venn
+
+logger = logging.getLogger(__name__)
 
 '''
 Helper function to create Hyperlinks
@@ -36,8 +38,8 @@ Helper function to get statisticts out of vcfs
 def getstats(self, type=0):
     stats = {}
     if (type == 0):
-        if all(col in self.columns for col in ['ZIGOSITY', 'VARTYPE', 'PUTATIVE_IMPACT', 'EFFECT']):
-            vcfstats = self.groupby([self.index.get_level_values(0), 'ZIGOSITY', 'VARTYPE', 'PUTATIVE_IMPACT',
+        if all(col in self.columns for col in ['ZIGOSITY', 'VARTYPE', 'IMPACT', 'EFFECT']):
+            vcfstats = self.groupby([self.index.get_level_values(0), 'ZIGOSITY', 'VARTYPE', 'IMPACT',
                                      'EFFECT']).size().to_frame(name='count')
             vcfstats.name = 'stats'
             stats['df'] = []
@@ -77,8 +79,8 @@ def checkFile(filePath, extension):
         if extension == fileExtension:
             return True
 
-    print(filePath, "couldn't be found. Please check if file exists and that it's extension is",
-          "'" + extension + "'")
+    logger.error(filePath, "couldn't be found. Please check if file exists and that it's extension is",
+                 "'" + extension + "'")
     exit(1)
 
 
@@ -87,31 +89,31 @@ def df_to_excel(df1: ParsedVCF, outpath):
         output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
     else:
         output = pd.ExcelWriter(outpath)
-    print('changing ID to url')
+    logger.info('changing ID to url')
 
     try:
-        df1['ID'] = df1['ID'].apply(lambda x: make_hyperlink(x, 'RSID'))
+        df1['RSID'] = df1['RSID'].apply(lambda x: make_hyperlink(x, 'RSID'))
         df1['GENE_ID'] = df1['GENE_ID'].apply(lambda x: make_hyperlink(x, 'GENE'))
     except:
-        print('Cant parse ID Field')
+        logger.error('Cant parse ID Field')
 
     # temp column drop until applied in config
     df1.drop(columns=['DISTANCE', 'GENE_NAME', 'ERRORS / WARNINGS / INFO'], inplace=True)
     # reordering columns so ID and GENE ID are first
-    cols_selected = ['GENE_ID', 'ID', 'HGVS.P', 'HGVS.C', 'EFFECT', 'IMPACT', 'VARTYPE', '1000GP3_AF',
+    cols_selected = ['GENE_ID', 'RSID', 'HGVS.P', 'HGVS.C', 'EFFECT', 'IMPACT', 'VARTYPE', '1000GP3_AF',
                      '1000GP3_AFR_AF', '1000GP3_AMR_AF', '1000GP3_EAS_AF', '1000GP3_EUR_AF', '1000GP3_SAS_AF',
                      'ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL', 'CLINVAR_CLNSIG', 'CLINVAR_CLNDSDB',
                      'CLINVAR_CLNDSDBID', 'CLINVAR_CLNDBN', 'CLINVAR_CLNREVSTAT', 'CLINVAR_CLNACC', 'ZIGOSITY',
                      'PolyPhen_Pred', 'PolyPhen_Score']
     # collist = [x for x in df1.columns if x not in cols_selected]
     df1.sort_index(inplace=True)
-    # df1 = df1[cols_selected]
+    df1 = df1.loc[:, df1.columns.isin(cols_selected)]
     # just for fleni, temp until i do it form cfg
 
     # removing qual column if duos or trios
-    # singlecols = ['QUAL']
-    # if df1.columns[-1] == 'TRIOS' or df1.columns[-1] == 'DUOS':
-    #	df1.drop(columns=singlecols, inplace=True)
+    singlecols = ['QUAL']
+    if any(["DUOS", "TRIOS"]) in df1.columns:
+        df1.drop(columns=singlecols, inplace=True)
     workbook = output.book
     datasheet = workbook.add_worksheet('DATA')
     statsheet = workbook.add_worksheet('STATISTICS')
@@ -119,7 +121,7 @@ def df_to_excel(df1: ParsedVCF, outpath):
     format1 = workbook.add_format({'num_format': '###,###,###'})
     hyper = workbook.add_format({'hyperlink': True})
     datasheet.set_column('B:B', 18, format1)
-    datasheet.set_column('E:F', 18, hyper)
+    datasheet.set_column('D:D', 18, hyper)
     df1.to_excel(output, sheet_name='DATA', merge_cells=False)
     stats = getstats(df1)
     output.sheets['STATISTICS'] = statsheet
@@ -136,20 +138,13 @@ def df_to_excel(df1: ParsedVCF, outpath):
     try:
         remove('./tempgraph.png')
     except:
-        print('couldnt remove tempgraph.png')
+        pass
     try:
         remove('./triostmp.png')
     except:
-        print('couldnt remove triostmp.png')
+        pass
 
     try:
         remove('./duostmp.png')
     except:
-        print('couldnt remove duostmp.png')
-
-
-def df_to_excel_pyexcelerate(res_df, outpath):
-    values = [res_df.columns] + list(res_df.values)
-    wb = Workbook()
-    wb.new_sheet('sheet name', data=values)
-    wb.save('output.xlsx')
+        pass

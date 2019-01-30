@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 import argparse
+import logging
 import os
 from sys import argv
 
 from MODApy import filemgr, cfg, panelmdl, pipeline, vcfmgr
 from MODApy.version import __version__
+
+logger = logging.getLogger(__name__)
 
 
 class Parser(object):
@@ -30,7 +33,7 @@ class Parser(object):
         # exclude all arguments but the first one
         args = parser.parse_args(argv[1:2])
         if not hasattr(self, args.command):
-            print('Unrecognized commands')
+            logger.error('Unrecognized commands')
             parser.print_help()
             exit(1)
 
@@ -59,7 +62,7 @@ class Parser(object):
         newpipe = pipeline.Pipeline.from_json(pipe)
 
         if len(args.FQ) > 2:
-            print('Only Two FASTQ files allowed. The Input for FastQ Files was: ', str(args.FQ))
+            logger.error('Only Two FASTQ files allowed. The Input for FastQ Files was: ', str(args.FQ))
             return exit(1)
 
         elif len(args.FQ) == 2:
@@ -95,12 +98,12 @@ class Parser(object):
         ptCheck = filemgr.checkFile(patient, '.vcf')
         pnCheck = filemgr.checkFile(panel, '.xlsx')
 
-        print("Running", args.Panel, "on patient", args.Patient)
+        logger.info("Running", args.Panel, "on patient", args.Patient)
         result = panelmdl.panelrun(panel, patient)
         outpath = cfg.resultsPath + 'Panels/' + result.name + '/' + result.name + '_' + args.Panel + '.xlsx'
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
         filemgr.df_to_excel(result, outpath)
-        print('Single Analisis Complete')
+        logger.info('Single Analisis Complete')
         return 0
 
     def duos(self):
@@ -124,7 +127,7 @@ class Parser(object):
         # Checks file existence and type for patients
         pt1Check = filemgr.checkFile(patient1, '.vcf')
         pt2Check = filemgr.checkFile(patient2, '.vcf')
-        print("Running Duos Study on", args.Patient1, args.Patient2)
+        logger.info("Running Duos Study on", args.Patient1, args.Patient2)
         result = vcfmgr.ParsedVCF.from_vcf(patient1).duos(patient2)
         resultname = result.name
         outpath = cfg.resultsPath + 'Duos/' + result.name
@@ -146,7 +149,7 @@ class Parser(object):
         if args.Filter[0] is not None:
             for x in args.Filter:
                 if (len(x.split())) != 2:
-                    print('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
+                    logger.error('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
                     exit(1)
                 else:
                     x = x.split()
@@ -158,7 +161,7 @@ class Parser(object):
                 outpath = outpath + '_f' + str(x[0]) + str(x[1])
         outpath = outpath + '.xlsx'
         filemgr.df_to_excel(result, outpath)
-        print('Duos Analisis Complete')
+        logger.info('Duos Analisis Complete')
         return 0
 
     def trios(self):
@@ -186,7 +189,7 @@ class Parser(object):
         pt1Check = filemgr.checkFile(patient1, '.vcf')
         pt2Check = filemgr.checkFile(patient2, '.vcf')
         pt3Check = filemgr.checkFile(patient3, '.vcf')
-        print("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
+        logger.info("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
         result = vcfmgr.ParsedVCF.from_vcf(patient1).trios
         resultname = result.name
         outpath = cfg.resultsPath + 'Trios/' + result.name
@@ -218,7 +221,7 @@ class Parser(object):
         if args.Filter[0] is not None:
             for x in args.Filter:
                 if (len(x.split())) != 2:
-                    print('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
+                    logger.error('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
                     exit(1)
                 else:
                     x = x.split()
@@ -230,11 +233,12 @@ class Parser(object):
                     outpath = outpath + '_f' + str(x[0]) + str(x[1])
         outpath = outpath + '.xlsx'
         filemgr.df_to_excel(result, outpath)
-        print('Trios Analisis Complete')
+        logger.info('Trios Analisis Complete')
         return 0
 
 
 def main():
+    cfg.setup_logging()
     Parser()
 
 
