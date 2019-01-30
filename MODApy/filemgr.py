@@ -98,16 +98,18 @@ def df_to_excel(df1: ParsedVCF, outpath):
         logger.error('Cant parse ID Field')
 
     # temp column drop until applied in config
+    df1.sort_index(inplace=True)
     df1.drop(columns=['DISTANCE', 'GENE_NAME', 'ERRORS / WARNINGS / INFO'], inplace=True)
     # reordering columns so ID and GENE ID are first
-    cols_selected = ['GENE_ID', 'RSID', 'HGVS.P', 'HGVS.C', 'EFFECT', 'IMPACT', 'VARTYPE', '1000GP3_AF',
+    cols_selected = ['GENE_ID', 'RSID', 'EFFECT', 'IMPACT', 'HGVS.P', 'HGVS.C', 'VARTYPE', '1000GP3_AF',
                      '1000GP3_AFR_AF', '1000GP3_AMR_AF', '1000GP3_EAS_AF', '1000GP3_EUR_AF', '1000GP3_SAS_AF',
                      'ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL', 'CLINVAR_CLNSIG', 'CLINVAR_CLNDSDB',
                      'CLINVAR_CLNDSDBID', 'CLINVAR_CLNDBN', 'CLINVAR_CLNREVSTAT', 'CLINVAR_CLNACC', 'ZIGOSITY',
                      'PolyPhen_Pred', 'PolyPhen_Score']
     # collist = [x for x in df1.columns if x not in cols_selected]
-    df1.sort_index(inplace=True)
-    df1 = df1.loc[:, df1.columns.isin(cols_selected)]
+
+    df1 = df1[[x for x in cols_selected if x in df1.columns]]
+    # df1 = df1.loc[:, df1.columns.isin(cols_selected)]
     # just for fleni, temp until i do it form cfg
 
     # removing qual column if duos or trios
