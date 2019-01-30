@@ -98,7 +98,7 @@ class Parser(object):
         ptCheck = filemgr.checkFile(patient, '.vcf')
         pnCheck = filemgr.checkFile(panel, '.xlsx')
 
-        logger.info("Running", args.Panel, "on patient", args.Patient)
+        logger.info("Running %s on patient %s" % (str(args.Panel), str(args.Patient)))
         result = panelmdl.panelrun(panel, patient)
         outpath = cfg.resultsPath + 'Panels/' + result.name + '/' + result.name + '_' + args.Panel + '.xlsx'
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
@@ -127,7 +127,7 @@ class Parser(object):
         # Checks file existence and type for patients
         pt1Check = filemgr.checkFile(patient1, '.vcf')
         pt2Check = filemgr.checkFile(patient2, '.vcf')
-        logger.info("Running Duos Study on", args.Patient1, args.Patient2)
+        logger.info("Running Duos Study on %s and %s" % (str(args.Patient1), str(args.Patient2)))
         result = vcfmgr.ParsedVCF.from_vcf(patient1).duos(patient2)
         resultname = result.name
         outpath = cfg.resultsPath + 'Duos/' + result.name
@@ -189,7 +189,8 @@ class Parser(object):
         pt1Check = filemgr.checkFile(patient1, '.vcf')
         pt2Check = filemgr.checkFile(patient2, '.vcf')
         pt3Check = filemgr.checkFile(patient3, '.vcf')
-        logger.info("Running Trios Study on", args.Patient1, args.Patient2, args.Patient3)
+        logger.info(
+            "Running Trios Study on %s, %s and %s" % (str(args.Patient1), str(args.Patient2), str(args.Patient3)))
         result = vcfmgr.ParsedVCF.from_vcf(patient1).trios
         resultname = result.name
         outpath = cfg.resultsPath + 'Trios/' + result.name
