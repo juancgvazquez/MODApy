@@ -150,9 +150,7 @@ class ParsedVCF(pd.DataFrame):
         Returns a Dataframe containing a new column 'DUOS', that indicates in which file is the variant.
         """
         vcf2df = ParsedVCF.from_vcf(vcf2)
-        print(vcf2df.name)
         vcf3df = ParsedVCF.from_vcf(vcf3)
-        print(vcf3df.name)
         A = self.loc[(~self.index.isin(vcf2df.index)) & (~self.index.isin(vcf3df.index))].copy()
         A['TRIOS'] = self.name
         B = vcf2df.loc[(~vcf2df.index.isin(self.index)) & (~vcf2df.index.isin(vcf3df.index))].copy()

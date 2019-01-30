@@ -191,7 +191,7 @@ class Parser(object):
         pt3Check = filemgr.checkFile(patient3, '.vcf')
         logger.info(
             "Running Trios Study on %s, %s and %s" % (str(args.Patient1), str(args.Patient2), str(args.Patient3)))
-        result = vcfmgr.ParsedVCF.from_vcf(patient1).trios
+        result = vcfmgr.ParsedVCF.from_vcf(patient1).trios(patient2, patient3)
         resultname = result.name
         outpath = cfg.resultsPath + 'Trios/' + result.name
         filemgr.getstats(result, 1)
