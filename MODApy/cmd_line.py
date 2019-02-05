@@ -55,9 +55,9 @@ class Parser(object):
 
         # ignore first argument
         args = parser.parse_args(argv[2:])
-        pipe = cfg.pipelinesPath + args.Pipeline + '.json'
+        pipe = cfg.pipelinesPath + args.Pipeline
 
-        filemgr.checkFile(pipe, '.json')
+        filemgr.checkFile(pipe, args.Pipeline.split('.')[-1])
 
         newpipe = pipeline.Pipeline.from_json(pipe)
 

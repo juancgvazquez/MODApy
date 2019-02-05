@@ -106,11 +106,9 @@ def df_to_excel(df1: ParsedVCF, outpath):
                      '1000GP3_AFR_AF', '1000GP3_AMR_AF', '1000GP3_EAS_AF', '1000GP3_EUR_AF', '1000GP3_SAS_AF',
                      'ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL', 'CLINVAR_CLNSIG', 'CLINVAR_CLNDSDB',
                      'CLINVAR_CLNDSDBID', 'CLINVAR_CLNDBN', 'CLINVAR_CLNREVSTAT', 'CLINVAR_CLNACC', 'PolyPhen_Pred',
-                     'PolyPhen_Score']
+                     'PolyPhen_Score', 'DUOS', 'TRIOS']
 
     df1 = df1[[x for x in cols_selected if x in df1.columns]]
-    # df1 = df1.loc[:, df1.columns.isin(cols_selected)]
-    # just for fleni, temp until i do it form cfg
 
     # removing qual column if duos or trios
     singlecols = ['QUAL']

@@ -5,7 +5,12 @@ import shlex
 import shutil
 import subprocess
 
+import xmltodict
+import yaml
+
 from MODApy import cfg
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: restructure pipeline, being less open, so less prone to errors
@@ -58,31 +63,33 @@ class Pipeline(object):
         self.required_files.append(path)
 
     @staticmethod
-    def _buildpipe(pipefile):
+    def _buildpipe(pipedict):
         """
          Private Class Method to build pipeline from loaded json,xml or yaml
          Parameters
          --------------------
          pipefile File loaded by from_json, from_xml or from_yaml
         """
-        name = pipefile['INFO']['name']
-        url = pipefile['INFO']['url']
-        description = pipefile['INFO']['description']
-        reference = pipefile['INFO']['reference']
+        name = pipedict['INFO']['name']
+        url = pipedict['INFO']['url']
+        description = pipedict['INFO']['description']
+        reference = pipedict['INFO']['reference']
 
         newpipe = Pipeline(name, reference, url, description)
 
-        for x in pipefile['INFO']['required_files']:
+        for x in pipedict['INFO']['required_files']:
             newpipe.add_req_files(x)
 
-        for x in range(1, len(pipefile['STEPS']) + 1):
-            name = pipefile['STEPS'][str(x)]['name']
-            command = pipefile['STEPS'][str(x)]['command']
-            subcommand = pipefile['STEPS'][str(x)]['subcommand']
-            version = pipefile['STEPS'][str(x)]['version']
-            inputfile = pipefile['STEPS'][str(x)]['input']
-            outputfile = pipefile['STEPS'][str(x)]['output']
-            args = pipefile['STEPS'][str(x)]['args']
+        steps = list(pipedict['STEPS'].values())
+
+        for i in range(0, len(steps) - 1):
+            name = steps[i]['name']
+            command = steps[i]['command']
+            subcommand = steps[i]['subcommand']
+            version = steps[i]['version']
+            inputfile = steps[i]['input']
+            outputfile = steps[i]['output']
+            args = steps[i]['args']
             newstep = PipeStep(name, command, subcommand, version, inputfile, outputfile, args)
             newpipe.add_steps(newstep)
 
@@ -100,9 +107,43 @@ class Pipeline(object):
         Returns Pipeline object
         """
         with open(jsonpath) as f:
-            pipefile = json.load(f)
+            pipedict = json.load(f)
 
-        builtpipe = cls._buildpipe(pipefile)
+        builtpipe = cls._buildpipe(pipedict)
+
+        return builtpipe
+
+    @classmethod
+    def from_yaml(cls, yamlpath):
+        """
+        Class Method to read yaml and build the Pipeline
+        Parameters
+        ----------
+        jsonpath
+            Path to the yaml file used to create the Pipeline.
+
+        Returns Pipeline object
+        """
+        with open(yamlpath) as f:
+            pipedict = yaml.load(f)
+        builtpipe = cls._buildpipe(pipedict)
+
+        return builtpipe
+
+    @classmethod
+    def from_xml(cls, xmlpath):
+        """
+        Class Method to parse xml and build the Pipeline
+        Parameters
+        ----------
+        xmlpath
+            Path to the xml file used to create the Pipeline.
+
+        Returns Pipeline object
+        """
+        with open(xmlpath) as f:
+            pipedict = xmltodict.parse(f.read())['root']
+        builtpipe = cls._buildpipe(pipedict)
 
         return builtpipe
 
@@ -177,15 +218,6 @@ class Pipeline(object):
 
             cmd = shlex.split(cmdstr)
 
-            # logging stuff
-            formatter2 = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            logging.basicConfig(level=logging.DEBUG, filename='log', format=formatter2)
-            console = logging.StreamHandler()
-            console.setLevel(logging.INFO)
-            formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-            console.setFormatter(formatter)
-            logging.getLogger('').addHandler(console)
-            # done logging config
             logging.info('Subprocess: ' + cmdstr)
             stdcmds = ['bwa', 'snpEff', 'SnpSift']
             try:
@@ -223,13 +255,13 @@ class Pipeline(object):
         if keeptmp is False:
             shutil.rmtree(tmpdir)
 
-        def pipelineinfo(self):
-            '''
-            Method to print Pipeline Info
-            '''
-            print('Name:', self.name)
-            print('Reference:', self.reference)
-            print('URL:', self.url)
-            print('Description:', self.description)
-            print('Additional Files Required:', self.required_files)
-            print('Steps:', self.steps)
+    def pipelineinfo(self):
+        '''
+        Method to print Pipeline Info
+        '''
+        print('Name:', self.name)
+        print('Reference:', self.reference)
+        print('URL:', self.url)
+        print('Description:', self.description)
+        print('Additional Files Required:', self.required_files)
+        print('Steps:', self.steps)
