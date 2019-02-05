@@ -3,6 +3,7 @@ import logging
 import logging.config
 import os
 
+###TODO:Create log directory and files on setup
 # config parsing from here on, parses paths and things from config.ini
 cfg = configparser.ConfigParser()
 cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.ini')
@@ -99,7 +100,7 @@ def setup_logging():
                 "handlers": [
                     "console"
                 ],
-                "propagate": False
+                "propagate": True
             }
         },
         "root": {
