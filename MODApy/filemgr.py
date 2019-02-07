@@ -4,6 +4,7 @@ from os import path, remove
 import matplotlib
 import pandas as pd
 
+from MODApy.cfg import cfg
 from MODApy.vcfmgr import ParsedVCF
 
 matplotlib.use('agg')
@@ -11,24 +12,6 @@ import matplotlib.pyplot as plt
 import matplotlib_venn as venn
 
 logger = logging.getLogger(__name__)
-
-'''
-Helper function to create Hyperlinks
-'''
-
-
-def make_hyperlink(value: str, urltype):
-    if urltype == 'RSID':
-        url = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={}"
-        if type(value) == str:
-            return '=HYPERLINK("%s", "%s")' % (
-                url.format(value.replace(';', ',').split(',')[0]), value.replace(';', ',').split(',')[0])
-    if urltype == 'GENE':
-        url = "https://www.genecards.org/cgi-bin/carddisp.pl?gene={}"
-        return '=HYPERLINK("%s", "%s")' % (url.format(value), value)
-    else:
-        return
-
 
 '''
 Helper function to get statisticts out of vcfs
@@ -84,45 +67,93 @@ def checkFile(filePath, extension):
     exit(1)
 
 
+def aminoChange(value: str):
+    value = value.replace('p.', '')
+    if value[:3] != value[-3:]:
+        return 'CHANGE'
+
+
 def df_to_excel(df1: ParsedVCF, outpath):
     if (len(df1.index) > 65300):
         output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
     else:
         output = pd.ExcelWriter(outpath)
-    logger.info('changing ID to url')
-
-    try:
-        df1['RSID'] = df1['RSID'].apply(lambda x: make_hyperlink(x, 'RSID'))
-        df1['GENE_ID'] = df1['GENE_ID'].apply(lambda x: make_hyperlink(x, 'GENE'))
-    except:
-        logger.error('Cant parse ID Field')
-
     # temp column drop until applied in config
-    df1.sort_index(inplace=True)
-    df1.drop(columns=['DISTANCE', 'GENE_NAME', 'ERRORS / WARNINGS / INFO'], inplace=True)
-    # reordering columns so ID and GENE ID are first
-    cols_selected = ['GENE_ID', 'RSID', 'EFFECT', 'IMPACT', 'HGVS.P', 'HGVS.C', 'VARTYPE', 'ZIGOSITY',
-                     '1000GP3_AF',
-                     '1000GP3_AFR_AF', '1000GP3_AMR_AF', '1000GP3_EAS_AF', '1000GP3_EUR_AF', '1000GP3_SAS_AF',
-                     'ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL', 'CLINVAR_CLNSIG', 'CLINVAR_CLNDSDB',
-                     'CLINVAR_CLNDSDBID', 'CLINVAR_CLNDBN', 'CLINVAR_CLNREVSTAT', 'CLINVAR_CLNACC', 'PolyPhen_Pred',
-                     'PolyPhen_Score', 'DUOS', 'TRIOS']
+    df1.reset_index(inplace=True)
 
-    df1 = df1[[x for x in cols_selected if x in df1.columns]]
+    # reordering columns according to cfg
+    cols_selected = cfg["OUTPUT"]["columnsorder"].replace(',', ' ').split()
 
-    # removing qual column if duos or trios
-    singlecols = ['QUAL']
-    if any(["DUOS", "TRIOS"]) in df1.columns:
-        df1.drop(columns=singlecols, inplace=True)
+    df1['AMINOCHANGE'] = df1['HGVS.P'].apply(aminoChange)
+
+    df1 = df1[[x for x in cols_selected if x in df1.columns]].copy()
+    df1 = df1.sort_values(by=cols_selected[0])
+    if 'POS' in cols_selected:
+        df1.POS = df1.POS.astype(int)
+
     workbook = output.book
     datasheet = workbook.add_worksheet('DATA')
     statsheet = workbook.add_worksheet('STATISTICS')
+
     output.sheets['DATA'] = datasheet
-    format1 = workbook.add_format({'num_format': '###,###,###'})
-    hyper = workbook.add_format({'hyperlink': True})
-    datasheet.set_column('B:B', 18, format1)
-    datasheet.set_column('D:D', 18, hyper)
-    df1.to_excel(output, sheet_name='DATA', merge_cells=False)
+    if ('CLINVAR_CLNSIG' in df1.columns):
+        translation = {'255': 'other', '0': 'Uncertain significance', '1': 'not provided', '2': 'Benign',
+                       '3': 'Likely Benign', '4': 'Likely pathogenic', '5': 'Pathogenic', '6': 'drug response',
+                       '7': 'histocompatibility'}
+        for k, v in translation.items():
+            df1['CLINVAR_CLNSIG'] = df1['CLINVAR_CLNSIG'].str.replace(k, v)
+
+    formatnum = workbook.add_format({'num_format': '#,#####0.00000'})
+    for i, col in enumerate(df1.columns):
+        collen = df1[col].astype(str).map(len).max()
+        collen = max(collen, len(col) + 4)
+        datasheet.set_column(i, i, collen, formatnum)
+
+    formatpos = workbook.add_format({'num_format': '###,###,###'})
+    datasheet.set_column(cols_selected.index('POS') - 2, cols_selected.index('POS') - 2, 15, formatpos)
+    datasheet.set_column(cols_selected.index('RSID'), cols_selected.index('RSID'), 15)
+    # Light red fill with dark red text.
+    highformat = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006', 'bold': True})
+    # Light yellow fill with dark yellow text.
+    modformat = workbook.add_format({'bg_color': '#FFFF99', 'font_color': '#9C6500', 'bold': True})
+    # Light orange fill with dark orange text.
+    moderformat = workbook.add_format({'bg_color': '#FFCC99', 'font_color': '#FF6600', 'bold': True})
+    # Green fill with dark green text.
+    lowformat = workbook.add_format({'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
+    datasheet.conditional_format(0, cols_selected.index('IMPACT'),
+                                 len(df1), cols_selected.index('IMPACT'),
+                                 {'type': 'text', 'criteria': 'containing', 'value': 'HIGH', 'format': highformat, })
+    datasheet.conditional_format(0, cols_selected.index('IMPACT'),
+                                 len(df1), cols_selected.index('IMPACT'),
+                                 {'type': 'text', 'criteria': 'containing', 'value': 'MODIFIER', 'format': modformat})
+    datasheet.conditional_format(0, cols_selected.index('IMPACT'),
+                                 len(df1), cols_selected.index('IMPACT'),
+                                 {'type': 'text', 'criteria': 'containing', 'value': 'MODERATE', 'format': moderformat})
+    datasheet.conditional_format(0, cols_selected.index('IMPACT'),
+                                 len(df1), cols_selected.index('IMPACT'),
+                                 {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
+    df1.to_excel(output, sheet_name='DATA', merge_cells=False, index=False)
+
+    logger.info('changing ID to url')
+    try:
+        colid = cols_selected.index('RSID')
+        colgen = cols_selected.index('GENE_ID')
+        row = 2
+        for x in zip(df1['RSID'], df1['GENE_ID']):
+            if type(x[0]) == str:
+                urlrs = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=%s"
+                rsvalue = (x[0].replace(';', ',').split(','))[0]
+                datasheet.write_url('%s%i' % (chr(colid + 65), (row)),
+                                    urlrs % rsvalue, string=rsvalue)
+            if type(x[1]) == str:
+                urlgen = "https://www.genecards.org/cgi-bin/carddisp.pl?gene=%s"
+                datasheet.write_url('%s%i' % (chr(colgen + 65), (row)),
+                                    urlgen % x[1], string=x[1])
+            row += 1
+
+    except:
+        logger.error('Cant parse ID Field', exc_info=True)
+    datasheet.autofilter(0, 0, len(df1), len(cols_selected))
     stats = getstats(df1)
     output.sheets['STATISTICS'] = statsheet
     for i in range(len(stats['df'])):

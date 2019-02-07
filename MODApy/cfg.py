@@ -3,7 +3,6 @@ import logging
 import logging.config
 import os
 
-###TODO:Create log directory and files on setup
 # config parsing from here on, parses paths and things from config.ini
 cfg = configparser.ConfigParser()
 cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.ini')
@@ -48,6 +47,17 @@ def setup_logging():
     Method to configure logging
 
     """
+
+    def _touch(path):
+        basedir = os.path.dirname(path)
+        if not os.path.exists(basedir):
+            os.makedirs(basedir)
+        with open(path, 'a'):
+            os.utime(path, None)
+
+    _touch(rootDir + '/logs/currentrun.log')
+    _touch(rootDir + '/logs/info.log')
+    _touch(rootDir + '/logs/errors.log')
     logCfg = {
         "version": 1,
         "disable_existing_loggers": False,
