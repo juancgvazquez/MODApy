@@ -172,6 +172,9 @@ class Parser(object):
             panel = cfg.panelsPath + args.Panel + '.xlsx'
             filemgr.checkFile(panel, '.xlsx')
             result = panelmdl.panelrun(panel, result)
+            if len(result == 0):
+                logger.error('No variants present after running selected Panel on selected Data')
+                exit(1)
             result.name = resultname
             outpath = outpath + '_P' + args.Panel
         if args.Filter[0] is not None:
@@ -287,6 +290,9 @@ class Parser(object):
         if args.Panel:
             panel = cfg.panelsPath + args.Panel + '.xlsx'
             result = panelmdl.panelrun(panel, result)
+            if len(result == 0):
+                logger.error('No variants present after running selected Panel on selected Data')
+                exit(1)
             result.name = resultname
             outpath = outpath + '_Panel' + args.Panel
         # check if there is a Filter Requested
