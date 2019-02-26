@@ -140,25 +140,25 @@ def df_to_excel(df1: ParsedVCF, outpath):
                                  {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
     df1.to_excel(output, sheet_name='DATA', merge_cells=False, index=False)
 
-    logger.info('changing ID to url')
-    # if (df1.index.max() < 65300):
-    try:
-        colid = cols_selected.index('RSID')
-        colgen = cols_selected.index('GENE_NAME')
-        row = 2
-        for x in zip(df1['RSID'], df1['GENE_NAME']):
-            if type(x[0]) == str:
-                urlrs = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=%s"
-                rsvalue = (x[0].replace(';', ',').split(','))[0]
-                datasheet.write_url('%s%i' % (chr(colid + 65), (row)),
-                                    urlrs % rsvalue, string=rsvalue)
-            if type(x[1]) == str:
-                urlgen = "https://www.genecards.org/cgi-bin/carddisp.pl?gene=%s"
-                datasheet.write_url('%s%i' % (chr(colgen + 65), (row)),
-                                    urlgen % x[1], string=x[1])
-            row += 1
-    except:
-        logger.info('Can\'t add links to Excel, more than 65,635 urls and exceeds excel capacity')
+    if (df1.reset_index().index.max() < 32150):
+        logger.info('changing ID to url')
+        try:
+            colid = cols_selected.index('RSID')
+            colgen = cols_selected.index('GENE_NAME')
+            row = 2
+            for x in zip(df1['RSID'], df1['GENE_NAME']):
+                if type(x[0]) == str:
+                    urlrs = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=%s"
+                    rsvalue = (x[0].replace(';', ',').split(','))[0]
+                    datasheet.write_url('%s%i' % (chr(colid + 65), (row)),
+                                        urlrs % rsvalue, string=rsvalue)
+                if type(x[1]) == str:
+                    urlgen = "https://www.genecards.org/cgi-bin/carddisp.pl?gene=%s"
+                    datasheet.write_url('%s%i' % (chr(colgen + 65), (row)),
+                                        urlgen % x[1], string=x[1])
+                row += 1
+        except Exception as e:
+            logger.error(e, exc_info=True)
     datasheet.autofilter(0, 0, len(df1), len(cols_selected))
     stats = getstats(df1)
     output.sheets['STATISTICS'] = statsheet

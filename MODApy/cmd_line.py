@@ -44,8 +44,9 @@ class Parser(object):
         getattr(self, args.command)()
 
     def launcher(self):
+        # TODO:Set shiny app inside MODAPY
         logger.info('Launching Web Interface')
-        cmd = 'R --vanilla -e shiny::runApp(\\"/DiscoDatos/Development/R/Shiny/MODApyTest/app.R\\"\\,launch\\.browser=TRUE)'
+        cmd = 'R --vanilla -e shiny::runApp(\\"' + cfg.rootDir + '/MODApy-Shiny.R\\"\\,port=8081\\,launch\\.browser=TRUE)'
         webapp = subprocess.Popen(shlex.split(cmd), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         webapp.wait()
         logger.info('Web Interface Closed')
@@ -140,18 +141,20 @@ class Parser(object):
         logger.info("Running Duos Study on %s and %s" % (str(args.Patient1), str(args.Patient2)))
         result = vcfmgr.ParsedVCF.from_vcf(patient1).duos(patient2)
         resultname = result.name
-        outpath = cfg.resultsPath + 'Duos/' + result.name
+        outpath = cfg.resultsPath + 'Duos/' + result.name.replace(':', '_')
         filemgr.getstats(result, 1)
         # check if there is a special Venn Place Requested
         if args.VennPlace == 'A':
             if len(result[result['DUOS'] == result.name.split(':')[0]]) > 0:
                 result = result[result['DUOS'] == result.name.split(':')[0]]
+                outpath += '_Venn' + resultname.split(':')[0]
             else:
                 logger.info('No variants present in selected Venn Place!')
                 exit(1)
         if args.VennPlace == 'B':
             if len(result[result['DUOS'] == result.name.split(':')[1]]) > 0:
                 result = result[result['DUOS'] == result.name.split(':')[1]]
+                outpath += '_Venn' + resultname.split(':')[1]
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -159,6 +162,7 @@ class Parser(object):
         if args.VennPlace == 'A:B':
             if len(result[result['DUOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]) > 0:
                 result = result[result['DUOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+                outpath += '_Venn' + resultname.replace(':', '_')
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -169,7 +173,7 @@ class Parser(object):
             filemgr.checkFile(panel, '.xlsx')
             result = panelmdl.panelrun(panel, result)
             result.name = resultname
-            outpath = outpath + '_' + args.Panel
+            outpath = outpath + '_P' + args.Panel
         if args.Filter[0] is not None:
             for x in args.Filter:
                 if (len(x.split())) != 2:
@@ -182,7 +186,7 @@ class Parser(object):
                     else:
                         result = result[~result[x[0]].str.contains(x[1])]
                 result.name = resultname
-                outpath = outpath + '_f' + str(x[0]) + str(x[1])
+                outpath = outpath + '_F' + str(x[0]) + str(x[1])
         outpath = outpath + '.xlsx'
         filemgr.df_to_excel(result, outpath)
         logger.info('Duos Analisis Complete')
@@ -217,12 +221,13 @@ class Parser(object):
             "Running Trios Study on %s, %s and %s" % (str(args.Patient1), str(args.Patient2), str(args.Patient3)))
         result = vcfmgr.ParsedVCF.from_vcf(patient1).trios(patient2, patient3)
         resultname = result.name
-        outpath = cfg.resultsPath + 'Trios/' + result.name
+        outpath = cfg.resultsPath + 'Trios/' + result.name.replace(':', '_')
         filemgr.getstats(result, 1)
         # check if there is a special Venn Place Requested
         if args.VennPlace == 'A':
             if (len(result[result['TRIOS'] == result.name.split(':')[0]])) > 0:
                 result = result[result['TRIOS'] == result.name.split(':')[0]]
+                outpath += '_Venn' + resultname.split(':')[0]
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -230,6 +235,7 @@ class Parser(object):
         if args.VennPlace == 'B':
             if (len(result[result['TRIOS'] == result.name.split(':')[1]])) > 0:
                 result = result[result['TRIOS'] == result.name.split(':')[1]]
+                outpath += '_Venn' + resultname.split(':')[1]
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -237,6 +243,7 @@ class Parser(object):
         if args.VennPlace == 'C':
             if (len(result[result['TRIOS'] == result.name.split(':')[2]])) > 0:
                 result = result[result['TRIOS'] == result.name.split(':')[2]]
+                outpath += '_Venn' + resultname.split(':')[2]
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -244,6 +251,7 @@ class Parser(object):
         if args.VennPlace == 'A:B':
             if (len(result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])])) > 0:
                 result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+                outpath += '_Venn' + '_'.join([resultname.split(':')[0], resultname.split(':')[1]])
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -251,6 +259,7 @@ class Parser(object):
         if args.VennPlace == 'A:C':
             if (len(result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])])) > 0:
                 result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
+                outpath += '_Venn' + '_'.join([resultname.split(':')[0], resultname.split(':')[2]])
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -258,6 +267,7 @@ class Parser(object):
         if args.VennPlace == 'B:C':
             if (len(result[result['TRIOS'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])])) > 0:
                 result = result[result['TRIOS'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
+                outpath += '_Venn' + '_'.join([resultname.split(':')[1], resultname.split(':')[2]])
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -266,6 +276,8 @@ class Parser(object):
             if (len(result[result['TRIOS'] == ':'.join(
                     [result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])])) > 0:
                 result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+                outpath += '_Venn' + '_'.join(
+                    [resultname.split(':')[0], resultname.split(':')[1], resultname.split(':')[2]])
             else:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
@@ -276,7 +288,7 @@ class Parser(object):
             panel = cfg.panelsPath + args.Panel + '.xlsx'
             result = panelmdl.panelrun(panel, result)
             result.name = resultname
-            outpath = outpath + '_' + args.Panel
+            outpath = outpath + '_Panel' + args.Panel
         # check if there is a Filter Requested
         if args.Filter[0] is not None:
             for x in args.Filter:
@@ -290,7 +302,7 @@ class Parser(object):
                     else:
                         result = result[~result[x[0]].str.contains(x[1])]
                     result.name = resultname
-                    outpath = outpath + '_f' + str(x[0]) + str(x[1])
+                    outpath = outpath + '_Filter' + str(x[0]) + str(x[1])
         outpath = outpath + '.xlsx'
         filemgr.df_to_excel(result, outpath)
         logger.info('Trios Analisis Complete')
