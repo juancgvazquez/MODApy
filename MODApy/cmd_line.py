@@ -282,7 +282,7 @@ class Parser(object):
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
-            result.name = resultname
+        result.name = resultname
         # check if there is a Panel Requested
         if args.Panel:
             panel = cfg.panelsPath + args.Panel + '.xlsx'

@@ -162,11 +162,17 @@ def df_to_excel(df1: ParsedVCF, outpath):
     datasheet.autofilter(0, 0, len(df1), len(cols_selected))
     stats = getstats(df1)
     output.sheets['STATISTICS'] = statsheet
-    for i in range(len(stats['df'])):
-        stats['df'][i].to_excel(output, sheet_name='STATISTICS')
-    for i in range(len(stats['graphs'])):
-        stats['graphs'][i].savefig('./tempgraph.png')
-        statsheet.insert_image('H2', './tempgraph.png')
+    try:
+        for i in range(len(stats['df'])):
+            stats['df'][i].to_excel(output, sheet_name='STATISTICS')
+    except Exception as e:
+        logger.error('Could not print statistics. Error was {}'.format(e), exc_info=True)
+    try:
+        for i in range(len(stats['graphs'])):
+            stats['graphs'][i].savefig('./tempgraph.png')
+            statsheet.insert_image('H2', './tempgraph.png')
+    except Exception as e:
+        logger.error('Could not print stats graphs. Error was {}'.format(e), exc_info=True)
     if path.isfile('./duostmp.png'):
         statsheet.insert_image('H25', './duostmp.png')
     elif path.isfile('./triostmp.png'):
