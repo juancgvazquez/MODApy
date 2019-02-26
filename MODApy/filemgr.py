@@ -14,7 +14,7 @@ import matplotlib_venn as venn
 logger = logging.getLogger(__name__)
 
 '''
-Helper function to get statisticts out of vcfs
+Helper function to get statistics out of vcfs
 '''
 
 
@@ -22,12 +22,12 @@ def getstats(self, type=0):
     stats = {}
     if (type == 0):
         if all(col in self.columns for col in ['ZIGOSITY', 'VARTYPE', 'IMPACT', 'EFFECT']):
-            vcfstats = self.groupby([self.index.get_level_values(0), 'ZIGOSITY', 'VARTYPE', 'IMPACT',
+            vcfstats = self.groupby(['CHROM', 'ZIGOSITY', 'VARTYPE', 'IMPACT',
                                      'EFFECT']).size().to_frame(name='count')
             vcfstats.name = 'stats'
             stats['df'] = []
             stats['df'].append(vcfstats)
-            plt.pie(vcfstats.groupby(level=0).count(), labels=vcfstats.groupby(level=0).count().index.values)
+            plt.pie(vcfstats.groupby('CHROM').count(), labels=vcfstats.groupby('CHROM').size().index.values)
             my_circle = plt.Circle((0, 0), 0.7, color='white')
             chromVars = plt.gcf()
             chromVars.gca().add_artist(my_circle)
@@ -36,6 +36,13 @@ def getstats(self, type=0):
     elif (type == 1):
         if 'TRIOS' in self.columns:
             trios = self.groupby('TRIOS', sort=False).size()
+            names = self.name.split(':')
+            names.append(self.name)
+            names.append(names[0] + ':' + names[1])
+            names.append(names[1] + ':' + names[2])
+            names.append(names[0] + ':' + names[2])
+            trios = trios.reindex(names).fillna(0)
+            trios = trios.astype(int)
             A, B, C = self.name.split(':')
             triosgraph = plt.figure()
             venn.venn3(trios, set_labels=[A, B, C], set_colors=['b', 'r', 'g'])
@@ -43,6 +50,9 @@ def getstats(self, type=0):
             triosgraph.clf()
         elif 'DUOS' in self.columns:
             duos = self.groupby('DUOS', sort=False).size()
+            names = self.name.split(':')
+            names.append(self.name)
+            duos = duos.reindex(names).fillna(0)
             A, B = self.name.split(':')
             duosgraph = plt.figure()
             venn.venn2(duos, set_labels=[A, B], set_colors=['b', 'r'])
@@ -74,12 +84,10 @@ def aminoChange(value: str):
 
 
 def df_to_excel(df1: ParsedVCF, outpath):
-    if (len(df1.index) > 65300):
-        output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
-    else:
-        output = pd.ExcelWriter(outpath)
+    #    output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
+    output = pd.ExcelWriter(outpath)
     # temp column drop until applied in config
-    df1.reset_index(inplace=True)
+    # df1.reset_index(inplace=True)
 
     # reordering columns according to cfg
     cols_selected = cfg["OUTPUT"]["columnsorder"].replace(',', ' ').split()
@@ -88,8 +96,6 @@ def df_to_excel(df1: ParsedVCF, outpath):
 
     df1 = df1[[x for x in cols_selected if x in df1.columns]].copy()
     df1 = df1.sort_values(by=cols_selected[0])
-    if 'POS' in cols_selected:
-        df1.POS = df1.POS.astype(int)
 
     workbook = output.book
     datasheet = workbook.add_worksheet('DATA')
@@ -105,9 +111,9 @@ def df_to_excel(df1: ParsedVCF, outpath):
 
     formatnum = workbook.add_format({'num_format': '#,#####0.00000'})
     for i, col in enumerate(df1.columns):
-        collen = df1[col].astype(str).map(len).max()
-        collen = max(collen, len(col) + 4)
-        datasheet.set_column(i, i, collen, formatnum)
+        # collen = df1[col].astype(str).map(len).max()
+        # collen = max(collen, len(col) + 4)
+        datasheet.set_column(i, i, 15, formatnum)
 
     formatpos = workbook.add_format({'num_format': '###,###,###'})
     datasheet.set_column(cols_selected.index('POS') - 2, cols_selected.index('POS') - 2, 15, formatpos)
@@ -135,11 +141,12 @@ def df_to_excel(df1: ParsedVCF, outpath):
     df1.to_excel(output, sheet_name='DATA', merge_cells=False, index=False)
 
     logger.info('changing ID to url')
+    # if (df1.index.max() < 65300):
     try:
         colid = cols_selected.index('RSID')
-        colgen = cols_selected.index('GENE_ID')
+        colgen = cols_selected.index('GENE_NAME')
         row = 2
-        for x in zip(df1['RSID'], df1['GENE_ID']):
+        for x in zip(df1['RSID'], df1['GENE_NAME']):
             if type(x[0]) == str:
                 urlrs = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=%s"
                 rsvalue = (x[0].replace(';', ',').split(','))[0]
@@ -150,9 +157,8 @@ def df_to_excel(df1: ParsedVCF, outpath):
                 datasheet.write_url('%s%i' % (chr(colgen + 65), (row)),
                                     urlgen % x[1], string=x[1])
             row += 1
-
     except:
-        logger.error('Cant parse ID Field', exc_info=True)
+        logger.info('Can\'t add links to Excel, more than 65,635 urls and exceeds excel capacity')
     datasheet.autofilter(0, 0, len(df1), len(cols_selected))
     stats = getstats(df1)
     output.sheets['STATISTICS'] = statsheet
@@ -174,7 +180,6 @@ def df_to_excel(df1: ParsedVCF, outpath):
         remove('./triostmp.png')
     except:
         pass
-
     try:
         remove('./duostmp.png')
     except:

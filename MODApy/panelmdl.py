@@ -20,5 +20,5 @@ def panelrun(panel, vcffile):
 def check_panel(genelist, vcf: pd.DataFrame):
     result = pd.DataFrame()
     for gene in genelist:
-        result = result.append(vcf.loc[vcf['GENE_ID'] == gene])
+        result = result.append(vcf.loc[vcf['GENE_NAME'] == gene])
     return result

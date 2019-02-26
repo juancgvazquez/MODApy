@@ -2,6 +2,8 @@
 import argparse
 import logging
 import os
+import shlex
+import subprocess
 from sys import argv
 
 from MODApy import filemgr, cfg, panelmdl, pipeline, vcfmgr
@@ -19,6 +21,7 @@ class Parser(object):
         parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''MODApy <command> [<args>]
 
         Commands:
+        launcher Run MoDAPy Web Interface
         pipeline Run pipeline on FastQ file/s
         single   Run study on a single patient
         duos     Run Duos analysis on two selected patients
@@ -39,6 +42,13 @@ class Parser(object):
 
         # goes to each command
         getattr(self, args.command)()
+
+    def launcher(self):
+        logger.info('Launching Web Interface')
+        cmd = 'R --vanilla -e shiny::runApp(\\"/DiscoDatos/Development/R/Shiny/MODApyTest/app.R\\"\\,launch\\.browser=TRUE)'
+        webapp = subprocess.Popen(shlex.split(cmd), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        webapp.wait()
+        logger.info('Web Interface Closed')
 
     def pipeline(self):
         # Description for pipeline usage
@@ -134,11 +144,25 @@ class Parser(object):
         filemgr.getstats(result, 1)
         # check if there is a special Venn Place Requested
         if args.VennPlace == 'A':
-            result = result[result['DUOS'] == result.name.split(':')[0]]
+            if len(result[result['DUOS'] == result.name.split(':')[0]]) > 0:
+                result = result[result['DUOS'] == result.name.split(':')[0]]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                exit(1)
         if args.VennPlace == 'B':
-            result = result[result['DUOS'] == result.name.split(':')[1]]
+            if len(result[result['DUOS'] == result.name.split(':')[1]]) > 0:
+                result = result[result['DUOS'] == result.name.split(':')[1]]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
         if args.VennPlace == 'A:B':
-            result = result[result['DUOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+            if len(result[result['DUOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]) > 0:
+                result = result[result['DUOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
         result.name = resultname
         if args.Panel is not None:
             panel = cfg.panelsPath + args.Panel + '.xlsx'
@@ -197,21 +221,56 @@ class Parser(object):
         filemgr.getstats(result, 1)
         # check if there is a special Venn Place Requested
         if args.VennPlace == 'A':
-            result = result[result['TRIOS'] == result.name.split(':')[0]]
+            if (len(result[result['TRIOS'] == result.name.split(':')[0]])) > 0:
+                result = result[result['TRIOS'] == result.name.split(':')[0]]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
         if args.VennPlace == 'B':
-            result = result[result['TRIOS'] == result.name.split(':')[1]]
+            if (len(result[result['TRIOS'] == result.name.split(':')[1]])) > 0:
+                result = result[result['TRIOS'] == result.name.split(':')[1]]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
         if args.VennPlace == 'C':
-            result = result[result['TRIOS'] == result.name.split(':')[2]]
+            if (len(result[result['TRIOS'] == result.name.split(':')[2]])) > 0:
+                result = result[result['TRIOS'] == result.name.split(':')[2]]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
         if args.VennPlace == 'A:B':
-            result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+            if (len(result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])])) > 0:
+                result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
         if args.VennPlace == 'A:C':
-            result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
+            if (len(result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])])) > 0:
+                result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[2]])]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
         if args.VennPlace == 'B:C':
-            result = result[result['TRIOS'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
+            if (len(result[result['TRIOS'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])])) > 0:
+                result = result[result['TRIOS'] == ':'.join([result.name.split(':')[1], result.name.split(':')[2]])]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
         if args.VennPlace == 'A:B:C':
-            result = result[result['TRIOS'] == ':'.join(
-                [result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])]
-        result.name = resultname
+            if (len(result[result['TRIOS'] == ':'.join(
+                    [result.name.split(':')[0], result.name.split(':')[1], result.name.split(':')[2]])])) > 0:
+                result = result[result['TRIOS'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+            else:
+                logger.info('No variants present in selected Venn Place!')
+                logger.error('Exiting due to no variants present in selected Venn Place!')
+                exit(1)
+            result.name = resultname
         # check if there is a Panel Requested
         if args.Panel:
             panel = cfg.panelsPath + args.Panel + '.xlsx'
