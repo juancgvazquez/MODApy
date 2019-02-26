@@ -169,6 +169,7 @@ class Parser(object):
                 exit(1)
         result.name = resultname
         if args.Panel is not None:
+            logger.info('Running panel {}'.format(args.Panel))
             panel = cfg.panelsPath + args.Panel + '.xlsx'
             filemgr.checkFile(panel, '.xlsx')
             result = panelmdl.panelrun(panel, result)
@@ -288,9 +289,10 @@ class Parser(object):
         result.name = resultname
         # check if there is a Panel Requested
         if args.Panel:
+            logger.info('Running panel {}'.format(args.Panel))
             panel = cfg.panelsPath + args.Panel + '.xlsx'
             result = panelmdl.panelrun(panel, result)
-            if len(result == 0):
+            if len(result) == 0:
                 logger.error('No variants present after running selected Panel on selected Data')
                 exit(1)
             result.name = resultname

@@ -178,12 +178,13 @@ class ParsedVCF(pd.DataFrame):
             [x.upper() for x in macrogen_cols if x.upper() in self.columns]].copy()
         df1.to_excel(outpath)
 
+    # TODO:USE THIS PANEL!
     def panel(self, panel):
         pldf = pd.ExcelFile(panel).parse('GeneList')
         geneSymbolList = list(pldf.GeneSymbol.unique())
         panel_df = pd.DataFrame()
         for gene in geneSymbolList:
-            panel_df = panel_df.append(self.loc[self['GENE_ID'].str.contains(gene)])
+            panel_df = panel_df.append(self.loc[self['GENE_NAME'] == gene])
         panel_df.name = self.name
         panel_df = panel_df.pipe(ParsedVCF)
         return panel_df
@@ -199,6 +200,8 @@ class ParsedVCF(pd.DataFrame):
         Returns a Dataframe containing a new column 'DUOS', that indicates in which file is the variant.
         """
         vcf2df = ParsedVCF.from_vcf(vcf2)
+        self.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
+        vcf2df.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
         AyB = self.loc[self.index.isin(vcf2df.index)].copy()
         A = self.loc[~self.index.isin(vcf2df.index)].copy()
         B = vcf2df.loc[~vcf2df.index.isin(self.index)].copy()
@@ -226,6 +229,9 @@ class ParsedVCF(pd.DataFrame):
         """
         vcf2df = ParsedVCF.from_vcf(vcf2)
         vcf3df = ParsedVCF.from_vcf(vcf3)
+        self.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
+        vcf2df.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
+        vcf3df.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
         A = self.loc[(~self.index.isin(vcf2df.index)) & (~self.index.isin(vcf3df.index))].copy()
         A['TRIOS'] = self.name
         B = vcf2df.loc[(~vcf2df.index.isin(self.index)) & (~vcf2df.index.isin(vcf3df.index))].copy()
