@@ -1,4 +1,5 @@
 import configparser
+import json
 import logging
 import logging.config
 import os
@@ -58,6 +59,9 @@ def setup_logging():
     _touch(rootDir + '/logs/currentrun.log')
     _touch(rootDir + '/logs/info.log')
     _touch(rootDir + '/logs/errors.log')
+    if not os.path.exists(rootDir + '/logs/downloads.log'):
+        with open(rootDir + '/logs/downloads.log', 'w') as dlog:
+            json.dump({}, dlog)
     logCfg = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -68,19 +72,22 @@ def setup_logging():
             },
             "console": {
                 "format": "%(name)-25s: %(levelname)-8s %(message)s"
+            },
+            "current_run": {
+                "format": "%(message)s"
             }
         },
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
-                "level": "DEBUG",
+                "level": "INFO",
                 "formatter": "console",
                 "stream": "ext://sys.stdout"
             },
-            "currentrun": {
+            "current_run": {
                 "class": "logging.FileHandler",
-                "level": "DEBUG",
-                "formatter": "console",
+                "level": "INFO",
+                "formatter": "current_run",
                 "filename": rootDir + "/logs/currentrun.log",
                 "mode": 'w'
             },
@@ -104,23 +111,13 @@ def setup_logging():
 
             }
         },
-        "loggers": {
-            "": {
-                "level": "ERROR",
-                "handlers": [
-                    "console"
-                ],
-                "propagate": True
-            }
-        },
         "root": {
             "level": "INFO",
             "handlers": [
                 "console",
-                "currentrun",
+                "current_run",
                 "info_file_handler",
-                "error_file_handler"
-            ]
+                "error_file_handler"]
         }
     }
 

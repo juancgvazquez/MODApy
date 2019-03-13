@@ -1,5 +1,5 @@
 import logging
-from os import path, remove
+from os import path, remove, makedirs
 
 import matplotlib
 import pandas as pd
@@ -18,47 +18,51 @@ Helper function to get statistics out of vcfs
 '''
 
 
-def getstats(self, type=0):
-    stats = {}
-    if (type == 0):
-        if all(col in self.columns for col in ['ZIGOSITY', 'VARTYPE', 'IMPACT', 'EFFECT']):
-            vcfstats = self.groupby(['CHROM', 'ZIGOSITY', 'VARTYPE', 'IMPACT',
-                                     'EFFECT']).size().to_frame(name='count')
-            vcfstats.name = 'stats'
-            stats['df'] = []
-            stats['df'].append(vcfstats)
-            plt.pie(vcfstats.groupby('CHROM').count(), labels=vcfstats.groupby('CHROM').size().index.values)
-            my_circle = plt.Circle((0, 0), 0.7, color='white')
-            chromVars = plt.gcf()
-            chromVars.gca().add_artist(my_circle)
-            stats['graphs'] = []
-            stats['graphs'].append(chromVars)
-    elif (type == 1):
-        if 'TRIOS' in self.columns:
-            trios = self.groupby('TRIOS', sort=False).size()
-            names = self.name.split(':')
-            names.append(self.name)
-            names.append(names[0] + ':' + names[1])
-            names.append(names[1] + ':' + names[2])
-            names.append(names[0] + ':' + names[2])
-            trios = trios.reindex(names).fillna(0)
-            trios = trios.astype(int)
-            A, B, C = self.name.split(':')
-            triosgraph = plt.figure()
-            venn.venn3(trios, set_labels=[A, B, C], set_colors=['b', 'r', 'g'])
-            triosgraph.savefig('./triostmp.png', dpi=triosgraph.dpi)
-            triosgraph.clf()
-        elif 'DUOS' in self.columns:
-            duos = self.groupby('DUOS', sort=False).size()
-            names = self.name.split(':')
-            names.append(self.name)
-            duos = duos.reindex(names).fillna(0)
-            A, B = self.name.split(':')
-            duosgraph = plt.figure()
-            venn.venn2(duos, set_labels=[A, B], set_colors=['b', 'r'])
-            duosgraph.savefig('./duostmp.png', dpi=duosgraph.dpi)
-            duosgraph.clf()
-    return stats
+def general_stats(self):
+    if 'VENN' in self.columns:
+        colstats = ['CHROM', 'VARTYPE', 'IMPACT', 'EFFECT']
+    else:
+        colstats = ['CHROM', 'ZIGOSITY', 'VARTYPE', 'IMPACT', 'EFFECT']
+    if set(colstats).issubset(self.columns):
+        logger.info('Calculating General Statistics')
+        vcfstats = self.groupby(colstats).size().to_frame(name='count')
+        vcfstats.name = 'stats'
+        plt.pie(vcfstats.groupby('CHROM').count(), labels=vcfstats.groupby('CHROM').size().index.values)
+        my_circle = plt.Circle((0, 0), 0.7, color='white')
+        chromVars = plt.gcf()
+        chromVars.gca().add_artist(my_circle)
+        chromVars.savefig('./general.png')
+        return vcfstats
+
+
+def trios_stats(self):
+    logger.info('Calculating Trios statistics')
+    trios = self.groupby('VENN', sort=False).size()
+    names = self.name.split(':')
+    names.append(self.name)
+    names.append(names[0] + ':' + names[1])
+    names.append(names[1] + ':' + names[2])
+    names.append(names[0] + ':' + names[2])
+    trios = trios.reindex(names).fillna(0)
+    trios = trios.astype(int)
+    A, B, C = self.name.split(':')
+    triosgraph = plt.figure()
+    venn.venn3(trios, set_labels=[A, B, C], set_colors=['b', 'r', 'g'])
+    triosgraph.savefig('./triostmp.png', dpi=triosgraph.dpi)
+    triosgraph.clf()
+
+
+def duos_stats(self):
+    logger.info('Calculating Duos statistics')
+    duos = self.groupby('VENN', sort=False).size()
+    names = self.name.split(':')
+    names.append(self.name)
+    duos = duos.reindex(names).fillna(0)
+    A, B = self.name.split(':')
+    duosgraph = plt.figure()
+    venn.venn2(duos, set_labels=[A, B], set_colors=['b', 'r'])
+    duosgraph.savefig('./duostmp.png', dpi=duosgraph.dpi)
+    duosgraph.clf()
 
 
 '''
@@ -84,16 +88,11 @@ def aminoChange(value: str):
 
 
 def df_to_excel(df1: ParsedVCF, outpath):
-    #    output = pd.ExcelWriter(outpath, engine='xlsxwriter', options={'strings_to_urls': False})
+    makedirs(outpath.rsplit('/', maxsplit=1)[0], exist_ok=True)
     output = pd.ExcelWriter(outpath)
-    # temp column drop until applied in config
-    # df1.reset_index(inplace=True)
-
-    # reordering columns according to cfg
     cols_selected = cfg["OUTPUT"]["columnsorder"].replace(',', ' ').split()
-
-    df1['AMINOCHANGE'] = df1['HGVS.P'].apply(aminoChange)
-
+    if 'ZIGOSITY' in cols_selected:
+        cols_selected += [x for x in df1.columns if 'ZIGOSITY' in x]
     df1 = df1[[x for x in cols_selected if x in df1.columns]].copy()
     df1 = df1.sort_values(by=cols_selected[0])
 
@@ -102,12 +101,6 @@ def df_to_excel(df1: ParsedVCF, outpath):
     statsheet = workbook.add_worksheet('STATISTICS')
 
     output.sheets['DATA'] = datasheet
-    if ('CLINVAR_CLNSIG' in df1.columns):
-        translation = {'255': 'other', '0': 'Uncertain significance', '1': 'not provided', '2': 'Benign',
-                       '3': 'Likely Benign', '4': 'Likely pathogenic', '5': 'Pathogenic', '6': 'drug response',
-                       '7': 'histocompatibility'}
-        for k, v in translation.items():
-            df1['CLINVAR_CLNSIG'] = df1['CLINVAR_CLNSIG'].str.replace(k, v)
 
     formatnum = workbook.add_format({'num_format': '#,#####0.00000'})
     for i, col in enumerate(df1.columns):
@@ -160,17 +153,14 @@ def df_to_excel(df1: ParsedVCF, outpath):
         except Exception as e:
             logger.error(e, exc_info=True)
     datasheet.autofilter(0, 0, len(df1), len(cols_selected))
-    stats = getstats(df1)
+    stats = general_stats(df1)
     output.sheets['STATISTICS'] = statsheet
     try:
-        for i in range(len(stats['df'])):
-            stats['df'][i].to_excel(output, sheet_name='STATISTICS')
+        stats.to_excel(output, sheet_name='STATISTICS')
     except Exception as e:
         logger.error('Could not print statistics. Error was {}'.format(e), exc_info=True)
     try:
-        for i in range(len(stats['graphs'])):
-            stats['graphs'][i].savefig('./tempgraph.png')
-            statsheet.insert_image('H2', './tempgraph.png')
+        statsheet.insert_image('H2', './general.png')
     except Exception as e:
         logger.error('Could not print stats graphs. Error was {}'.format(e), exc_info=True)
     if path.isfile('./duostmp.png'):
@@ -179,7 +169,7 @@ def df_to_excel(df1: ParsedVCF, outpath):
         statsheet.insert_image('H25', './triostmp.png')
     output.save()
     try:
-        remove('./tempgraph.png')
+        remove('./general.png')
     except:
         pass
     try:
