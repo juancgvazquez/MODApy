@@ -88,13 +88,16 @@ def aminoChange(value: str):
 
 
 def df_to_excel(df1: ParsedVCF, outpath):
+    logger.info('Formating Excel File')
     makedirs(outpath.rsplit('/', maxsplit=1)[0], exist_ok=True)
     output = pd.ExcelWriter(outpath)
     cols_selected = cfg["OUTPUT"]["columnsorder"].replace(',', ' ').split()
-    if 'ZIGOSITY' in cols_selected:
-        cols_selected += [x for x in df1.columns if 'ZIGOSITY' in x]
-    df1 = df1[[x for x in cols_selected if x in df1.columns]].copy()
-    df1 = df1.sort_values(by=cols_selected[0])
+    if 'VENN' in df1.columns:
+        if 'ZIGOSITY' in cols_selected:
+            cols_selected += [x for x in df1.columns if 'ZIGOSITY' in x]
+    finalcols = [x for x in cols_selected if x in df1.columns]
+    df1 = df1[finalcols].copy()
+    df1 = df1.sort_values(by=finalcols[0])
 
     workbook = output.book
     datasheet = workbook.add_worksheet('DATA')
@@ -109,8 +112,8 @@ def df_to_excel(df1: ParsedVCF, outpath):
         datasheet.set_column(i, i, 15, formatnum)
 
     formatpos = workbook.add_format({'num_format': '###,###,###'})
-    datasheet.set_column(cols_selected.index('POS') - 2, cols_selected.index('POS') - 2, 15, formatpos)
-    datasheet.set_column(cols_selected.index('RSID'), cols_selected.index('RSID'), 15)
+    datasheet.set_column(finalcols.index('POS'), finalcols.index('POS'), 15, formatpos)
+    datasheet.set_column(finalcols.index('RSID'), finalcols.index('RSID'), 15)
     # Light red fill with dark red text.
     highformat = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006', 'bold': True})
     # Light yellow fill with dark yellow text.
@@ -131,10 +134,11 @@ def df_to_excel(df1: ParsedVCF, outpath):
     datasheet.conditional_format(0, cols_selected.index('IMPACT'),
                                  len(df1), cols_selected.index('IMPACT'),
                                  {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
+    logger.info('Writing Excel File')
     df1.to_excel(output, sheet_name='DATA', merge_cells=False, index=False)
 
     if (df1.reset_index().index.max() < 32150):
-        logger.info('changing ID to url')
+        logger.info('Redirecting IDs and GENEs to URLs')
         try:
             colid = cols_selected.index('RSID')
             colgen = cols_selected.index('GENE_NAME')
@@ -152,7 +156,7 @@ def df_to_excel(df1: ParsedVCF, outpath):
                 row += 1
         except Exception as e:
             logger.error(e, exc_info=True)
-    datasheet.autofilter(0, 0, len(df1), len(cols_selected))
+    datasheet.autofilter(0, 0, len(df1), len(finalcols))
     stats = general_stats(df1)
     output.sheets['STATISTICS'] = statsheet
     try:

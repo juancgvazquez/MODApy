@@ -154,25 +154,22 @@ class Parser(object):
         filemgr.duos_stats(result)
         # check if there is a special Venn Place Requested
         if args.VennPlace == 'A':
-            if len(result[result['VENN'] == result.name.split(':')[0]]) > 0:
-                result = result[result['VEN'] == result.name.split(':')[0]]
-                outpath += '_Venn' + resultname.split(':')[0]
-            else:
+            result = result[result['VEN'] == result.name.split(':')[0]]
+            outpath += '_Venn' + resultname.split(':')[0]
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 exit(1)
         if args.VennPlace == 'B':
-            if len(result[result['VENN'] == result.name.split(':')[1]]) > 0:
-                result = result[result['VENN'] == result.name.split(':')[1]]
-                outpath += '_Venn' + resultname.split(':')[1]
-            else:
+            result = result[result['VENN'] == result.name.split(':')[1]]
+            outpath += '_Venn' + resultname.split(':')[1]
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
         if args.VennPlace == 'A:B':
-            if len(result[result['VENN'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]) > 0:
-                result = result[result['VENN'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
-                outpath += '_Venn' + resultname.replace(':', '_')
-            else:
+            result = result[result['VENN'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
+            outpath += '_Venn' + resultname.replace(':', '_')
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
@@ -182,11 +179,12 @@ class Parser(object):
             panel = cfg.panelsPath + args.Panel + '.xlsx'
             filemgr.checkFile(panel, '.xlsx')
             result = result.panel(panel)
-            if len(result == 0):
+            if result.empty:
                 logger.error('No variants present after running selected Panel on selected Data')
                 exit(1)
-            result.name = resultname
-            outpath = outpath + '_P' + args.Panel
+            else:
+                result.name = resultname
+                outpath = outpath + '_P' + args.Panel
         if args.Filter[0] is not None:
             for x in args.Filter:
                 if (len(x.split())) != 2:
@@ -244,7 +242,7 @@ class Parser(object):
             result = result[(result['VENN'].str.contains(names[0])) & ~(result['VENN'].str.contains(names[1])) & ~(
                 result['VENN'].str.contains(names[2]))]
             outpath += '_Venn' + names[0]
-            if len(result) == 0:
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
@@ -252,7 +250,7 @@ class Parser(object):
             result = result[~(result['VENN'].str.contains(names[0])) & (result['VENN'].str.contains(names[1])) & ~(
                 result['VENN'].str.contains(names[2]))]
             outpath += '_Venn' + names[1]
-            if len(result) == 0:
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
@@ -260,7 +258,7 @@ class Parser(object):
             result = result[~(result['VENN'].str.contains(names[0])) & ~(result['VENN'].str.contains(names[1])) & (
                 result['VENN'].str.contains(names[2]))]
             outpath += '_Venn' + names[2]
-            if len(result) == 0:
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
@@ -268,7 +266,7 @@ class Parser(object):
             result = result[(result['VENN'].str.contains(names[0])) & (result['VENN'].str.contains(names[1])) & ~(
                 result['VENN'].str.contains(names[2]))]
             outpath += '_Venn' + '_'.join([names[0], names[1]])
-            if len(result) == 0:
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
@@ -276,7 +274,7 @@ class Parser(object):
             result = result[(result['VENN'].str.contains(names[0])) & ~(result['VENN'].str.contains(names[1])) & (
                 result['VENN'].str.contains(names[2]))]
             outpath += '_Venn' + '_'.join([names[0], names[2]])
-            if len(result) == 0:
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
@@ -284,7 +282,7 @@ class Parser(object):
             result = result[~(result['VENN'].str.contains(names[0])) & (result['VENN'].str.contains(names[1])) & (
                 result['VENN'].str.contains(names[2]))]
             outpath += '_Venn' + '_'.join([names[1], names[2]])
-            if len(result) == 0:
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
@@ -292,7 +290,7 @@ class Parser(object):
             result = result[(result['VENN'].str.contains(names[0])) & (result['VENN'].str.contains(names[1])) & (
                 result['VENN'].str.contains(names[2]))]
             outpath += '_Venn' + '_'.join(names)
-            if len(result) == 0:
+            if result.empty:
                 logger.info('No variants present in selected Venn Place!')
                 logger.error('Exiting due to no variants present in selected Venn Place!')
                 exit(1)
@@ -302,7 +300,7 @@ class Parser(object):
             logger.info('Running panel {}'.format(args.Panel))
             panel = cfg.panelsPath + args.Panel + '.xlsx'
             result = result.panel(panel)
-            if len(result) == 0:
+            if result.empty:
                 logger.error('No variants present after running selected Panel on selected Data')
                 exit(1)
             result.name = resultname

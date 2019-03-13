@@ -89,10 +89,12 @@ class ParsedVCF(pd.DataFrame):
         splitlist.append('ALT')
         xlist = [x + '_x' for x in splitlist]
         ylist = [y + '_y' for y in splitlist]
-
+        del splitdf  # ya no uso más split df así que lo borro
         for col in splitlist:
             df1[col] = df1[col + '_y'].combine_first(df1[col + '_x'])
+        del splitlist  # ya no uso más splitlist
         df1.drop(columns=xlist + ylist, inplace=True)
+        del xlist, ylist  # ya no uso más esto.
         df1['POS'] = df1['POS'].astype(int)
         df1.sort_values(by=['CHROM', 'POS'], inplace=True)
         if 'ANN' in df1.columns:
@@ -102,32 +104,31 @@ class ParsedVCF(pd.DataFrame):
             anndf = anndf.str.split(',', expand=True).stack()
             anndf = anndf.str.split('|', expand=True)
             anndf.columns = annheaderlist
-        vcfdf = df1.copy()
-        vcfdf.drop(columns=['ANN'], inplace=True)
+        df1.drop(columns=['ANN'], inplace=True)
         anndf.index = anndf.index.droplevel(1)
-        vcfdf = vcfdf.join(anndf, how='inner')
-        vcfdf.columns = vcfdf.columns.str.upper()
-        if 'HOM' in vcfdf.columns:
-            vcfdf['HOM'] = vcfdf['HOM'].map({True: 'HOM'})
-            vcfdf.HOM.fillna('HET', inplace=True)
-            vcfdf.rename(columns={'HOM': 'ZIGOSITY'}, inplace=True)
-            vcfdf.drop(columns='HET', inplace=True)
-        if 'ESP6500_MAF' in vcfdf.columns:
-            vcfdf[['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']] = vcfdf['ESP6500_MAF'].str.split(',',
-                                                                                                            expand=True)
-            vcfdf['ESP6500_MAF_EA'] = vcfdf['ESP6500_MAF_EA'].apply(divide, args=(100,))
-            vcfdf['ESP6500_MAF_AA'] = vcfdf['ESP6500_MAF_AA'].apply(divide, args=(100,))
-            vcfdf['ESP6500_MAF_ALL'] = vcfdf['ESP6500_MAF_ALL'].apply(divide, args=(100,))
-            vcfdf.drop(columns=['ESP6500_MAF'], inplace=True)
-        if 'ESP6500_PH' in vcfdf.columns:
-            vcfdf[['POLYPHEN_PRED', 'POLYPHEN_SCORE']] = vcfdf['ESP6500_PH'].str.split(':', 1, expand=True)
-            vcfdf['POLYPHEN_PRED'] = vcfdf['POLYPHEN_PRED'].str.strip('.').str.strip('.,')
-            vcfdf['POLYPHEN_SCORE'] = vcfdf['POLYPHEN_SCORE'].str.split(',').str[0]
-            vcfdf.drop(columns=['ESP6500_PH'], inplace=True)
-            vcfdf.rename(columns={'ANNOTATION': 'EFFECT', 'ANNOTATION_IMPACT': 'IMPACT', 'ID': 'RSID'},
-                         inplace=True)
-            vcfdf = vcfdf.where(pd.notnull(vcfdf), None)
-            vcfdf.sort_values(by=['CHROM', 'POS']).reset_index(inplace=True)
+        df1 = df1.join(anndf, how='inner')
+        df1.columns = df1.columns.str.upper()
+        if 'HOM' in df1.columns:
+            df1['HOM'] = df1['HOM'].map({True: 'HOM'})
+            df1.HOM.fillna('HET', inplace=True)
+            df1.rename(columns={'HOM': 'ZIGOSITY'}, inplace=True)
+            df1.drop(columns='HET', inplace=True)
+        if 'ESP6500_MAF' in df1.columns:
+            df1[['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']] = df1['ESP6500_MAF'].str.split(',',
+                                                                                                        expand=True)
+            df1['ESP6500_MAF_EA'] = df1['ESP6500_MAF_EA'].apply(divide, args=(100,))
+            df1['ESP6500_MAF_AA'] = df1['ESP6500_MAF_AA'].apply(divide, args=(100,))
+            df1['ESP6500_MAF_ALL'] = df1['ESP6500_MAF_ALL'].apply(divide, args=(100,))
+            df1.drop(columns=['ESP6500_MAF'], inplace=True)
+        if 'ESP6500_PH' in df1.columns:
+            df1[['POLYPHEN_PRED', 'POLYPHEN_SCORE']] = df1['ESP6500_PH'].str.split(':', 1, expand=True)
+            df1['POLYPHEN_PRED'] = df1['POLYPHEN_PRED'].str.strip('.').str.strip('.,')
+            df1['POLYPHEN_SCORE'] = df1['POLYPHEN_SCORE'].str.split(',').str[0]
+            df1.drop(columns=['ESP6500_PH'], inplace=True)
+            df1.rename(columns={'ANNOTATION': 'EFFECT', 'ANNOTATION_IMPACT': 'IMPACT', 'ID': 'RSID'},
+                       inplace=True)
+            df1 = df1.where(pd.notnull(df1), None)
+            df1.sort_values(by=['CHROM', 'POS']).reset_index(inplace=True)
         IMPACT_SEVERITY = {
             'exon_loss_variant': 1,
             'frameshift_variant': 2,
@@ -159,42 +160,41 @@ class ParsedVCF(pd.DataFrame):
             'intergenic_region': 28,
             'transcript': 29
         }
-        vcfdf2 = vcfdf.copy()
-        vcfdf2['sorter'] = vcfdf2['EFFECT'].str.split('&').str[0].replace(IMPACT_SEVERITY)
-        vcfdf2.loc[vcfdf2['HGVS.C'].str.contains('null'), 'HGVS.C'] = None
-        vcfdf2['sorter2'] = [x[0] == x[1] for x in zip(vcfdf2['ALT'], vcfdf2['ALLELE'])]
-        vcfdf2['chrsort'] = vcfdf2['CHROM'].str.strip('chr').replace({'X': 30, 'Y': 40}).astype(int)
-        vcfdf2 = vcfdf2.sort_values(by=['CHROM', 'POS', 'sorter2', 'sorter'],
-                                    ascending=[True, True, False, True]).drop_duplicates(['CHROM', 'POS', 'REF', 'ALT'])
+        df1['sorter'] = df1['EFFECT'].str.split('&').str[0].replace(IMPACT_SEVERITY)
+        df1.loc[df1['HGVS.C'].str.contains('null'), 'HGVS.C'] = None
+        df1['sorter2'] = [x[0] == x[1] for x in zip(df1['ALT'], df1['ALLELE'])]
+        df1['chrsort'] = df1['CHROM'].str.strip('chr').replace({'X': 30, 'Y': 40}).astype(int)
+        df1 = df1.sort_values(by=['CHROM', 'POS', 'sorter2', 'sorter'],
+                              ascending=[True, True, False, True]).drop_duplicates(['CHROM', 'POS', 'REF', 'ALT'])
         numcols = list()
         for x in pVCF.header_iter():
             if x.type == 'INFO':
                 if x['Type'] in ['Float', 'Integer']:
                     numcols.append(x['ID'])
-        numcols = list(set([x.upper() for x in numcols for y in vcfdf2.columns if x.upper() in y]))
-        vcfdf2[numcols] = vcfdf2[numcols].apply(pd.to_numeric, errors='coerce', axis=1)
-        vcfdf2 = vcfdf2.replace([None], np.nan)
-        vcfdf2 = vcfdf2.replace('nan', np.nan)
-        vcfdf2 = vcfdf2.replace(r'^\s*$', np.nan, regex=True)
-        vcfdf2 = vcfdf2.replace('.', np.nan)
-        vcfdf2 = vcfdf2.round(6)
+        numcols = list(set([x.upper() for x in numcols for y in df1.columns if x.upper() in y]))
+        df1[numcols] = df1[numcols].apply(pd.to_numeric, errors='coerce', axis=1)
+        df1 = df1.replace([None], np.nan)
+        df1 = df1.replace('nan', np.nan)
+        df1 = df1.replace(r'^\s*$', np.nan, regex=True)
+        df1 = df1.replace('.', np.nan)
+        df1 = df1.round(6)
 
-        if ('CLINVAR_CLNSIG' in vcfdf2.columns):
+        if ('CLINVAR_CLNSIG' in df1.columns):
             clinvartranslation = {'255': 'other', '0': 'Uncertain significance', '1': 'not provided', '2': 'Benign',
                                   '3': 'Likely Benign', '4': 'Likely pathogenic', '5': 'Pathogenic',
                                   '6': 'drug response',
                                   '7': 'histocompatibility'}
             for k, v in clinvartranslation.items():
-                vcfdf2['CLINVAR_CLNSIG'] = vcfdf2['CLINVAR_CLNSIG'].str.replace(k, v)
+                df1['CLINVAR_CLNSIG'] = df1['CLINVAR_CLNSIG'].str.replace(k, v)
 
-        vcfdf2['AMINOCHANGE'] = vcfdf2['HGVS.P'].apply(aminoChange)
-        vcfdf2.fillna('.', inplace=True)
-        result = vcfdf2.pipe(ParsedVCF)
+        df1['AMINOCHANGE'] = df1['HGVS.P'].apply(aminoChange)
+        df1.fillna('.', inplace=True)
+        df1 = df1.pipe(ParsedVCF)
         try:
-            result.name = pVCF.samples[0]
+            df1.name = pVCF.samples[0]
         except:
-            result.name = vcf.split('/')[-1]
-        return result
+            df1.name = vcf.split('/')[-1]
+        return df1
 
     @classmethod
     def mp_parser(cls, *vcfs):
@@ -232,6 +232,7 @@ class ParsedVCF(pd.DataFrame):
         df1.to_excel(outpath)
 
     def panel(self, panel):
+        logger.info('Analyzing Panel')
         pldf = pd.ExcelFile(panel).parse('GeneList')
         geneSymbolList = list(pldf.GeneSymbol.unique())
         panel_df = pd.DataFrame()
@@ -239,7 +240,6 @@ class ParsedVCF(pd.DataFrame):
             panel_df = panel_df.append(self.loc[self['GENE_NAME'] == gene])
         panel_df = panel_df.pipe(ParsedVCF)
         panel_df.name = self.name
-
         return panel_df
 
     def duos(self, vcf2):
@@ -268,16 +268,19 @@ class ParsedVCF(pd.DataFrame):
                 'in a trios). Both arguments provided where duos or trios')
             exit(1)
         elif 'VENN' in self.columns:
+            logger.info('Running TRIOS analysis on %s' % ':'.join([self.name, pvcf2.name]))
             indicator = 'TRIOS'
             left = pvcf2
             right = self
             left.drop(columns=indcols, inplace=True)
         elif 'VENN' in pvcf2.columns:
+            logger.info('Running TRIOS analysis on %s' % ':'.join([self.name, pvcf2.name]))
             indicator = 'TRIOS'
             left = self
             right = pvcf2
             left.drop(columns=indcols, inplace=True)
         else:
+            logger.info('Running DUOS analysis on %s' % ':'.join([self.name, pvcf2.name]))
             indicator = 'DUOS'
             left = self
             right = pvcf2
