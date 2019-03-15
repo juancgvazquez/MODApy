@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from sys import argv
 
-from MODApy import filemgr, cfg, pipeline, vcfmgr, downloader
+from MODApy import filemgr, cfg, pipeline, vcfmgr, downloader, variantsdb
 from MODApy.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,7 @@ class Parser(object):
 
         Commands:
         launcher    Run MoDAPy Web Interface
+        variantsDB  Work with Variants Database
         addPatient  Download Patient Data to Patients folder. Receives both url or xls/xlsx
         pipeline    Run pipeline on FastQ file/s
         single      Run study on a single patient
@@ -58,6 +59,22 @@ class Parser(object):
         args = parser.parse_args(argv[2:])
         fileorurl = args.FileorURL
         downloader.get_links(fileorurl)
+
+    def variantsDB(self):
+        parser = argparse.ArgumentParser(description="Work with Variants DB")
+        parser.add_argument('-buildDB', action='store_true',
+                            help='Build Variants DataBase with all patients that are not currently in it.')
+        parser.add_argument('-addPatientToDB',
+                            help='Adds a single patient to DB. Must supply path to vcf')
+        args = parser.parse_args(argv[2:])
+        if args.buildDB:
+            db = variantsdb.VariantsDB.buildDB()
+            db.to_VarDBXLS()
+        if args.addPatientToDB:
+            patient = cfg.patientPath + args.addPatientToDB
+            db = variantsdb.VariantsDB.from_exceldb(variantsdb.variantsDBPath)
+            db = db.addPatientToDB(patient)
+            db.to_VarDBXLS()
 
     def pipeline(self):
         # Description for pipeline usage
@@ -154,7 +171,7 @@ class Parser(object):
         filemgr.duos_stats(result)
         # check if there is a special Venn Place Requested
         if args.VennPlace == 'A':
-            result = result[result['VEN'] == result.name.split(':')[0]]
+            result = result[result['VENN'] == result.name.split(':')[0]]
             outpath += '_Venn' + resultname.split(':')[0]
             if result.empty:
                 logger.info('No variants present in selected Venn Place!')

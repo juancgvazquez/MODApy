@@ -19,6 +19,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         'pandas',
+        'numpy',
         'configparser',
         'argparse',
         'Cython',
@@ -29,7 +30,9 @@ setuptools.setup(
         'matplotlib',
         'matplotlib-venn',
         'xmltodict',
-        'pyyaml'
+        'pyyaml',
+        'requests',
+        'tqdm'
     ],
     entry_points={
         # Command line scripts

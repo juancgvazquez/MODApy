@@ -6,6 +6,8 @@ import cyvcf2
 import numpy as np
 import pandas as pd
 
+from MODApy.cfg import cfg
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +21,7 @@ class ParsedVCF(pd.DataFrame):
     @classmethod
     def from_vcf(cls, vcf):
         """
-        Method that creates a ParsedVCF (a DataFrame) from a vcf file
+        Method that creates a ParsedVCF1 (a DataFrame) from a vcf file
         Parameters
         ----------
         vcf
@@ -31,8 +33,10 @@ class ParsedVCF(pd.DataFrame):
                 value = value.replace('p.', '')
                 if value[:3] != value[-3:]:
                     return 'CHANGE'
+                else:
+                    return '.'
             except:
-                return np.nan
+                return '.'
 
         def divide(x, y):
             """
@@ -52,6 +56,10 @@ class ParsedVCF(pd.DataFrame):
 
         logger.info('Parsing VCF File. %s' % vcf)
         pVCF = cyvcf2.Reader(vcf)
+        try:
+            name = pVCF.samples[0]
+        except:
+            name = vcf.split('/')[-1]
         variantsDict = OrderedDict()
         for variant in pVCF:
             variantsDict[variant.CHROM + '+' + str(variant.POS) + '+' + variant.REF + '+' + ','.join(variant.ALT)] = {
@@ -61,6 +69,7 @@ class ParsedVCF(pd.DataFrame):
                 {k: v for (k, v) in variant.INFO})
 
         df1 = pd.DataFrame.from_dict(variantsDict, orient='index')
+        del variantsDict
         df1.index = df1.index.str.split('+', expand=True)
         df1.index.names = ['CHROM', 'POS', 'REF', 'ALT']
         df1.reset_index(inplace=True)
@@ -69,6 +78,7 @@ class ParsedVCF(pd.DataFrame):
         ALT.index = ALT.index.droplevel(-1)
         ALT = ALT.to_frame()
         splitdf = splitdf.join(ALT, lsuffix='_x', rsuffix='_y')
+        del ALT
         splitdf['ALT'] = splitdf['ALT_y'].combine_first(splitdf['ALT_x'])
         splitdf.drop(columns=['ALT_y', 'ALT_x'], inplace=True)
         splitdf.reset_index(inplace=True)
@@ -77,26 +87,24 @@ class ParsedVCF(pd.DataFrame):
         even = splitdf.iloc[1::2].copy()
         splitlist = ['ID', 'AC', 'SAMPLES_AF', 'MLEAC', 'MLEAF', 'VARTYPE', 'dbSNPBuildID']
         splitlist += [x for x in df1.columns if x.startswith(('1000', 'CLINVAR'))]
-        if 'ANN' in splitlist:
-            splitlist.remove('ANN')
         for col in splitlist:
             odd[col] = odd[col].astype(str).str.split(',', n=1).str[0]
             even[col] = even[col].apply(lambda x:
                                         x if len(str(x).split(',')) <= 1 else str(x).split(',', maxsplit=1)[1])
         splitdf = pd.concat([odd, even]).sort_index().replace(to_replace=['\(', '\)'], value='', regex=True)
+        del odd, even
         splitdf = splitdf[['CHROM', 'POS', 'REF', 'ALT'] + splitlist]
         df1 = df1.merge(splitdf, on=['CHROM', 'POS', 'REF'], how='left')
         splitlist.append('ALT')
         xlist = [x + '_x' for x in splitlist]
         ylist = [y + '_y' for y in splitlist]
-        del splitdf  # ya no uso más split df así que lo borro
+        del splitdf  # ya no uso más splitdf así que lo borro
         for col in splitlist:
             df1[col] = df1[col + '_y'].combine_first(df1[col + '_x'])
         del splitlist  # ya no uso más splitlist
         df1.drop(columns=xlist + ylist, inplace=True)
         del xlist, ylist  # ya no uso más esto.
         df1['POS'] = df1['POS'].astype(int)
-        df1.sort_values(by=['CHROM', 'POS'], inplace=True)
         if 'ANN' in df1.columns:
             anndf = df1['ANN']
             annhead = pVCF.get_header_type('ANN')['Description'].strip('"Functional annotations: \'"')
@@ -104,15 +112,56 @@ class ParsedVCF(pd.DataFrame):
             anndf = anndf.str.split(',', expand=True).stack()
             anndf = anndf.str.split('|', expand=True)
             anndf.columns = annheaderlist
-        df1.drop(columns=['ANN'], inplace=True)
-        anndf.index = anndf.index.droplevel(1)
-        df1 = df1.join(anndf, how='inner')
+            df1.drop(columns='ANN', inplace=True)
+            anndf.index = anndf.index.droplevel(1)
+            df1 = df1.join(anndf, how='inner')
+            del anndf
+            del annhead
+            del annheaderlist
+            IMPACT_SEVERITY = {
+                'exon_loss_variant': 1,
+                'frameshift_variant': 2,
+                'stop_gained': 3,
+                'stop_lost': 4,
+                'start_lost': 5,
+                'splice_acceptor_variant': 6,
+                'splice_donor_variant': 7,
+                'disruptive_inframe_deletion': 8,
+                'inframe_insertion': 9,
+                'disruptive_inframe_insertion': 10,
+                'inframe_deletion': 11,
+                'missense_variant': 12,
+                'splice_region_variant': 13,
+                'stop_retained_variant': 14,
+                'initiator_codon_variant': 15,
+                'synonymous_variant': 16,
+                'start_retained': 17,
+                'coding_sequence_variant': 18,
+                '5_prime_UTR_variant': 19,
+                '3_prime_UTR_variant': 20,
+                '5_prime_UTR_premature_start_codon_gain_variant': 21,
+                'intron_variant': 22,
+                'non_coding_exon_variant': 23,
+                'upstream_gene_variant': 24,
+                'downstream_gene_variant': 25,
+                'TF_binding_site_variant': 26,
+                'regulatory_region_variant': 27,
+                'intergenic_region': 28,
+                'transcript': 29
+            }
+            df1['sorter'] = df1['Annotation'].str.split('&').str[0].replace(IMPACT_SEVERITY)
+            df1.loc[df1['HGVS.c'].str.contains('null'), 'HGVS.c'] = None
+            df1['sorter2'] = [x[0] == x[1] for x in zip(df1['ALT'], df1['Allele'])]
+            df1 = df1.sort_values(by=['CHROM', 'POS', 'sorter2', 'sorter'],
+                                  ascending=[True, True, False, True]).drop_duplicates(['CHROM', 'POS', 'REF', 'ALT'])
+            df1.drop(columns=['sorter', 'sorter2'], inplace=True)
+            del IMPACT_SEVERITY
         df1.columns = df1.columns.str.upper()
         if 'HOM' in df1.columns:
-            df1['HOM'] = df1['HOM'].map({True: 'HOM'})
-            df1.HOM.fillna('HET', inplace=True)
-            df1.rename(columns={'HOM': 'ZIGOSITY'}, inplace=True)
+            df1['HOM'] = df1['HOM'].map({True: 'HOM', False: 'HET'})
             df1.drop(columns='HET', inplace=True)
+            df1.rename(columns={'HOM': 'ZIGOSITY'}, inplace=True)
+
         if 'ESP6500_MAF' in df1.columns:
             df1[['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']] = df1['ESP6500_MAF'].str.split(',',
                                                                                                         expand=True)
@@ -127,56 +176,14 @@ class ParsedVCF(pd.DataFrame):
             df1.drop(columns=['ESP6500_PH'], inplace=True)
             df1.rename(columns={'ANNOTATION': 'EFFECT', 'ANNOTATION_IMPACT': 'IMPACT', 'ID': 'RSID'},
                        inplace=True)
-            df1 = df1.where(pd.notnull(df1), None)
-            df1.sort_values(by=['CHROM', 'POS']).reset_index(inplace=True)
-        IMPACT_SEVERITY = {
-            'exon_loss_variant': 1,
-            'frameshift_variant': 2,
-            'stop_gained': 3,
-            'stop_lost': 4,
-            'start_lost': 5,
-            'splice_acceptor_variant': 6,
-            'splice_donor_variant': 7,
-            'disruptive_inframe_deletion': 8,
-            'inframe_insertion': 9,
-            'disruptive_inframe_insertion': 10,
-            'inframe_deletion': 11,
-            'missense_variant': 12,
-            'splice_region_variant': 13,
-            'stop_retained_variant': 14,
-            'initiator_codon_variant': 15,
-            'synonymous_variant': 16,
-            'start_retained': 17,
-            'coding_sequence_variant': 18,
-            '5_prime_UTR_variant': 19,
-            '3_prime_UTR_variant': 20,
-            '5_prime_UTR_premature_start_codon_gain_variant': 21,
-            'intron_variant': 22,
-            'non_coding_exon_variant': 23,
-            'upstream_gene_variant': 24,
-            'downstream_gene_variant': 25,
-            'TF_binding_site_variant': 26,
-            'regulatory_region_variant': 27,
-            'intergenic_region': 28,
-            'transcript': 29
-        }
-        df1['sorter'] = df1['EFFECT'].str.split('&').str[0].replace(IMPACT_SEVERITY)
-        df1.loc[df1['HGVS.C'].str.contains('null'), 'HGVS.C'] = None
-        df1['sorter2'] = [x[0] == x[1] for x in zip(df1['ALT'], df1['ALLELE'])]
-        df1['chrsort'] = df1['CHROM'].str.strip('chr').replace({'X': 30, 'Y': 40}).astype(int)
-        df1 = df1.sort_values(by=['CHROM', 'POS', 'sorter2', 'sorter'],
-                              ascending=[True, True, False, True]).drop_duplicates(['CHROM', 'POS', 'REF', 'ALT'])
         numcols = list()
         for x in pVCF.header_iter():
             if x.type == 'INFO':
                 if x['Type'] in ['Float', 'Integer']:
                     numcols.append(x['ID'])
+        numcols += ['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']
         numcols = list(set([x.upper() for x in numcols for y in df1.columns if x.upper() in y]))
         df1[numcols] = df1[numcols].apply(pd.to_numeric, errors='coerce', axis=1)
-        df1 = df1.replace([None], np.nan)
-        df1 = df1.replace('nan', np.nan)
-        df1 = df1.replace(r'^\s*$', np.nan, regex=True)
-        df1 = df1.replace('.', np.nan)
         df1 = df1.round(6)
 
         if ('CLINVAR_CLNSIG' in df1.columns):
@@ -188,30 +195,37 @@ class ParsedVCF(pd.DataFrame):
                 df1['CLINVAR_CLNSIG'] = df1['CLINVAR_CLNSIG'].str.replace(k, v)
 
         df1['AMINOCHANGE'] = df1['HGVS.P'].apply(aminoChange)
-        df1.fillna('.', inplace=True)
+        df1.replace(['nan', '', np.nan], '.', inplace=True)
+        df1.replace([[None], '.'], inplace=True, regex=True)
+        df1 = df1.astype('str')
+        df1['POS'] = df1['POS'].astype(int)
         df1 = df1.pipe(ParsedVCF)
-        try:
-            df1.name = pVCF.samples[0]
-        except:
-            df1.name = vcf.split('/')[-1]
+        df1.name = name
         return df1
 
     @classmethod
-    def mp_parser(cls, *vcfs):
+    def mp_parser(cls, *vcfs, cores=int(cfg['GENERAL']['cores'])):
+        if len(vcfs) < 1:
+            logger.error('No vcfs provided!')
+            exit(1)
+        elif len(vcfs) == 1:
+            pvcfs = list()
+            pvcfs.append(ParsedVCF.from_vcf(vcfs[0]))
         try:
             [x + '' for x in vcfs]
         except:
             logger.error('All mp_parser args must be strings')
         else:
             logger.info('Starting Multi-Parser')
-            cpus = mp.cpu_count()
-            if cpus > 1:
-                if len(vcfs) <= cpus - 1:
+            if cores is None:
+                cores = mp.cpu_count()
+            if cores > 1:
+                if len(vcfs) <= cores - 1:
                     pool = mp.Pool(processes=len(vcfs))
                 else:
-                    pool = mp.Pool(processes=cpus - 1)
+                    pool = mp.Pool(processes=cores - 1)
             else:
-                pool = mp.Pool(processes=cpus)
+                pool = mp.Pool(processes=cores)
             pvcfs = pool.map(cls.from_vcf, (x for x in vcfs))
             pool.close()
             pool.join()
@@ -227,14 +241,20 @@ class ParsedVCF(pd.DataFrame):
                          'Polyphen2_HDIV_score', 'Polyphen2_HDIV_pred', 'Polyphen2_HVAR_score', 'Polyphen2_HVAR_pred',
                          'CLINVAR_CLNSIG', 'CLINVAR_CLNDSDB', 'CLINVAR_CLNDSDBID', 'CLINVAR_CLNDBN',
                          'CLINVAR_CLNREVSTAT', 'CLINVAR_CLNACC']
+        self['chrsort'] = self['CHROM'].replace({'X': 30, 'Y': 40})
         df1 = self.sort_values(['chrsort', 'POS'])[
             [x.upper() for x in macrogen_cols if x.upper() in self.columns]].copy()
         df1.to_excel(outpath)
 
     def panel(self, panel):
         logger.info('Analyzing Panel')
-        pldf = pd.ExcelFile(panel).parse('GeneList')
-        geneSymbolList = list(pldf.GeneSymbol.unique())
+        try:
+            pldf = pd.ExcelFile(panel).parse('GeneList')
+            geneSymbolList = list(pldf.GeneSymbol.unique())
+        except:
+            logger.error('There was an error parsing GeneList')
+            logger.debug('', exc_info=True)
+            exit(1)
         panel_df = pd.DataFrame()
         for gene in geneSymbolList:
             panel_df = panel_df.append(self.loc[self['GENE_NAME'] == gene])
