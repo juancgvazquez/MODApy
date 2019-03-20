@@ -76,9 +76,14 @@ def download(url):
     os.makedirs(tmpdir, exist_ok=True)
     logger.info('Downloading %s to %s' % (url, outpath))
     try:
-        file_size = int(requests.head(url).headers["Content-Length"])
+        response = requests.head(url)
+        if response.status_code == 200:
+            try:
+                file_size = int(response.headers["Content-Length"])
+            except:
+                logger.error('Could not get file size')
     except:
-        logger.error('There was a connection error')
+        logger.error('Connection Failed')
         logger.debug('', exc_info=True)
         exit(1)
     if os.path.exists(tmppath):
