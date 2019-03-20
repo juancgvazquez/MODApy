@@ -87,7 +87,11 @@ def download(url):
                 file_size = int(response.headers["Content-Length"])
             else:
                 logger.info('Could not get file size')
-                file_size = 0
+                file_size = -1
+        else:
+            logger.error('Connection Failed')
+            logger.debug('', exc_info=True)
+            exit(1)
     if os.path.exists(tmppath):
         first_byte = os.path.getsize(tmppath)
     else:
