@@ -83,9 +83,9 @@ def download(url):
         exit(1)
     else:
         if response.status_code == 200:
-            try:
+            if 'Content-Length' in response.headers.keys():
                 file_size = int(response.headers["Content-Length"])
-            except:
+            else:
                 logger.info('Could not get file size')
                 file_size = 0
     if os.path.exists(tmppath):
