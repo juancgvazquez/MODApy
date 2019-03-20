@@ -83,11 +83,7 @@ def download(url):
         exit(1)
     else:
         if response.status_code == 200:
-            if 'Content-Length' in response.headers.keys():
-                file_size = int(response.headers["Content-Length"])
-            else:
-                logger.info('Could not get file size')
-                file_size = -1
+            file_size = int(response.headers["Content-Length"], -1)
         else:
             logger.error('Connection Failed')
             logger.debug('', exc_info=True)
@@ -96,8 +92,6 @@ def download(url):
         first_byte = os.path.getsize(tmppath)
     else:
         first_byte = 0
-    if first_byte >= file_size:
-        return file_size
     header = {"Range": "bytes=%s-%s" % (first_byte, file_size)}
     with open(downlog, 'r') as dlog:
         down_dict = json.load(dlog)
