@@ -22,14 +22,14 @@ getcommand <- function(input){
   switch (input$tabset,
           Pipeline={
             if(file.exists(paste(cfg$PATHS$patientpath, input$PatientPipe, "/",input$PatientPipe,"_1", ".fastq", sep=""))){
-              cmd =  paste("pipeline -Pipeline", 
-                           input$Pipeline, "-FQ", 
+              cmd =  paste("pipeline -Pipeline",
+                           input$Pipeline, "-FQ",
                            paste(input$PatientPipe, "/",input$PatientPipe,"_1", ".fastq", sep=""), "-FQ",
                            paste(input$PatientPipe, "/",input$PatientPipe,"_2", ".fastq", sep=""))
             }
             else if(file.exists(paste(cfg$PATHS$patientpath, input$PatientPipe, "/",input$PatientPipe,"_1", ".fastq.gz", sep=""))){
-              cmd = paste("pipeline -Pipeline", 
-                          input$Pipeline, "-FQ", 
+              cmd = paste("pipeline -Pipeline",
+                          input$Pipeline, "-FQ",
                           paste(input$PatientPipe, "/",input$PatientPipe,"_1", ".fastq.gz", sep=""), "-FQ",
                           paste(input$PatientPipe, "/",input$PatientPipe,"_2", ".fastq.gz", sep=""))
             }
@@ -66,7 +66,7 @@ getcommand <- function(input){
             if(venn!=''){
               cmd = paste(cmd,"--VennPlace", venn)
             }
-            if(input$PanelT != 'NONE'){  
+            if(input$PanelT != 'NONE'){
               cmd = paste(cmd, '--Panel', input$PanelT)
             }
           }
@@ -77,19 +77,19 @@ getcommand <- function(input){
 }
 
 # ui -------------------------------------------------------------------
-panels = 
+panels =
   ui <- navbarPage("MODApy",
-                   tabPanel("ANALISIS",
+                   tabPanel("Analisis",
                         sidebarLayout(
                           sidebarPanel(
                             width = 6,
-                            tabsetPanel(id="tabset", selected = "Panel",
+                            tabsetPanel(id="tabset", selected = "Single",
                                         # tabPanel("Pipeline",
                                         #   selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
                                         #   selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
                                         #     path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
                                         # ),
-                                        tabPanel("Panel",
+                                        tabPanel("Single",
                                                  selectizeInput(inputId = "PatientPanel", label = "Patient", choices = patientsvcf, options=list(placeholder='Please select an option below', onInitialize = I('function() {this.setValue("");}'))),
                                                  selectInput(inputId = "Panel", label = "Panel", choices = gsub('.xlsx','',list.files(path=cfg$PATHS$panelspath)))
                                         ),
@@ -143,7 +143,7 @@ server <- function(input,output, session){
   rv <- reactiveValues(textstream = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv2 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv3 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
-  
+
   observeEvent(input$buildDBbtn, {
     rv$textstream = ""
     rv$started<-TRUE

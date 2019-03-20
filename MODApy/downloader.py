@@ -77,15 +77,17 @@ def download(url):
     logger.info('Downloading %s to %s' % (url, outpath))
     try:
         response = requests.head(url)
-        if response.status_code == 200:
-            if int(response.headers["Content-Length"]):
-                file_size = int(response.headers["Content-Length"])
-            else:
-                logger.info('Could not get file size')
     except:
         logger.error('Connection Failed')
         logger.debug('', exc_info=True)
         exit(1)
+    else:
+        if response.status_code == 200:
+            try:
+                file_size = int(response.headers["Content-Length"])
+            except:
+                logger.info('Could not get file size')
+                file_size = 0
     if os.path.exists(tmppath):
         first_byte = os.path.getsize(tmppath)
     else:
