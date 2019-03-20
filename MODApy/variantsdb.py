@@ -8,7 +8,9 @@ from MODApy.cfg import variantsDBPath, patientPath
 from MODApy.vcfmgr import ParsedVCF
 
 logger = logging.getLogger(__name__)
-#TODO: FIND A MORE EFFICIENT WAY TO SUM EMPTY
+
+
+# TODO: FIND A MORE EFFICIENT WAY TO SUM EMPTY
 
 class VariantsDB(pd.DataFrame):
     @property
@@ -121,17 +123,18 @@ class VariantsDB(pd.DataFrame):
         self.to_excel(output, sheet_name='VariantsDB', index=False, merge_cells=False,
                       freeze_panes=(1, len(self.columns)))
         output.save()
+        logger.info('DB complete')
 
     def calcfreqs(self):
         logger.info('Calculating Variant Frequencies')
         patients = self.columns.tolist()
         if 'FREQ' in patients:
             patients.remove('FREQ')
-        self.replace({'.':np.nan},inplace=True)
+        self.replace({'.': np.nan}, inplace=True)
         self['FREQ'] = (self[patients].notnull().sum(axis=1) / len(patients))
         cols = self.columns.tolist()
         cols.remove('FREQ')
         self = self[['FREQ'] + cols]
-        self.replace({np.nan:'.'},inplace=True)
+        self.replace({np.nan: '.'}, inplace=True)
         self.pipe(VariantsDB)
         return self
