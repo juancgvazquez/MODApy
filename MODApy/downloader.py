@@ -83,7 +83,11 @@ def download(url):
         exit(1)
     else:
         if response.status_code == 200:
-            file_size = int(response.headers["Content-Length"], -1)
+            if 'Content-Length' in response.headers.keys():
+                file_size = int(response.headers["Content-Length"])
+            else:
+                logger.info('Could not get file size')
+                file_size = 0
         else:
             logger.error('Connection Failed')
             logger.debug('', exc_info=True)
