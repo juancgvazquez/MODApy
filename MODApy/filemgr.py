@@ -134,8 +134,7 @@ def df_to_excel(df1: ParsedVCF, outpath):
                                  len(df1), cols_selected.index('IMPACT'),
                                  {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
     logger.info('Writing Excel File')
-    df1.to_excel(output, sheet_name='DATA', merge_cells=False, index=False, header=True,
-                 freeze_panes=(1, len(df1.columns)))
+    df1.to_excel(output, sheet_name='DATA', merge_cells=False, index=False, header=True)
 
     if (df1.reset_index().index.max() < 32150):
         logger.info('Redirecting IDs and GENEs to URLs')

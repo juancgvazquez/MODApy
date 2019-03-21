@@ -148,8 +148,7 @@ class VariantsDB(pd.DataFrame):
         formatpos = workbook.add_format({'num_format': '###,###,###'})
         self['POS'] = self['POS'].astype(int)
         datasheet.set_column('B:B', 15, formatpos)
-        self.to_excel(output, sheet_name='VariantsDB', index=False, merge_cells=False,
-                      freeze_panes=(1, len(self.columns)))
+        self.to_excel(output, sheet_name='VariantsDB', index=False, merge_cells=False)
         output.save()
         logger.info('Xlsx DB construction complete')
 
