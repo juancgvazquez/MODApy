@@ -83,7 +83,7 @@ class VariantsDB(pd.DataFrame):
             patientslist = patientLister()
             db = None
         # TODO: change this 10 to a variable depending on cpus or mem
-        sublists = [patientslist[i:i + 3] for i in range(0, len(patientslist), 3)]
+        sublists = [patientslist[i:i + 10] for i in range(0, len(patientslist), 10)]
         for l in sublists:
             db = dbbuilder(l, db)
         return db

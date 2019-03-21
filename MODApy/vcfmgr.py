@@ -54,6 +54,7 @@ class ParsedVCF(pd.DataFrame):
             except:
                 return x
 
+        logger.info('Parsing VCF File. %s' % vcf)
         pVCF = cyvcf2.Reader(vcf)
         try:
             name = pVCF.samples[0]
