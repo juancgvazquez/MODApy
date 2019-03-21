@@ -36,53 +36,57 @@ class VariantsDB(pd.DataFrame):
 
     @classmethod
     def buildDB(cls):
-        vcfspath = list()
-        for dirpath, dirnames, filenames in os.walk(patientPath):
-            for filename in [f for f in filenames if f.lower().endswith('final.vcf')]:
-                vcfspath.append(os.path.join(dirpath, filename))
-        vcfsnames = [x.rsplit('/', maxsplit=1)[-1].strip('.final.vcf') for x in vcfspath]
+        def patientLister(db=None):
+            vcfspath = []
+            for dirpath, dirnames, filenames in os.walk(patientPath):
+                for filename in [f for f in filenames if f.lower().endswith('final.vcf')]:
+                    vcfspath.append(os.path.join(dirpath, filename))
+            vcfsnames = [x.rsplit('/', maxsplit=1)[-1].strip('.final.vcf') for x in vcfspath]
 
-        if os.path.exists(variantsDBPath):
-            logger.info('Parsing DB File')
-            db = VariantsDB.from_exceldb(variantsDBPath)
-            addpatnames = [x for x in vcfsnames if x not in db.columns]
-            if len(addpatnames) >= 1:
-                logger.info('Adding Patients: {}'.format([x for x in addpatnames]))
+            if db is not None:
+                addpatnames = [x for x in vcfsnames if x not in db.columns]
+                if len(addpatnames) >= 1:
+                    logger.info('Adding Patients: {}'.format([x for x in addpatnames]))
+                else:
+                    logger.error('No Patients to Add')
+                    exit(1)
+                patientslist = [x for x in vcfspath for y in addpatnames if y in x]
             else:
-                logger.error('No Patients to Add')
-                exit(1)
-            addpatpath = [x for x in vcfspath for y in addpatnames if y in x]
+                patientslist = vcfspath
+
+            return patientslist
+
+        def dbbuilder(patientslist, db=None):
             logger.info('Parsing Patients')
-            pvcfs = ParsedVCF.mp_parser(*addpatpath)
+            pvcfs = ParsedVCF.mp_parser(*patientslist)
             pvcfs = [x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY']] for x in pvcfs]
             for df in pvcfs:
                 if 'ZIGOSITY' not in df.columns:
                     df['ZIGOSITY'] = 'UNKWN'
             pvcfs = [x.rename(columns={'ZIGOSITY': x.name}) for x in pvcfs if 'ZIGOSITY' in x.columns]
             pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT']) for x in pvcfs]
-            pvcfs.insert(0, db)
-            logger.info('Merging DB')
+            if db is not None:
+                pvcfs.insert(0, db)
+            logger.info('Merging parsed patients toDB')
             db = pd.concat(pvcfs, axis=1, join='outer')
             db.replace({'.': np.nan}, inplace=True)
             db = db.pipe(VariantsDB)
             db = db.calcfreqs()
             return db
+
+        if os.path.exists(variantsDBPath):
+            logger.info('Parsing DB File')
+            db = VariantsDB.from_exceldb(variantsDBPath)
+            patientslist = patientLister(db)
         else:
-            logger.info('No DB found, creating a new one.')
-            logger.info('Parsing Patients')
-            pvcfs = ParsedVCF.mp_parser(*vcfspath)
-            pvcfs = [
-                x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY']] for x in pvcfs]
-            for df in pvcfs:
-                if 'ZIGOSITY' not in df.columns:
-                    df['ZIGOSITY'] = 'UNKWN'
-            pvcfs = [x.rename(columns={'ZIGOSITY': x.name}) for x in pvcfs]
-            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT']) for x in pvcfs]
-            logger.info('Merging DB')
-            db = pd.concat(pvcfs, axis=1, join='outer')
-            db = db.pipe(VariantsDB)
-            db = db.calcfreqs()
-            return db
+            logger.info('No DB Found, Building new Variants DB')
+            patientslist = patientLister()
+            db = None
+        # TODO: change this 10 to a variable depending on cpus or mem
+        sublists = [patientslist[i:i + 3] for i in range(0, len(patientslist), 3)]
+        for l in sublists:
+            db = dbbuilder(l, db)
+        return db
 
     def addPatientToDB(self, patient):
         if patient.rsplit('/')[-1].strip('.final.vcf') in self.columns:
@@ -104,7 +108,6 @@ class VariantsDB(pd.DataFrame):
         db = pd.concat([self, pvcf], axis=1, join='outer')
         db = db.pipe(VariantsDB)
         db = db.calcfreqs()
-        collist = db.columns
         return db
 
     def to_VarDBXLS(self):
@@ -123,7 +126,7 @@ class VariantsDB(pd.DataFrame):
         self.to_excel(output, sheet_name='VariantsDB', index=False, merge_cells=False,
                       freeze_panes=(1, len(self.columns)))
         output.save()
-        logger.info('DB complete')
+        logger.info('DB construction complete')
 
     def calcfreqs(self):
         logger.info('Calculating Variant Frequencies')
