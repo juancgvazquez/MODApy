@@ -182,7 +182,7 @@ class ParsedVCF(pd.DataFrame):
                 if x['Type'] in ['Float', 'Integer']:
                     numcols.append(x['ID'])
         numcols += ['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']
-        numcols = list(set([x.upper() for x in numcols for y in df1.columns if x.upper() in y]))
+        numcols = list(set([x.upper() for x in numcols for y in df1.columns if x.upper() == y]))
         df1[numcols] = df1[numcols].apply(pd.to_numeric, errors='coerce', axis=1)
         df1 = df1.round(6)
 

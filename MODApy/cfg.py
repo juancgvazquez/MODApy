@@ -103,7 +103,7 @@ def setup_logging():
             },
             "error_file_handler": {
                 "class": "logging.handlers.RotatingFileHandler",
-                "level": "ERROR",
+                "level": "DEBUG",
                 "formatter": "simple",
                 "filename": rootDir + "/logs/errors.log",
                 "maxBytes": 10485760,
@@ -113,7 +113,7 @@ def setup_logging():
             }
         },
         "root": {
-            "level": "INFO",
+            "level": "DEBUG",
             "handlers": [
                 "console",
                 "current_run",
