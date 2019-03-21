@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from MODApy.cfg import variantsDBPath, patientPath
+from MODApy.cfg import variantsDBPath, patientPath, cfg
 from MODApy.vcfmgr import ParsedVCF
 
 logger = logging.getLogger(__name__)
@@ -107,8 +107,8 @@ class VariantsDB(pd.DataFrame):
             logger.info('No DB Found, Building new Variants DB')
             patientslist = patientLister()
             db = None
-        # TODO: change this 10 to a variable depending on cpus or mem
-        sublists = [patientslist[i:i + 10] for i in range(0, len(patientslist), 10)]
+        sublists = [patientslist[i:i + int(cfg['GENERAL']['cores'])] for i in
+                    range(0, len(patientslist), int(cfg['GENERAL']['cores']))]
         for l in sublists:
             db = dbbuilder(l, db)
         return db
