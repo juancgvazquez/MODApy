@@ -35,6 +35,22 @@ class VariantsDB(pd.DataFrame):
         return db
 
     @classmethod
+    def from_csvdb(cls, csvpath):
+        if os.path.exists(csvpath):
+            try:
+                db = pd.read_csv(csvpath)
+            except:
+                logger.error('There was an error parsing CSV File')
+                logger.debug('', exc_info=True)
+                exit(1)
+        else:
+            logger.error('Path to CSV file incorrect.')
+            exit(1)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
+        db = db.pipe(VariantsDB)
+        return db
+
+    @classmethod
     def buildDB(cls):
         def patientLister(db=None):
             vcfspath = []
@@ -75,9 +91,18 @@ class VariantsDB(pd.DataFrame):
             return db
 
         if os.path.exists(variantsDBPath):
-            logger.info('Parsing DB File')
-            db = VariantsDB.from_exceldb(variantsDBPath)
-            patientslist = patientLister(db)
+            if variantsDBPath.rsplit('.')[-1].lower() == 'xlsx':
+                logger.info('Parsing XLSX DB File')
+                db = VariantsDB.from_exceldb(variantsDBPath)
+                patientslist = patientLister(db)
+            elif variantsDBPath.rsplit('.')[-1].lower() == 'csv':
+                logger.info('Parsing CSV DB File')
+                db = VariantsDB.from_csvdb(variantsDBPath)
+                patientslist = patientLister(db)
+            else:
+                logger.error('VariantsDBPath must be a xlsx or csv file')
+                exit(1)
+
         else:
             logger.info('No DB Found, Building new Variants DB')
             patientslist = patientLister()
@@ -126,6 +151,15 @@ class VariantsDB(pd.DataFrame):
         self.to_excel(output, sheet_name='VariantsDB', index=False, merge_cells=False,
                       freeze_panes=(1, len(self.columns)))
         output.save()
+        logger.info('Xlsx DB construction complete')
+
+    def to_VarDBCSV(self):
+        logger.info('Writing DB to CSV')
+        self.reset_index(inplace=True)
+        self['POS'] = self['POS'].astype(int)
+        self.sort_values(['CHROM', 'POS'], inplace=True)
+        os.makedirs(variantsDBPath.rsplit('/', maxsplit=1)[0], exist_ok=True)
+        self.to_csv(variantsDBPath, index=False)
         logger.info('DB construction complete')
 
     def calcfreqs(self):

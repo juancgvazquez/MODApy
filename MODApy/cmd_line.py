@@ -69,12 +69,12 @@ class Parser(object):
         args = parser.parse_args(argv[2:])
         if args.buildDB:
             db = variantsdb.VariantsDB.buildDB()
-            db.to_VarDBXLS()
+            db.to_VarDBCSV()
         if args.addPatientToDB:
             patient = cfg.patientPath + args.addPatientToDB
             db = variantsdb.VariantsDB.from_exceldb(variantsdb.variantsDBPath)
             db = db.addPatientToDB(patient)
-            db.to_VarDBXLS()
+            db.to_VarDBCSV()
 
     def pipeline(self):
         # Description for pipeline usage

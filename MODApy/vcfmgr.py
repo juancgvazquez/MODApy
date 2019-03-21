@@ -211,25 +211,26 @@ class ParsedVCF(pd.DataFrame):
         elif len(vcfs) == 1:
             pvcfs = list()
             pvcfs.append(ParsedVCF.from_vcf(vcfs[0]))
-        try:
-            [x + '' for x in vcfs]
-        except:
-            logger.error('All mp_parser args must be strings')
         else:
-            logger.info('Starting Multi-Parser')
-            if cores is None:
-                cores = mp.cpu_count()
-            if cores > 1:
-                if len(vcfs) <= cores - 1:
-                    pool = mp.Pool(processes=len(vcfs))
-                else:
-                    pool = mp.Pool(processes=cores - 1)
+            try:
+                [x + '' for x in vcfs]
+            except:
+                logger.error('All mp_parser args must be strings')
             else:
-                pool = mp.Pool(processes=cores)
-            pvcfs = pool.map(cls.from_vcf, (x for x in vcfs))
-            pool.close()
-            pool.join()
-            return pvcfs
+                logger.info('Starting Multi-Parser')
+                if cores is None:
+                    cores = mp.cpu_count()
+                if cores > 1:
+                    if len(vcfs) <= cores - 1:
+                        pool = mp.Pool(processes=len(vcfs))
+                    else:
+                        pool = mp.Pool(processes=cores - 1)
+                else:
+                    pool = mp.Pool(processes=cores)
+                pvcfs = pool.map(cls.from_vcf, (x for x in vcfs))
+                pool.close()
+                pool.join()
+        return pvcfs
 
     def to_macrogen_xls(self, outpath):
         macrogen_cols = ['CHROM', 'POS', 'REF', 'ALT', 'DP', 'AD', 'QUAL', 'MQ', 'Zygosity', 'FILTER', 'Effect',
