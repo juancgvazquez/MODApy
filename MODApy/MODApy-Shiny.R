@@ -37,7 +37,7 @@ getcommand <- function(input){
               cat("No fastq or gzipped fastq files found for that Patient",file=logfile,sep='\n')
             }
           },
-          Panel={
+          Single={
             cmd = paste("single -Panel", input$Panel, "-Patient", paste(input$PatientPanel, "/",input$PatientPanel,".final.vcf", sep=""))
           },
           Duos={

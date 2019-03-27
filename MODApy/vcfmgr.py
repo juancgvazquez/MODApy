@@ -1,5 +1,13 @@
 import logging
 import multiprocessing as mp
+import os
+
+import matplotlib
+
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import matplotlib_venn as venn
+
 from collections import OrderedDict
 
 import cyvcf2
@@ -158,10 +166,9 @@ class ParsedVCF(pd.DataFrame):
             del IMPACT_SEVERITY
         df1.columns = df1.columns.str.upper()
         if 'HOM' in df1.columns:
-            df1['HOM'] = df1['HOM'].map({True: 'HOM', False: 'HET'})
+            df1['HOM'] = df1['HOM'].replace({True: 'HOM', np.nan: 'HET', None: 'HET'})
             df1.drop(columns='HET', inplace=True)
             df1.rename(columns={'HOM': 'ZIGOSITY'}, inplace=True)
-
         if 'ESP6500_MAF' in df1.columns:
             df1[['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']] = df1['ESP6500_MAF'].str.split(',',
                                                                                                         expand=True)
@@ -261,9 +268,11 @@ class ParsedVCF(pd.DataFrame):
             panel_df = panel_df.append(self.loc[self['GENE_NAME'] == gene])
         panel_df = panel_df.pipe(ParsedVCF)
         panel_df.name = self.name
+        if len(panel_df) < 1:
+            logger.error('After running Panel, resulting Dataframe holds no variants')
         return panel_df
 
-    def duos(self, vcf2):
+    def duos(self, vcf2, VENNPLACE=None):
         """
         Method to compare two vcfs, using CHROM, POS, REF and ALT columns as index.
         Parameters
@@ -273,7 +282,36 @@ class ParsedVCF(pd.DataFrame):
 
         Returns a Dataframe containing a new column 'DUOS', that indicates in which file is the variant.
         """
+
         # chequeo si el segundo es un vcf parseado o una ruta a un vcf
+        def _trios_stats(self, names):
+            logger.info('Calculating Trios statistics')
+            trios = self.groupby('VENN', sort=False).size()
+            A, B, C = names.split(':')
+            names = [A, B]
+            names.append(A + ':' + B)
+            names.append(C)
+            names.append(A + ':' + C)
+            names.append(B + ':' + C)
+            names.append(':'.join([A, B, C]))
+            trios = trios.reindex(names).fillna(0)
+            trios = trios.astype(int)
+            triosgraph = plt.figure()
+            venn.venn3(trios, set_labels=[A, B, C], set_colors=['b', 'r', 'g'])
+            triosgraph.savefig('./venn.png', dpi=triosgraph.dpi)
+            triosgraph.clf()
+
+        def _duos_stats(self, names):
+            logger.info('Calculating Duos statistics')
+            duos = self.groupby('VENN', sort=False).size()
+            A, B = names.split(':')
+            names = [A, B, names]
+            duos = duos.reindex(names).fillna(0)
+            duosgraph = plt.figure()
+            venn.venn2(duos, set_labels=[A, B], set_colors=['b', 'r'])
+            duosgraph.savefig('./venn.png', dpi=duosgraph.dpi)
+            duosgraph.clf()
+
         if isinstance(vcf2, str):
             pvcf2 = ParsedVCF.from_vcf(vcf2)
         elif isinstance(vcf2, ParsedVCF):
@@ -282,6 +320,13 @@ class ParsedVCF(pd.DataFrame):
         indcols = ['QUAL', 'FILTER', 'DP', 'FS', 'MQ', 'SOR', 'QD', 'SET', 'BASEQRANKSUM', 'CLIPPINGRANKSUM',
                    'MQRANKSUM', 'READPOSRANKSUM', 'AC', 'SAMPLES_AF', 'MLEAC', 'MLEAF', 'DBSNPBUILDID']
 
+        indself = []
+        indpvcf2 = []
+        indself = [x for x in indcols if x in self.columns]
+        indpvcf2 = [x for x in indcols if x in pvcf2.columns]
+        self.drop(columns=indself, inplace=True)
+        pvcf2.drop(columns=indpvcf2, inplace=True)
+        del indcols, indself, indpvcf2
         # chequeo si alguno es un duos y dropeo columnas individuales
         if ('VENN' in self.columns) & ('VENN' in pvcf2.columns):
             logger.error(
@@ -293,20 +338,16 @@ class ParsedVCF(pd.DataFrame):
             indicator = 'TRIOS'
             left = pvcf2
             right = self
-            left.drop(columns=indcols, inplace=True)
         elif 'VENN' in pvcf2.columns:
             logger.info('Running TRIOS analysis on %s' % ':'.join([self.name, pvcf2.name]))
             indicator = 'TRIOS'
             left = self
             right = pvcf2
-            left.drop(columns=indcols, inplace=True)
         else:
             logger.info('Running DUOS analysis on %s' % ':'.join([self.name, pvcf2.name]))
             indicator = 'DUOS'
             left = self
             right = pvcf2
-            left.drop(columns=indcols, inplace=True)
-            right.drop(columns=indcols, inplace=True)
 
         # Hago el merge
         mergedVCF = left.merge(right, on=['CHROM', 'POS', 'REF', 'ALT'], how='outer',
@@ -341,6 +382,19 @@ class ParsedVCF(pd.DataFrame):
             mergedVCF['DUOS'].replace(
                 {'left_only': self.name, 'right_only': pvcf2.name, 'both': self.name + ':' + pvcf2.name}, inplace=True)
             mergedVCF.rename(columns={'DUOS': 'VENN'}, inplace=True)
+            names = ':'.join([self.name, pvcf2.name])
+            _duos_stats(mergedVCF, names)
+            if VENNPLACE is not None:
+                if VENNPLACE == 'A':
+                    mergedVCF = mergedVCF[mergedVCF['VENN'] == self.name]
+                elif VENNPLACE == 'B':
+                    mergedVCF = mergedVCF[mergedVCF['VENN'] == pvcf2.name]
+                elif VENNPLACE == 'A:B':
+                    mergedVCF = mergedVCF[mergedVCF['VENN'] == self.name + ':' + pvcf2.name]
+                else:
+                    logger.error('VENNPLACE can only be A, B or A:B for a trios analysis')
+                    logger.debug('', exc_info=True)
+                    exit(1)
         if indicator == 'TRIOS':
             mergedVCF['PATIENT'] = None
             mergedVCF['PATIENT'] = np.where(mergedVCF['TRIOS'] == 'left_only', left.name, mergedVCF['PATIENT'])
@@ -350,7 +404,155 @@ class ParsedVCF(pd.DataFrame):
                                             mergedVCF['PATIENT'])
             mergedVCF.drop(columns=['VENN', 'TRIOS'], inplace=True)
             mergedVCF.rename(columns={'PATIENT': 'VENN', 'ZIGOSITY': 'ZIGOSITY_' + left.name}, inplace=True)
+            names = self.name + ':' + pvcf2.name
+            _trios_stats(mergedVCF, names)
+            if VENNPLACE is not None:
+                print(names)
+                names = names.split(':')
+                if VENNPLACE == 'A':
+                    mergedVCF = mergedVCF[
+                        (mergedVCF['VENN'].str.contains(names[0])) & ~(mergedVCF['VENN'].str.contains(names[1])) & ~(
+                            mergedVCF['VENN'].str.contains(names[2]))]
+                elif VENNPLACE == 'B':
+                    mergedVCF = mergedVCF[
+                        ~(mergedVCF['VENN'].str.contains(names[0])) & (mergedVCF['VENN'].str.contains(names[1])) & ~(
+                            mergedVCF['VENN'].str.contains(names[2]))]
+                elif VENNPLACE == 'C':
+                    mergedVCF = mergedVCF[
+                        ~(mergedVCF['VENN'].str.contains(names[0])) & ~(mergedVCF['VENN'].str.contains(names[1])) & (
+                            mergedVCF['VENN'].str.contains(names[2]))]
+                elif VENNPLACE == 'A:B':
+                    mergedVCF = mergedVCF[
+                        (mergedVCF['VENN'].str.contains(names[0])) & (mergedVCF['VENN'].str.contains(names[1])) & ~(
+                            mergedVCF['VENN'].str.contains(names[2]))]
+                elif VENNPLACE == 'A:C':
+                    mergedVCF = mergedVCF[
+                        (mergedVCF['VENN'].str.contains(names[0])) & ~(mergedVCF['VENN'].str.contains(names[1])) & (
+                            mergedVCF['VENN'].str.contains(names[2]))]
+                elif VENNPLACE == 'B:C':
+                    mergedVCF = mergedVCF[
+                        ~(mergedVCF['VENN'].str.contains(names[0])) & (mergedVCF['VENN'].str.contains(names[1])) & (
+                            mergedVCF['VENN'].str.contains(names[2]))]
+                elif VENNPLACE == 'A:B:C':
+                    mergedVCF = mergedVCF[
+                        (mergedVCF['VENN'].str.contains(names[0])) & (mergedVCF['VENN'].str.contains(names[1])) & (
+                            mergedVCF['VENN'].str.contains(names[2]))]
+                else:
+                    logger.error('VENNPLACE can only be A, B, C, A:B, A:C, B:C or A:B:C in a trios analysis')
+                    logger.debug('', exc_info=True)
+                    exit(1)
+        if len(mergedVCF) < 1:
+            logger.error('After running Duos/Trios, resulting Dataframe does not hold any variants')
+            exit(1)
         mergedVCF.fillna('.', inplace=True)
         mergedVCF = mergedVCF.pipe(ParsedVCF)
         mergedVCF.name = ':'.join([self.name, pvcf2.name])
         return mergedVCF
+
+    def general_stats(self):
+        if 'VENN' in self.columns:
+            colstats = ['CHROM', 'VARTYPE', 'IMPACT', 'EFFECT']
+        else:
+            colstats = ['CHROM', 'ZIGOSITY', 'VARTYPE', 'IMPACT', 'EFFECT']
+        if set(colstats).issubset(self.columns):
+            logger.info('Calculating General Statistics')
+            vcfstats = self.groupby(colstats).size().to_frame(name='count')
+            vcfstats.name = 'stats'
+            plt.pie(vcfstats.groupby('CHROM').count(), labels=vcfstats.groupby('CHROM').size().index.values)
+            my_circle = plt.Circle((0, 0), 0.7, color='white')
+            chromVars = plt.gcf()
+            chromVars.gca().add_artist(my_circle)
+            chromVars.savefig('./general.png')
+            return vcfstats
+
+    def vcf_to_excel(self, outpath):
+        logger.info('Formating Excel File')
+        os.makedirs(outpath.rsplit('/', maxsplit=1)[0], exist_ok=True)
+        output = pd.ExcelWriter(outpath)
+        cols_selected = cfg["OUTPUT"]["columnsorder"].replace(',', ' ').split()
+        if 'VENN' in self.columns:
+            if 'ZIGOSITY' in cols_selected:
+                cols_selected += [x for x in self.columns if 'ZIGOSITY' in x]
+        finalcols = [x for x in cols_selected if x in self.columns]
+        self = self[finalcols]
+        self = self.sort_values(by=finalcols[0])
+        workbook = output.book
+        datasheet = workbook.add_worksheet('DATA')
+        statsheet = workbook.add_worksheet('STATISTICS')
+
+        output.sheets['DATA'] = datasheet
+
+        formatnum = workbook.add_format({'num_format': '#,#####0.00000'})
+        for i, col in enumerate(self.columns):
+            datasheet.set_column(i, i, 15, formatnum)
+
+        formatpos = workbook.add_format({'num_format': '###,###,###'})
+        datasheet.set_column(finalcols.index('POS'), finalcols.index('POS'), 15, formatpos)
+        datasheet.set_column(finalcols.index('RSID'), finalcols.index('RSID'), 15)
+        # Light red fill with dark red text.
+        highformat = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006', 'bold': True})
+        # Light yellow fill with dark yellow text.
+        modformat = workbook.add_format({'bg_color': '#FFFF99', 'font_color': '#9C6500', 'bold': True})
+        # Light orange fill with dark orange text.
+        moderformat = workbook.add_format({'bg_color': '#FFCC99', 'font_color': '#FF6600', 'bold': True})
+        # Green fill with dark green text.
+        lowformat = workbook.add_format({'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
+        datasheet.conditional_format(0, cols_selected.index('IMPACT'),
+                                     len(self), cols_selected.index('IMPACT'),
+                                     {'type': 'text', 'criteria': 'containing', 'value': 'HIGH',
+                                      'format': highformat, })
+        datasheet.conditional_format(0, cols_selected.index('IMPACT'),
+                                     len(self), cols_selected.index('IMPACT'),
+                                     {'type': 'text', 'criteria': 'containing', 'value': 'MODIFIER',
+                                      'format': modformat})
+        datasheet.conditional_format(0, cols_selected.index('IMPACT'),
+                                     len(self), cols_selected.index('IMPACT'),
+                                     {'type': 'text', 'criteria': 'containing', 'value': 'MODERATE',
+                                      'format': moderformat})
+        datasheet.conditional_format(0, cols_selected.index('IMPACT'),
+                                     len(self), cols_selected.index('IMPACT'),
+                                     {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
+        logger.info('Writing Excel File')
+        self.to_excel(output, sheet_name='DATA', merge_cells=False, index=False, header=True)
+
+        if (self.reset_index().index.max() < 32150):
+            logger.info('Redirecting IDs and GENEs to URLs')
+            try:
+                colid = cols_selected.index('RSID')
+                colgen = cols_selected.index('GENE_NAME')
+                row = 2
+                for x in zip(self['RSID'], self['GENE_NAME']):
+                    if type(x[0]) == str:
+                        urlrs = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=%s"
+                        rsvalue = (x[0].replace(';', ',').split(','))[0]
+                        datasheet.write_url('%s%i' % (chr(colid + 65), (row)),
+                                            urlrs % rsvalue, string=rsvalue)
+                    if type(x[1]) == str:
+                        urlgen = "https://www.genecards.org/cgi-bin/carddisp.pl?gene=%s"
+                        datasheet.write_url('%s%i' % (chr(colgen + 65), (row)),
+                                            urlgen % x[1], string=x[1])
+                    row += 1
+            except Exception as e:
+                logger.error(e, exc_info=True)
+        datasheet.autofilter(0, 0, len(self), len(finalcols))
+        stats = self.general_stats()
+        output.sheets['STATISTICS'] = statsheet
+        try:
+            stats.to_excel(output, sheet_name='STATISTICS')
+        except Exception as e:
+            logger.error('Could not print statistics. Error was {}'.format(e), exc_info=True)
+        try:
+            statsheet.insert_image('H2', './general.png')
+        except Exception as e:
+            logger.error('Could not print stats graphs. Error was {}'.format(e), exc_info=True)
+        if os.path.isfile('./venn.png'):
+            statsheet.insert_image('H25', './venn.png')
+        output.save()
+        try:
+            os.remove('./general.png')
+        except:
+            logger.debug('Could not remove general.png')
+        try:
+            os.remove('./venn.png')
+        except:
+            logger.debug('Could not remove venn.png')

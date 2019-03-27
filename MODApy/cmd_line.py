@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from sys import argv
 
-from MODApy import filemgr, cfg, pipeline, vcfmgr, downloader, variantsdb
+from MODApy import cfg, pipeline, vcfmgr, downloader, variantsdb
 from MODApy.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ class Parser(object):
         args = parser.parse_args(argv[2:])
         pipe = cfg.pipelinesPath + args.Pipeline
 
-        filemgr.checkFile(pipe, args.Pipeline.split('.')[-1])
+        checkFile(pipe, args.Pipeline.split('.')[-1])
 
         newpipe = pipeline.Pipeline.from_json(pipe)
 
@@ -104,8 +104,8 @@ class Parser(object):
         elif len(args.FQ) == 2:
             fq1 = cfg.patientPath + args.FQ[0]
             fq2 = cfg.patientPath + args.FQ[1]
-            filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
-            filemgr.checkFile(fq2, '.' + fq2.split('.')[-1])
+            checkFile(fq1, '.' + fq1.split('.')[-1])
+            checkFile(fq2, '.' + fq2.split('.')[-1])
             if args.keeptmp:
                 newpipe.runpipeline(fq1, fq2, keeptmp=True, startStep=args.startStep)
             else:
@@ -114,7 +114,7 @@ class Parser(object):
         else:
             fq1 = cfg.patientPath + args.FQ[0]
             fq2 = ''
-            filemgr.checkFile(fq1, '.' + fq1.split('.')[-1])
+            checkFile(fq1, '.' + fq1.split('.')[-1])
             if args.keeptmp:
                 newpipe.runpipeline(fq1, keeptmp=True, startStep=args.startStep)
             else:
@@ -131,14 +131,14 @@ class Parser(object):
         args = parser.parse_args(argv[2:])
         panel = cfg.panelsPath + args.Panel + '.xlsx'
         patient = cfg.patientPath + args.Patient
-        ptCheck = filemgr.checkFile(patient, '.vcf')
-        pnCheck = filemgr.checkFile(panel, '.xlsx')
+        ptCheck = checkFile(patient, '.vcf')
+        pnCheck = checkFile(panel, '.xlsx')
 
         logger.info("Running %s on patient %s" % (str(args.Panel), str(args.Patient)))
         result = vcfmgr.ParsedVCF.from_vcf(patient).panel(panel)
         outpath = cfg.resultsPath + 'Panels/' + result.name + '/' + result.name + '_' + args.Panel + '.xlsx'
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
-        filemgr.df_to_excel(result, outpath)
+        result.vcf_to_excel(outpath)
         logger.info('Single Analisis Complete')
         return 0
 
@@ -149,7 +149,7 @@ class Parser(object):
                             help="Patient 1 File Path - It needs to match exactly to the one found inside Patients folder")
         parser.add_argument("-Patient2", required=True,
                             help="Patient 2 File Path - It needs to match exactly to the one found inside Patients folder")
-        parser.add_argument("--VennPlace", default='ALL', const='ALL', choices=['A', 'B', 'A:B', 'ALL'], nargs='?',
+        parser.add_argument("--VennPlace", const=None, choices=['A', 'B', 'A:B'], nargs='?',
                             help="Place in a Venn Diagram to obtain variants from")
         parser.add_argument("--Panel", nargs='?', const=None, help="Panel to run on Duos study")
         parser.add_argument("--Filter", nargs='?', const=None,
@@ -161,47 +161,23 @@ class Parser(object):
         patient1 = cfg.patientPath + args.Patient1
         patient2 = cfg.patientPath + args.Patient2
         # Checks file existence and type for patients
-        pt1Check = filemgr.checkFile(patient1, '.vcf')
-        pt2Check = filemgr.checkFile(patient2, '.vcf')
+        pt1Check = checkFile(patient1, '.vcf')
+        pt2Check = checkFile(patient2, '.vcf')
         logger.info("Running Duos Study on %s and %s" % (str(args.Patient1), str(args.Patient2)))
         pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2)
-        result = pvcfs[0].duos(pvcfs[1])
+        result = pvcfs[0].duos(pvcfs[1], VENNPLACE=args.VennPlace)
         resultname = result.name
         outpath = cfg.resultsPath + 'Duos/' + result.name.replace(':', '_') + '/' + result.name.replace(':', '_')
-        filemgr.duos_stats(result)
-        # check if there is a special Venn Place Requested
-        if args.VennPlace == 'A':
-            result = result[result['VENN'] == result.name.split(':')[0]]
-            outpath += '_Venn' + resultname.split(':')[0]
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                exit(1)
-        if args.VennPlace == 'B':
-            result = result[result['VENN'] == result.name.split(':')[1]]
-            outpath += '_Venn' + resultname.split(':')[1]
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
-        if args.VennPlace == 'A:B':
-            result = result[result['VENN'] == ':'.join([result.name.split(':')[0], result.name.split(':')[1]])]
-            outpath += '_Venn' + resultname.replace(':', '_')
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
         result.name = resultname
+        if args.VennPlace is not None:
+            outpath = outpath + '_Venn' + args.VennPlace.replace(':', '_')
         if args.Panel is not None:
             logger.info('Running panel {}'.format(args.Panel))
             panel = cfg.panelsPath + args.Panel + '.xlsx'
-            filemgr.checkFile(panel, '.xlsx')
+            checkFile(panel, '.xlsx')
             result = result.panel(panel)
-            if result.empty:
-                logger.error('No variants present after running selected Panel on selected Data')
-                exit(1)
-            else:
-                result.name = resultname
-                outpath = outpath + '_P' + args.Panel
+            result.name = resultname
+            outpath = outpath + '_P' + args.Panel
         if args.Filter[0] is not None:
             for x in args.Filter:
                 if (len(x.split())) != 2:
@@ -216,7 +192,7 @@ class Parser(object):
                 result.name = resultname
                 outpath = outpath + '_F' + str(x[0]) + str(x[1])
         outpath = outpath + '.xlsx'
-        filemgr.df_to_excel(result, outpath)
+        result.vcf_to_excel(outpath)
         logger.info('Duos Analisis Complete')
         return 0
 
@@ -242,84 +218,24 @@ class Parser(object):
         patient2 = cfg.patientPath + args.Patient2
         patient3 = cfg.patientPath + args.Patient3
         # Checks file existence and type for patients
-        pt1Check = filemgr.checkFile(patient1, '.vcf')
-        pt2Check = filemgr.checkFile(patient2, '.vcf')
-        pt3Check = filemgr.checkFile(patient3, '.vcf')
+        pt1Check = checkFile(patient1, '.vcf')
+        pt2Check = checkFile(patient2, '.vcf')
+        pt3Check = checkFile(patient3, '.vcf')
         logger.info(
             "Running Trios Study on %s, %s and %s" % (str(args.Patient1), str(args.Patient2), str(args.Patient3)))
         pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2, patient3)
-        names = [pvcf.name for pvcf in pvcfs]
-        result = pvcfs[0].duos(pvcfs[1])
-        result = result.duos(pvcfs[2])
+        result = pvcfs[0].duos(pvcfs[1]).duos(pvcfs[2], VENNPLACE=args.VennPlace)
         resultname = result.name
         outpath = cfg.resultsPath + 'Trios/' + result.name.replace(':', '_') + '/' + result.name.replace(':', '_')
-        filemgr.trios_stats(result)
-        # check if there is a special Venn Place Requested
-        if args.VennPlace == 'A':
-            result = result[(result['VENN'].str.contains(names[0])) & ~(result['VENN'].str.contains(names[1])) & ~(
-                result['VENN'].str.contains(names[2]))]
-            outpath += '_Venn' + names[0]
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
-        if args.VennPlace == 'B':
-            result = result[~(result['VENN'].str.contains(names[0])) & (result['VENN'].str.contains(names[1])) & ~(
-                result['VENN'].str.contains(names[2]))]
-            outpath += '_Venn' + names[1]
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
-        if args.VennPlace == 'C':
-            result = result[~(result['VENN'].str.contains(names[0])) & ~(result['VENN'].str.contains(names[1])) & (
-                result['VENN'].str.contains(names[2]))]
-            outpath += '_Venn' + names[2]
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
-        if args.VennPlace == 'A:B':
-            result = result[(result['VENN'].str.contains(names[0])) & (result['VENN'].str.contains(names[1])) & ~(
-                result['VENN'].str.contains(names[2]))]
-            outpath += '_Venn' + '_'.join([names[0], names[1]])
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
-        if args.VennPlace == 'A:C':
-            result = result[(result['VENN'].str.contains(names[0])) & ~(result['VENN'].str.contains(names[1])) & (
-                result['VENN'].str.contains(names[2]))]
-            outpath += '_Venn' + '_'.join([names[0], names[2]])
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
-        if args.VennPlace == 'B:C':
-            result = result[~(result['VENN'].str.contains(names[0])) & (result['VENN'].str.contains(names[1])) & (
-                result['VENN'].str.contains(names[2]))]
-            outpath += '_Venn' + '_'.join([names[1], names[2]])
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
-        if args.VennPlace == 'A:B:C':
-            result = result[(result['VENN'].str.contains(names[0])) & (result['VENN'].str.contains(names[1])) & (
-                result['VENN'].str.contains(names[2]))]
-            outpath += '_Venn' + '_'.join(names)
-            if result.empty:
-                logger.info('No variants present in selected Venn Place!')
-                logger.error('Exiting due to no variants present in selected Venn Place!')
-                exit(1)
         result.name = resultname
+        if args.VennPlace is not None:
+            outpath = outpath + '_Venn' + args.VennPlace.replace(':', '_')
         # check if there is a Panel Requested
         if args.Panel:
             logger.info('Running panel {}'.format(args.Panel))
             panel = cfg.panelsPath + args.Panel + '.xlsx'
+            checkFile(panel, '.xlsx')
             result = result.panel(panel)
-            if result.empty:
-                logger.error('No variants present after running selected Panel on selected Data')
-                exit(1)
             result.name = resultname
             outpath = outpath + '_Panel' + args.Panel
         # check if there is a Filter Requested
@@ -337,9 +253,20 @@ class Parser(object):
                     result.name = resultname
                     outpath = outpath + '_Filter' + str(x[0]) + str(x[1])
         outpath = outpath + '.xlsx'
-        filemgr.df_to_excel(result, outpath)
+        result.vcf_to_excel(outpath)
         logger.info('Trios Analisis Complete')
         return 0
+
+
+def checkFile(filePath, extension):
+    if os.path.isfile(filePath):
+        fileName, fileExtension = os.path.splitext(filePath)
+        if extension == fileExtension:
+            return True
+
+    logger.error("%s couldn't be found. Please check if file exists and that it's extension is %s" % (filePath,
+                                                                                                      extension))
+    exit(1)
 
 
 def main():
