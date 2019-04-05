@@ -140,6 +140,7 @@ class Parser(object):
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
         result.vcf_to_excel(outpath)
         logger.info('Single Analisis Complete')
+        logger.info('File available at:%s' % outpath)
         return 0
 
     def duos(self):
@@ -194,6 +195,7 @@ class Parser(object):
         outpath = outpath + '.xlsx'
         result.vcf_to_excel(outpath)
         logger.info('Duos Analisis Complete')
+        logger.info('File available at:%s' % outpath)
         return 0
 
     def trios(self):
@@ -255,6 +257,7 @@ class Parser(object):
         outpath = outpath + '.xlsx'
         result.vcf_to_excel(outpath)
         logger.info('Trios Analisis Complete')
+        logger.info('File available at:%s' % outpath)
         return 0
 
 

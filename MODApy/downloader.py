@@ -13,12 +13,14 @@ downlog = cfg.rootDir + '/logs/downloads.log'
 
 def get_links(filename):
     link_list = list()
+    # If filename is an url
     if (filename.startswith('http://') or filename.startswith('https://') or filename.startswith('ftp://')):
         logger.debug('URL to download')
         download(filename)
     elif (filename.startswith('www')):
         logger.error('URLs must start with http:// or https:// or ftp://')
         exit(1)
+    # If filename is an excel file
     elif os.path.exists(filename):
         if filename.rsplit('.')[-1] == 'xlsx':
             logger.info('Parsing file to find URLs')
@@ -70,16 +72,16 @@ def download(url):
     outputdir = cfg.patientPath + url.rsplit('/')[-1].split('.')[0] + '/'
     outputfile = url.rsplit('/')[-1]
     outpath = outputdir + outputfile
-    tmpdir = cfg.rootDir + '/tmp/downloads/'
-    tmppath = cfg.rootDir + '/tmp/downloads/' + outputfile
+    tmpdir = cfg.tmpDir
+    tmppath = cfg.tmpDir + outputfile
     os.makedirs(outputdir, exist_ok=True)
     os.makedirs(tmpdir, exist_ok=True)
     logger.info('Downloading %s to %s' % (url, outpath))
     try:
         response = requests.head(url)
     except:
-        logger.error('Connection Failed')
-        logger.debug('', exc_info=True)
+        logger.info('Connection Failed')
+        logger.debug('Downloader Connection Failed', exc_info=True)
         exit(1)
     else:
         if response.status_code == 200:
@@ -89,8 +91,8 @@ def download(url):
                 logger.info('Could not get file size')
                 file_size = 0
         else:
-            logger.error('Connection Failed')
-            logger.debug('', exc_info=True)
+            logger.info('Connection Failed')
+            logger.debug('Downloader Connection Failed', exc_info=True)
             exit(1)
     if os.path.exists(tmppath):
         first_byte = os.path.getsize(tmppath)
@@ -130,7 +132,7 @@ def download(url):
             down_dict = json.load(dlog)
             down_dict.update({url: 'Download Error'})
             logger.error('Error with download')
-            logger.error('', exc_info=True)
+            logger.debug('', exc_info=True)
         with open(downlog, 'w') as dlog:
             json.dump(down_dict, dlog, indent=4)
     return file_size

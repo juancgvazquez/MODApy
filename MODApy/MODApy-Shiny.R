@@ -1,9 +1,11 @@
+#Req Libraries
 library(shiny)
 library(ConfigParser)
 library(reticulate)
 library(DT)
 library(openxlsx)
-# python config -------------------------------------------------------------------
+#library(shinyjs)
+#python config -------------------------------------------------------------------
 cfgpath = '/DiscoDatos/Development/modapy/MODApy/config.ini'
 logfile = "/DiscoDatos/Development/modapy/MODApy/logs/currentrun.log"
 dlog = "/DiscoDatos/Development/modapy/MODApy/logs/downloads.log"
@@ -11,10 +13,17 @@ cfg = read.ini(cfgpath)
 use_virtualenv("/DiscoDatos/Development/modapy/venv/")
 use_python("/DiscoDatos/Development/modapy/venv/python3")
 py_config()
-
+MODApy<-import('MODApy')
 
 # combo box options -------------------------------------------------------------------
-patientsvcf <- gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))
+patientsvcf <- function(){
+    result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))  
+  return(result)
+}
+panels <<- function(){
+  result<-gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
+  return(result)
+}
 
 # utils ---------------------------------------------------------------------------
 getcommand <- function(input){
@@ -77,73 +86,164 @@ getcommand <- function(input){
 }
 
 # ui -------------------------------------------------------------------
-panels =
-  ui <- navbarPage("MODApy",
-                   tabPanel("Analisis",
-                        sidebarLayout(
-                          sidebarPanel(
-                            width = 6,
-                            tabsetPanel(id="tabset", selected = "Single",
-                                        # tabPanel("Pipeline",
-                                        #   selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
-                                        #   selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
-                                        #     path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
-                                        # ),
-                                        tabPanel("Single",
-                                                 selectInput(inputId = "PatientPanel", label = "Patient", choices = patientsvcf),
-                                                 selectInput(inputId = "Panel", label = "Panel", choices = gsub('.xlsx','',list.files(path=cfg$PATHS$panelspath)))
-                                        ),
-                                        tabPanel("Duos",
-                                                 selectInput(inputId = "Patient1D", label = "Patient 1", choices = patientsvcf),
-                                                 selectInput(inputId = "Patient2D", label = "Patient 2", choices = patientsvcf),
-                                                 selectInput(inputId = "PanelD", label = "Panel (optional)", choices = gsub('.xlsx',"",c('NONE',list.files(path=cfg$PATHS$panelspath))), selected='NONE'),
-                                                 uiOutput("vennDuos")
-                                        ),
-                                        tabPanel("Trios",
-                                                 selectInput(inputId = "Patient1T", label = "Patient 1", choices = patientsvcf),
-                                                 selectInput(inputId = "Patient2T", label = "Patient 2", choices = patientsvcf),
-                                                 selectInput(inputId = "Patient3T", label = "Patient 3", choices = patientsvcf),
-                                                 selectInput(inputId = "PanelT", label = "Panel (optional)", choices = gsub('.xlsx',"",c('NONE',list.files(path=cfg$PATHS$panelspath))), selected='NONE'),
-                                                 uiOutput("vennTrios")
-                                        )
-                            ),
-                            actionButton("buttonrun","Run"),
-                            actionButton("buttonlastcmd","Get Last Command Status")
+ui <- tagList(shinyjs::useShinyjs(),
+                 navbarPage("MODApy",
+                 tabPanel("Analisis",
+                      sidebarLayout(
+                        sidebarPanel(
+                          width = 4,
+                          tabsetPanel(id="tabset", selected = "Single",
+                                      # tabPanel("Pipeline",
+                                      #   selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
+                                      #   selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
+                                      #     path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
+                                      # ),
+                                      tabPanel("Single",
+                                               fluidRow(style='padding-left:20px;',
+                                               br(),
+                                               div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient:')),
+                                               div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PatientPanel", label = NULL, choices = patientsvcf())),
+                                               div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
+                                               ),
+                                               fluidRow(style='padding-left:20px;',
+                                               br(),
+                                               div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
+                                               div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Panel", label = NULL, choices = panels())),
+                                               div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus'))))
+                                      ),
+                                      tabPanel("Duos",
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 1:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient1D", label = NULL, choices = patientsvcf())),
+                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
+                                                        ),
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 2:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient2D", label = NULL, choices = patientsvcf())),
+                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
+                                                        ),
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PanelD", label = NULL, choices = c('NONE',panels()))),
+                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus')))
+                                                        ),
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:top; width: 150px;",h4('Venn Place:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",uiOutput("vennDuos"))
+                                                        )
+                                      ),
+                                      tabPanel("Trios",
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 1:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient1T", label = NULL, choices = patientsvcf())),
+                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
+                                               ),
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 2:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient2T", label = NULL, choices = patientsvcf())),
+                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
+                                               ),
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 3:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient3T", label = NULL, choices = patientsvcf())),
+                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
+                                               ),
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PanelT", label = NULL, choices = c('NONE',panels()))),
+                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus')))
+                                                        ),
+                                               fluidRow(style='padding-left:20px;',
+                                                        br(),
+                                                        div(style="display: inline-block;vertical-align:top; width: 150px;",h4('Venn Place:')),
+                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",uiOutput("vennTrios"))
+                                               )
+                                      )
                           ),
-                          mainPanel(#style="background-color:blue",
-                            width = 6,
-                            h1('Command Output',style = "font-family: 'Courgette', cursive;
-                               font-weight: 500; line-height: 1.1; 
-                               color: #4d3a7d;"),
-                            htmlOutput("consoleout")
-                            )
-                          )),
-               tabPanel('Add New Patient',
-                        p('This will add a new patient, downlading the data from a url or a xlsx/xls file.
-                          Please either write the url or upload a file and press Submit. If both values are filled, will only download urls from files. 
-                          It will generate the folder under the Patient folder and download the .tar file'),
-                        textInput('url',NULL,value="",placeholder='Enter URL'),
-                        fileInput('file1','Choose File to Upload',accept=c('.xls','.xlsx')),
-                        actionButton("addbtn","Add Patient"),
-                        actionButton("dstatbtn","Get Downloads Status"),
-                        h1('Command Output',style = "font-family: 'Courgette', cursive;
-                           font-weight: 500; line-height: 1.1; 
-                           color: #4d3a7d;"),
-                        htmlOutput("downout")
+                          actionButton("buttonrun","Run"),
+                          actionButton("buttonlastcmd","Last Run Status"),
+                          shinyjs::disabled(downloadButton('downloadData','Download Result'))
                         ),
-               tabPanel('VariantsDB',
-                        actionButton("buildDBbtn","Build DataBase"),
-                        actionButton("openDBbtn","Open Database"),
-                        htmlOutput("dbout"),
-                        DT::dataTableOutput("mytable")
-                        )
-    )
+                        mainPanel(#style="background-color:blue",
+                          width = 6,
+                          h1('Command Output',style = "font-family: 'Courgette', cursive;
+                             font-weight: 500; line-height: 1.1; 
+                             color: #4d3a7d;"),
+                          htmlOutput("consoleout")
+                          )
+                        )),
+             tabPanel('VariantsDB',
+                      actionButton("buildDBbtn","Build DataBase"),
+                      actionButton("openDBbtn","Open Database"),
+                      htmlOutput("dbout"),
+                      DT::dataTableOutput("mytable")
+                      ),
+             tabPanel('About',
+                      h3('Shiny App developed and mantained by Juan Carlos Vázquez and Elmer Fernández')
+             )
+             )
+  )
 # server -------------------------------------------------------------------
 server <- function(input,output, session){
   rv <- reactiveValues(textstream = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv2 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv3 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
+  downpath <- reactiveValues()
 
+  newpatientModal <- function(failed = FALSE) {
+    modalDialog(
+      title = "Add New Patient",
+      p('This will add a new patient, downlading the data from a url or a xlsx/xls file.
+                          Please either write the url or upload a file and press Submit. If both values are filled, will only download urls from files. 
+                          It will generate the folder under the Patient folder and download the .tar file'),
+      textInput('url',NULL,value="",placeholder='Enter URL'),
+      fileInput('file1','Choose File to Upload',accept=c('.xls','.xlsx')),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("addbtn","Add Patient")
+      ))
+  }
+  newpanelModal <- function(failed = FALSE) {
+    modalDialog(
+      title = "Add New Panel",
+      p('This will add a new Panel. A panel consists in a list of genes'),
+      p('Panel must be an Xlsx file with the same format as the example'),
+      p(url <- a("Example Panel", href="data/Panel_Example.xlsx")),
+      p('It is required to have a Sheet named \"GeneList\" with a column named \"GeneSymbol\ in it."'),
+      p('Example can be downloaded and customized or upload a new file as long as the format is exactly equal.'),
+      fileInput('panelupload','Choose Panel File to Upload',accept=c(".xlsx","xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("addpanelbtn","Add Panel")
+      ))
+  }
+  observeEvent(input$newpatient, {
+    showModal(newpatientModal())
+  })
+  observeEvent(input$newpanel, {
+    showModal(newpanelModal())
+  })
+  observeEvent(input$addpanelbtn,{
+    if(tolower(tools::file_ext(input$panelupload$datapath)) == "xlsx"){
+      file.copy(input$panelupload$datapath, paste(cfg$PATHS$panelspath,input$panelupload$name))
+      removeModal()
+      updateSelectInput(session,'Panel',choices=panels())
+      updateSelectInput(session,'PanelD',selected = 'NONE',choices=c('NONE',panels()))
+      updateSelectInput(session,'PanelT',selected = 'NONE',choices=c('NONE',panels()))
+    }
+    else{
+      removeModal()
+      showModal(modalDialog(title='Error', 'Uploaded File must be an Excel file with xlsx extension'))
+    }
+  })
   observeEvent(input$buildDBbtn, {
     rv$textstream = ""
     rv$started<-TRUE
@@ -184,22 +284,71 @@ server <- function(input,output, session){
       system2('MODApy',args = paste('addPatient',input$file1$datapath),wait = FALSE,stdout = FALSE,stderr = FALSE)}
   })
   observeEvent(input$buttonrun, {
-    rv$textstream = ""
+    shinyjs::disable('buttonrun')
+    file.create(logfile)
     rv$started<-TRUE
     getcommand(input)
   })
+  #Download Result
+  output$downloadData <- downloadHandler(
+    filename<-function(){
+      downpath$file
+    },
+    content<-function(file){
+      file.copy(downpath$path,file)
+    },
+    contentType = "application/xlsx"
+  )
   observeEvent(input$buttonlastcmd, {
     rv$textstream = ""
     rv$started<-TRUE
   })
-  observeEvent(input$dstatbtn, {
-    rv3$started<-FALSE
-    rv2$started<-TRUE
+  observeEvent(
+    input$Patient1D,{
+      current <- isolate(input$Patient2D)
+      updateSelectInput(session,'Patient2D',selected = current, choices = patientsvcf()[!(patientsvcf() %in% input$Patient1D)])
+  })
+  observeEvent(
+    input$Patient2D,{
+      current <- isolate(input$Patient1D)
+      updateSelectInput(session,'Patient1D',selected = current, choices = patientsvcf()[!(patientsvcf() %in% input$Patient2D)])  
+    }
+  )
+  observeEvent(
+    input$Patient1T,{
+      current2 <- isolate(input$Patient2T)
+      current3 <- isolate(input$Patient3T)
+      updateSelectInput(session,'Patient2T',selected = current2,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient1T,input$Patient3T))])
+      updateSelectInput(session,'Patient3T',selected = current3,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient1T,input$Patient2T))])
+  })
+  observeEvent(
+    input$Patient2T,{
+      current1 <- isolate(input$Patient1T)
+      current3 <- isolate(input$Patient3T)
+      updateSelectInput(session,'Patient1T',selected = current1,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient2T,input$Patient3T))])
+      updateSelectInput(session,'Patient3T',selected = current3,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient1T,input$Patient2T))])
+  })
+  observeEvent(
+    input$Patient3T,{
+      current1 <- isolate(input$Patient1T)
+      current2 <- isolate(input$Patient2T)
+      updateSelectInput(session,'Patient1T',selected = current1,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient2T,input$Patient3T))])
+      updateSelectInput(session,'Patient2T',selected = current2,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient1T,input$Patient3T))])
   })
   observe({
     rv$timer()
-    Sys.sleep(0.2)
     if(isolate(rv$started))rv$textstream <- paste(readLines(logfile),collapse="<br/>")
+    if(grepl('Complete',rv$textstream,ignore.case = TRUE)){
+      cat('Terminó!')
+      rv$started<-FALSE
+      dwnpath <- strsplit(rv$textstream,'File available at:')[[1]][2]
+      dwnname <- tail(unlist(strsplit(strsplit(rv$textstream,'File available at:')[[1]][2],'/')),n=1)
+      downpath$path <- dwnpath
+      downpath$file <- dwnname
+      rv$textstream <- gsub('Complete','Finished',rv$textstream,fixed = TRUE)
+      shinyjs::enable('buttonrun')
+      shinyjs::enable('downloadData')
+      }
   })
   observe({
     rv2$timer()
@@ -221,10 +370,10 @@ server <- function(input,output, session){
     HTML(rv$textstream)
   })
   output$vennDuos <- renderUI({
-    selectInput("vennplaceD","Venn Place:", choices = list(input$Patient1D, input$Patient2D, paste(input$Patient1D, input$Patient2D,sep=":"), "All"), selected='All')
+    selectInput("vennplaceD",NULL, choices = list(input$Patient1D, input$Patient2D, paste(input$Patient1D, input$Patient2D,sep=":"), "All"), selected='All')
   })
   output$vennTrios <- renderUI({
-    selectInput("vennplaceT","Venn Place:", choices = list(input$Patient1T, input$Patient2T, input$Patient3T, paste(input$Patient1T, input$Patient2T,sep=":"), paste(input$Patient1T, input$Patient3T,sep=":"), paste(input$Patient2T, input$Patient3T,sep=":"), paste(input$Patient1T, input$Patient2T, input$Patient3T,sep=":"), "All"), selected='All')
+    selectInput("vennplaceT",NULL, choices = list(input$Patient1T, input$Patient2T, input$Patient3T, paste(input$Patient1T, input$Patient2T,sep=":"), paste(input$Patient1T, input$Patient3T,sep=":"), paste(input$Patient2T, input$Patient3T,sep=":"), paste(input$Patient1T, input$Patient2T, input$Patient3T,sep=":"), "All"), selected='All')
   })
   session$onSessionEnded(function(){stopApp()})
 }

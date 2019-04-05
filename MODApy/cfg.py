@@ -19,6 +19,7 @@ pipelinesPath = cfg['PATHS']['pipelinespath']
 referencesPath = cfg['PATHS']['referencespath']
 testPath = cfg['PATHS']['testpath']
 variantsDBPath = cfg['PATHS']['dbpath']
+tmpDir = cfg['PATHS']['tmppath']
 
 if cfg.has_option('PATHS', 'binpath'):
     binPath = cfg['PATHS']['binpath']
