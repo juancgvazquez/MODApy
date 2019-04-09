@@ -4,7 +4,6 @@ library(ConfigParser)
 library(reticulate)
 library(DT)
 library(openxlsx)
-#library(shinyjs)
 #python config -------------------------------------------------------------------
 cfgpath = '/DiscoDatos/Development/modapy/MODApy/config.ini'
 logfile = "/DiscoDatos/Development/modapy/MODApy/logs/currentrun.log"
@@ -17,7 +16,7 @@ MODApy<-import('MODApy')
 
 # combo box options -------------------------------------------------------------------
 patientsvcf <- function(){
-    result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))  
+    result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))
   return(result)
 }
 panels <<- function(){
@@ -187,7 +186,14 @@ ui <- tagList(shinyjs::useShinyjs(),
                       DT::dataTableOutput("mytable")
                       ),
              tabPanel('About',
-                      h3('Shiny App developed and mantained by Juan Carlos Vázquez and Elmer Fernández')
+                      h2('MODApy'),
+                      h3('Multi-Omics Data Analysis in Python - Shiny Frontend'),
+                      br(),
+                      p('MODApy is currently in development. Backend is developed in Python'),
+                      p('Frontend is developed in R through Shiny.'),
+                      p('Authors: Juan Carlos Vázquez - Elmer A. Fernández'),
+                      p('Bioscience Data Mining Group - Universidad Católica de Córdoba'),
+                      p('Centro de Investigación y Desarrollo en Inmunología y Enfermedades Infecciosas - CONICET')
              )
              )
   )
@@ -339,7 +345,6 @@ server <- function(input,output, session){
     rv$timer()
     if(isolate(rv$started))rv$textstream <- paste(readLines(logfile),collapse="<br/>")
     if(grepl('Complete',rv$textstream,ignore.case = TRUE)){
-      cat('Terminó!')
       rv$started<-FALSE
       dwnpath <- strsplit(rv$textstream,'File available at:')[[1]][2]
       dwnname <- tail(unlist(strsplit(strsplit(rv$textstream,'File available at:')[[1]][2],'/')),n=1)
@@ -348,8 +353,14 @@ server <- function(input,output, session){
       rv$textstream <- gsub('Complete','Finished',rv$textstream,fixed = TRUE)
       shinyjs::enable('buttonrun')
       shinyjs::enable('downloadData')
-      }
+    }
+    else if(grepl('Failed',rv$textstream,ignore.case = TRUE)){
+      rv$started<-FALSE
+      rv$textstream <- gsub('Failed','had an error.',rv$textstream,fixed = TRUE)
+      shinyjs::enable('buttonrun')
+    }
   })
+  
   observe({
     rv2$timer()
     Sys.sleep(0.2)

@@ -1,8 +1,14 @@
+import hashlib
 import json
 import logging
 import os
+import re
+import tarfile
 
+import openpyxl
+import pandas as pd
 import requests
+import xlrd
 from tqdm import tqdm
 
 from MODApy import cfg
@@ -24,39 +30,47 @@ def get_links(filename):
     elif os.path.exists(filename):
         if filename.rsplit('.')[-1] == 'xlsx':
             logger.info('Parsing file to find URLs')
-            from openpyxl import load_workbook
-            wb = load_workbook(filename=filename)
+            wb = openpyxl.load_workbook(filename=filename)
             for ws in wb:
                 for row in ws.rows:
                     for cell in row:
                         if cell.data_type == 'f':
                             link_list.append(cell.value.strip('=HYPERLINK("').split(',')[0])
+            pdxl = pd.read_excel(filename, sheet_name='Download_Address')
+            md5 = list(pdxl.iloc[pdxl.index[pdxl['download address'] == 'md5sum'].item() + 1:]['download address'])
             link_list = [x for x in link_list if '.tar' in x]
+            linksdict = dict(zip(link_list, md5))
             logger.info('Parsing finished. Found %i links. These files will be now downloaded' % (len(link_list)))
             with open(downlog, 'r') as dlog:
                 down_dict = json.load(dlog)
-                down_dict.update({x: 'Pending' for x in link_list})
+                down_dict.update({x: 'Pending' for x in linksdict})
             with open(downlog, 'w') as dlog:
                 json.dump(down_dict, dlog, indent=4)
-            for link in link_list:
-                download(link)
+            for link in linksdict:
+                download(link, linksdict[link])
         elif filename.split('.')[-1] == 'xls':
+            wb = xlrd.open_workbook(filename)
+            ws = wb.sheet_by_name('Download_Address')
+            for row in range(ws.nrows):
+                for col in range(ws.ncols):
+                    if ws.cell(row, col).value == 'md5sum':
+                        md5list = ws.col_values(col, row + 1)
             logger.info('Parsing file to find URLs')
-            import re
             with open(filename, "r", encoding='ISO-8859-1') as fp:
                 pru = fp.read()
             lista = re.findall(r'(https?://\S+)', pru)
             for x in lista:
                 link_list.append(x.rsplit(sep='\x17')[0])
             link_list = [x for x in link_list if '.tar' in x]
+            linksdict = dict(zip(link_list, md5list))
             logger.info('Parsing finished. Found %i links. These files will be now downloaded' % (len(link_list)))
             with open(downlog, 'r') as dlog:
                 down_dict = json.load(dlog)
-                down_dict.update({x: 'Pending' for x in link_list})
+                down_dict.update({x: 'Pending' for x in linksdict})
             with open(downlog, 'w') as dlog:
                 json.dump(down_dict, dlog, indent=4)
-            for link in link_list:
-                download(link)
+            for link in linksdict:
+                download(link, linksdict[link])
         else:
             logger.error('File extension must be xlsx or xls.')
             exit(1)
@@ -65,7 +79,7 @@ def get_links(filename):
         exit(1)
 
 
-def download(url):
+def download(url, md5=None):
     """
     @param: url to download file
     """
@@ -119,8 +133,34 @@ def download(url):
             down_dict = json.load(dlog)
             down_dict.update({url: 'Download Complete'})
             logger.info('Download Complete for %s' % outputfile)
-            logger.info('Moving file to destination folder')
-            os.rename(tmppath, outpath)
+            if md5 is not None:
+                logger.info('Checking md5')
+                file_md5 = hashlib.md5()
+                with open(tmppath, 'rb') as f:
+                    while True:
+                        fileBuffer = f.read(16 * 1024 * 1024)
+                        if not fileBuffer:
+                            break
+                        file_md5.update(fileBuffer)
+                    file_md5 = file_md5.hexdigest()
+                if md5 == file_md5:
+                    logger.info('MD5 Verified')
+                    logger.info('Moving file to destination folder')
+                    os.rename(tmppath, outpath)
+                    try:
+                        logger.info('Extracting tar file')
+                        tf = tarfile.open(outpath)
+                        tf.extractall(outputdir)
+                        logger.info('Extraction finished')
+                    except:
+                        logger.error('Extraction failed')
+                        logger.debug('', exc_info=True)
+                        exit(1)
+                else:
+                    print(file_md5, md5)
+                    logger.info('MD5 Verification Failed')
+                    logger.error('Error with the download')
+                    exit(1)
             try:
                 os.removedirs(tmpdir)
             except:

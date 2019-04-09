@@ -128,19 +128,21 @@ class Parser(object):
         parser.add_argument("-Patient", required=True,
                             help="Patient File Path - It needs to match exactly to the one found inside Patients folder")
         # ignore first argument
-        args = parser.parse_args(argv[2:])
-        panel = cfg.panelsPath + args.Panel + '.xlsx'
-        patient = cfg.patientPath + args.Patient
-        ptCheck = checkFile(patient, '.vcf')
-        pnCheck = checkFile(panel, '.xlsx')
-
-        logger.info("Running %s on patient %s" % (str(args.Panel), str(args.Patient)))
-        result = vcfmgr.ParsedVCF.from_vcf(patient).panel(panel)
-        outpath = cfg.resultsPath + 'Panels/' + result.name + '/' + result.name + '_' + args.Panel + '.xlsx'
-        os.makedirs(os.path.dirname(outpath), exist_ok=True)
-        result.vcf_to_excel(outpath)
-        logger.info('Single Analisis Complete')
-        logger.info('File available at:%s' % outpath)
+        try:
+            args = parser.parse_args(argv[2:])
+            panel = cfg.panelsPath + args.Panel + '.xlsx'
+            patient = cfg.patientPath + args.Patient
+            ptCheck = checkFile(patient, '.vcf')
+            pnCheck = checkFile(panel, '.xlsx')
+            logger.info("Running %s on patient %s" % (str(args.Panel), str(args.Patient)))
+            result = vcfmgr.ParsedVCF.from_vcf(patient).panel(panel)
+            outpath = cfg.resultsPath + 'Panels/' + result.name + '/' + result.name + '_' + args.Panel + '.xlsx'
+            os.makedirs(os.path.dirname(outpath), exist_ok=True)
+            result.vcf_to_excel(outpath)
+            logger.info('Single Analisis Complete')
+            logger.info('File available at:%s' % outpath)
+        except:
+            logger.info('Single Analisis Failed')
         return 0
 
     def duos(self):
@@ -158,44 +160,47 @@ class Parser(object):
                                  " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
                             metavar=("COLUMN TEXT"), action='append')
         # ignore first argument
-        args = parser.parse_args(argv[2:])
-        patient1 = cfg.patientPath + args.Patient1
-        patient2 = cfg.patientPath + args.Patient2
-        # Checks file existence and type for patients
-        pt1Check = checkFile(patient1, '.vcf')
-        pt2Check = checkFile(patient2, '.vcf')
-        logger.info("Running Duos Study on %s and %s" % (str(args.Patient1), str(args.Patient2)))
-        pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2)
-        result = pvcfs[0].duos(pvcfs[1], VENNPLACE=args.VennPlace)
-        resultname = result.name
-        outpath = cfg.resultsPath + 'Duos/' + result.name.replace(':', '_') + '/' + result.name.replace(':', '_')
-        result.name = resultname
-        if args.VennPlace is not None:
-            outpath = outpath + '_Venn' + args.VennPlace.replace(':', '_')
-        if args.Panel is not None:
-            logger.info('Running panel {}'.format(args.Panel))
-            panel = cfg.panelsPath + args.Panel + '.xlsx'
-            checkFile(panel, '.xlsx')
-            result = result.panel(panel)
+        try:
+            args = parser.parse_args(argv[2:])
+            patient1 = cfg.patientPath + args.Patient1
+            patient2 = cfg.patientPath + args.Patient2
+            # Checks file existence and type for patients
+            pt1Check = checkFile(patient1, '.vcf')
+            pt2Check = checkFile(patient2, '.vcf')
+            logger.info("Running Duos Study on %s and %s" % (str(args.Patient1), str(args.Patient2)))
+            pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2)
+            result = pvcfs[0].duos(pvcfs[1], VENNPLACE=args.VennPlace)
+            resultname = result.name
+            outpath = cfg.resultsPath + 'Duos/' + result.name.replace(':', '_') + '/' + result.name.replace(':', '_')
             result.name = resultname
-            outpath = outpath + '_P' + args.Panel
-        if args.Filter[0] is not None:
-            for x in args.Filter:
-                if (len(x.split())) != 2:
-                    logger.error('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
-                    exit(1)
-                else:
-                    x = x.split()
-                    if x[1] == 'Empty':
-                        result = result[result[x[0]] != '']
-                    else:
-                        result = result[~result[x[0]].str.contains(x[1])]
+            if args.VennPlace is not None:
+                outpath = outpath + '_Venn' + args.VennPlace.replace(':', '_')
+            if args.Panel is not None:
+                logger.info('Running panel {}'.format(args.Panel))
+                panel = cfg.panelsPath + args.Panel + '.xlsx'
+                checkFile(panel, '.xlsx')
+                result = result.panel(panel)
                 result.name = resultname
-                outpath = outpath + '_F' + str(x[0]) + str(x[1])
-        outpath = outpath + '.xlsx'
-        result.vcf_to_excel(outpath)
-        logger.info('Duos Analisis Complete')
-        logger.info('File available at:%s' % outpath)
+                outpath = outpath + '_P' + args.Panel
+            if args.Filter[0] is not None:
+                for x in args.Filter:
+                    if (len(x.split())) != 2:
+                        logger.error('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
+                        exit(1)
+                    else:
+                        x = x.split()
+                        if x[1] == 'Empty':
+                            result = result[result[x[0]] != '']
+                        else:
+                            result = result[~result[x[0]].str.contains(x[1])]
+                    result.name = resultname
+                    outpath = outpath + '_F' + str(x[0]) + str(x[1])
+            outpath = outpath + '.xlsx'
+            result.vcf_to_excel(outpath)
+            logger.info('Duos Analisis Complete')
+            logger.info('File available at:%s' % outpath)
+        except:
+            logger.info('Duos Analisis Failed')
         return 0
 
     def trios(self):
@@ -214,50 +219,53 @@ class Parser(object):
         parser.add_argument("--VennPlace", default='ALL', const='ALL', nargs='?',
                             choices=['A', 'B', 'C', 'A:B', 'A:C', 'B:C', 'A:B:C', 'ALL'],
                             help="Place in a Venn Diagram to obtain variants from")
-        # ignore first argument
-        args = parser.parse_args(argv[2:])
-        patient1 = cfg.patientPath + args.Patient1
-        patient2 = cfg.patientPath + args.Patient2
-        patient3 = cfg.patientPath + args.Patient3
-        # Checks file existence and type for patients
-        pt1Check = checkFile(patient1, '.vcf')
-        pt2Check = checkFile(patient2, '.vcf')
-        pt3Check = checkFile(patient3, '.vcf')
-        logger.info(
-            "Running Trios Study on %s, %s and %s" % (str(args.Patient1), str(args.Patient2), str(args.Patient3)))
-        pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2, patient3)
-        result = pvcfs[0].duos(pvcfs[1]).duos(pvcfs[2], VENNPLACE=args.VennPlace)
-        resultname = result.name
-        outpath = cfg.resultsPath + 'Trios/' + result.name.replace(':', '_') + '/' + result.name.replace(':', '_')
-        result.name = resultname
-        if args.VennPlace is not None:
-            outpath = outpath + '_Venn' + args.VennPlace.replace(':', '_')
-        # check if there is a Panel Requested
-        if args.Panel:
-            logger.info('Running panel {}'.format(args.Panel))
-            panel = cfg.panelsPath + args.Panel + '.xlsx'
-            checkFile(panel, '.xlsx')
-            result = result.panel(panel)
+        try:
+            # ignore first argument
+            args = parser.parse_args(argv[2:])
+            patient1 = cfg.patientPath + args.Patient1
+            patient2 = cfg.patientPath + args.Patient2
+            patient3 = cfg.patientPath + args.Patient3
+            # Checks file existence and type for patients
+            pt1Check = checkFile(patient1, '.vcf')
+            pt2Check = checkFile(patient2, '.vcf')
+            pt3Check = checkFile(patient3, '.vcf')
+            logger.info(
+                "Running Trios Study on %s, %s and %s" % (str(args.Patient1), str(args.Patient2), str(args.Patient3)))
+            pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2, patient3)
+            result = pvcfs[0].duos(pvcfs[1]).duos(pvcfs[2], VENNPLACE=args.VennPlace)
+            resultname = result.name
+            outpath = cfg.resultsPath + 'Trios/' + result.name.replace(':', '_') + '/' + result.name.replace(':', '_')
             result.name = resultname
-            outpath = outpath + '_Panel' + args.Panel
-        # check if there is a Filter Requested
-        if args.Filter[0] is not None:
-            for x in args.Filter:
-                if (len(x.split())) != 2:
-                    logger.error('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
-                    exit(1)
-                else:
-                    x = x.split()
-                    if x[1] == 'Empty':
-                        result = result[result[x[0]] != '']
+            if args.VennPlace is not None:
+                outpath = outpath + '_Venn' + args.VennPlace.replace(':', '_')
+            # check if there is a Panel Requested
+            if args.Panel:
+                logger.info('Running panel {}'.format(args.Panel))
+                panel = cfg.panelsPath + args.Panel + '.xlsx'
+                checkFile(panel, '.xlsx')
+                result = result.panel(panel)
+                result.name = resultname
+                outpath = outpath + '_Panel' + args.Panel
+            # check if there is a Filter Requested
+            if args.Filter[0] is not None:
+                for x in args.Filter:
+                    if (len(x.split())) != 2:
+                        logger.error('--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
+                        exit(1)
                     else:
-                        result = result[~result[x[0]].str.contains(x[1])]
-                    result.name = resultname
-                    outpath = outpath + '_Filter' + str(x[0]) + str(x[1])
-        outpath = outpath + '.xlsx'
-        result.vcf_to_excel(outpath)
-        logger.info('Trios Analisis Complete')
-        logger.info('File available at:%s' % outpath)
+                        x = x.split()
+                        if x[1] == 'Empty':
+                            result = result[result[x[0]] != '']
+                        else:
+                            result = result[~result[x[0]].str.contains(x[1])]
+                        result.name = resultname
+                        outpath = outpath + '_Filter' + str(x[0]) + str(x[1])
+            outpath = outpath + '.xlsx'
+            result.vcf_to_excel(outpath)
+            logger.info('Trios Analisis Complete')
+            logger.info('File available at:%s' % outpath)
+        except:
+            logger.info('Trios Analisis Failed')
         return 0
 
 
