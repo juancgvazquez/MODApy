@@ -319,9 +319,6 @@ class ParsedVCF(pd.DataFrame):
 
         indcols = ['QUAL', 'FILTER', 'DP', 'FS', 'MQ', 'SOR', 'QD', 'SET', 'BASEQRANKSUM', 'CLIPPINGRANKSUM',
                    'MQRANKSUM', 'READPOSRANKSUM', 'AC', 'SAMPLES_AF', 'MLEAC', 'MLEAF', 'DBSNPBUILDID']
-
-        indself = []
-        indpvcf2 = []
         indself = [x for x in indcols if x in self.columns]
         indpvcf2 = [x for x in indcols if x in pvcf2.columns]
         self.drop(columns=indself, inplace=True)
