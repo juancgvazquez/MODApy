@@ -15,15 +15,12 @@ py_config()
 MODApy<-import('MODApy')
 
 # combo box options -------------------------------------------------------------------
-patientsvcf <- function(){
-    result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))
-  return(result)
-}
-panels <<- function(){
+patientsvcf <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))
+updatepanels <<- function(){
   result<-gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
   return(result)
 }
-
+panels <- gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
 # utils ---------------------------------------------------------------------------
 getcommand <- function(input){
   cmd = ''
@@ -86,130 +83,130 @@ getcommand <- function(input){
 
 # ui -------------------------------------------------------------------
 ui <- tagList(shinyjs::useShinyjs(),
-                 navbarPage("MODApy",
-                 tabPanel("Analisis",
-                      sidebarLayout(
-                        sidebarPanel(
-                          width = 4,
-                          tabsetPanel(id="tabset", selected = "Single",
-                                      # tabPanel("Pipeline",
-                                      #   selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
-                                      #   selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
-                                      #     path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
-                                      # ),
-                                      tabPanel("Single",
-                                               fluidRow(style='padding-left:20px;',
-                                               br(),
-                                               div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient:')),
-                                               div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PatientPanel", label = NULL, choices = patientsvcf())),
-                                               div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
-                                               ),
-                                               fluidRow(style='padding-left:20px;',
-                                               br(),
-                                               div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
-                                               div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Panel", label = NULL, choices = panels())),
-                                               div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus'))))
+              navbarPage("MODApy",
+                         tabPanel("Analisis",
+                                  sidebarLayout(
+                                    sidebarPanel(
+                                      width = 4,
+                                      tabsetPanel(id="tabset", selected = "Single",
+                                                  # tabPanel("Pipeline",
+                                                  #   selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
+                                                  #   selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
+                                                  #     path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
+                                                  # ),
+                                                  tabPanel("Single",
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PatientPanel", label = NULL, choices = patientsvcf)),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Panel", label = NULL, choices = panels)),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus'))))
+                                                  ),
+                                                  tabPanel("Duos",
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 1:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient1D", label = NULL, choices = patientsvcf)),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient1D',label=NULL,icon=icon('plus')))
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 2:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient2D", label = NULL, choices = patientsvcf)),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient2D',label=NULL,icon=icon('plus')))
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PanelD", label = NULL, choices = c('NONE',panels))),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanelD',label=NULL,icon=icon('plus')))
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 150px;",h4('Venn Place:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",uiOutput("vennDuos"))
+                                                           )
+                                                  ),
+                                                  tabPanel("Trios",
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 1:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient1T", label = NULL, choices = patientsvcf)),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient1T',label=NULL,icon=icon('plus')))
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 2:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient2T", label = NULL, choices = patientsvcf)),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient2T',label=NULL,icon=icon('plus')))
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 3:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient3T", label = NULL, choices = patientsvcf)),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient3T',label=NULL,icon=icon('plus')))
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PanelT", label = NULL, choices = c('NONE',panels))),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanelT',label=NULL,icon=icon('plus')))
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 150px;",h4('Venn Place:')),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 300px;",uiOutput("vennTrios"))
+                                                           )
+                                                  )
                                       ),
-                                      tabPanel("Duos",
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 1:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient1D", label = NULL, choices = patientsvcf())),
-                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
-                                                        ),
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 2:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient2D", label = NULL, choices = patientsvcf())),
-                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
-                                                        ),
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PanelD", label = NULL, choices = c('NONE',panels()))),
-                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus')))
-                                                        ),
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:top; width: 150px;",h4('Venn Place:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",uiOutput("vennDuos"))
-                                                        )
-                                      ),
-                                      tabPanel("Trios",
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 1:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient1T", label = NULL, choices = patientsvcf())),
-                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
-                                               ),
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 2:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient2T", label = NULL, choices = patientsvcf())),
-                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
-                                               ),
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Patient 3:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Patient3T", label = NULL, choices = patientsvcf())),
-                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpatient',label=NULL,icon=icon('plus')))
-                                               ),
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "PanelT", label = NULL, choices = c('NONE',panels()))),
-                                                        div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus')))
-                                                        ),
-                                               fluidRow(style='padding-left:20px;',
-                                                        br(),
-                                                        div(style="display: inline-block;vertical-align:top; width: 150px;",h4('Venn Place:')),
-                                                        div(style="display: inline-block;vertical-align:top; width: 300px;",uiOutput("vennTrios"))
-                                               )
+                                      actionButton("buttonrun","Run"),
+                                      actionButton("buttonlastcmd","Last Run Status"),
+                                      shinyjs::disabled(downloadButton('downloadData','Download Result'))
+                                    ),
+                                    mainPanel(#style="background-color:blue",
+                                      width = 6,
+                                      h1('Command Output',style = "font-family: 'Courgette', cursive;
+                                         font-weight: 500; line-height: 1.1; 
+                                         color: #4d3a7d;"),
+                                      htmlOutput("consoleout")
                                       )
-                          ),
-                          actionButton("buttonrun","Run"),
-                          actionButton("buttonlastcmd","Last Run Status"),
-                          shinyjs::disabled(downloadButton('downloadData','Download Result'))
-                        ),
-                        mainPanel(#style="background-color:blue",
-                          width = 6,
-                          h1('Command Output',style = "font-family: 'Courgette', cursive;
-                             font-weight: 500; line-height: 1.1; 
-                             color: #4d3a7d;"),
-                          htmlOutput("consoleout")
-                          )
-                        )),
-             tabPanel('VariantsDB',
-                      actionButton("buildDBbtn","Build DataBase"),
-                      actionButton("openDBbtn","Open Database"),
-                      htmlOutput("dbout"),
-                      DT::dataTableOutput("mytable")
-                      ),
-             tabPanel('About',
-                      h2('MODApy'),
-                      h3('Multi-Omics Data Analysis in Python - Shiny Frontend'),
-                      br(),
-                      p('MODApy is currently in development. Backend is developed in Python'),
-                      p('Frontend is developed in R through Shiny.'),
-                      p('Authors: Juan Carlos Vázquez - Elmer A. Fernández'),
-                      p('Bioscience Data Mining Group - Universidad Católica de Córdoba'),
-                      p('Centro de Investigación y Desarrollo en Inmunología y Enfermedades Infecciosas - CONICET')
-             )
-             )
-  )
+                                    )),
+                         tabPanel('VariantsDB',
+                                  actionButton("buildDBbtn","Build DataBase"),
+                                  actionButton("openDBbtn","Open Database"),
+                                  htmlOutput("dbout"),
+                                  DT::dataTableOutput("mytable")
+                         ),
+                         tabPanel('About',
+                                  h2('MODApy'),
+                                  h3('Multi-Omics Data Analysis in Python - Shiny Frontend'),
+                                  br(),
+                                  p('MODApy is currently in development. Backend is developed in Python'),
+                                  p('Frontend is developed in R through Shiny.'),
+                                  p('Authors: Juan Carlos Vázquez - Elmer A. Fernández'),
+                                  p('Bioscience Data Mining Group - Universidad Católica de Córdoba'),
+                                  p('Centro de Investigación y Desarrollo en Inmunología y Enfermedades Infecciosas - CONICET')
+                         )
+              )
+)
 # server -------------------------------------------------------------------
 server <- function(input,output, session){
   rv <- reactiveValues(textstream = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv2 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv3 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
   downpath <- reactiveValues()
-
+  
   newpatientModal <- function(failed = FALSE) {
     modalDialog(
       title = "Add New Patient",
       p('This will add a new patient, downlading the data from a url or a xlsx/xls file.
-                          Please either write the url or upload a file and press Submit. If both values are filled, will only download urls from files. 
-                          It will generate the folder under the Patient folder and download the .tar file'),
+        Please either write the url or upload a file and press Submit. If both values are filled, will only download urls from files. 
+        It will generate the folder under the Patient folder and download the .tar file'),
       textInput('url',NULL,value="",placeholder='Enter URL'),
       fileInput('file1','Choose File to Upload',accept=c('.xls','.xlsx')),
       footer = tagList(
@@ -231,19 +228,29 @@ server <- function(input,output, session){
         actionButton("addpanelbtn","Add Panel")
       ))
   }
-  observeEvent(input$newpatient, {
-    showModal(newpatientModal())
-  })
-  observeEvent(input$newpanel, {
-    showModal(newpanelModal())
-  })
+  observeEvent(c(input$newpatient,
+                 input$newpatient1D,
+                 input$newpatient2D,
+                 input$newpatient1T,
+                 input$newpatient2T,
+                 input$newpatient3T), {
+                   validate(need(input$newpatient > 0 | input$newpatient1D > 0 | input$newpatient2D > 0 |
+                                   input$newpatient1T > 0 | input$newpatient2T > 0 | input$newpatient3T > 0, ''))
+                   showModal(newpatientModal())
+                 })
+  observeEvent(c(input$newpanel,
+                 input$newpanelD,
+                 input$newpanelT), {
+                   validate(need(input$newpanel > 0 | input$newpanelD > 0 | input$newpanelT > 0, ''))
+                   showModal(newpanelModal())
+                 })
   observeEvent(input$addpanelbtn,{
     if(tolower(tools::file_ext(input$panelupload$datapath)) == "xlsx"){
       file.copy(input$panelupload$datapath, paste(cfg$PATHS$panelspath,input$panelupload$name))
       removeModal()
-      updateSelectInput(session,'Panel',choices=panels())
-      updateSelectInput(session,'PanelD',selected = 'NONE',choices=c('NONE',panels()))
-      updateSelectInput(session,'PanelT',selected = 'NONE',choices=c('NONE',panels()))
+      updateSelectInput(session,'Panel',choices=updatepanels())
+      updateSelectInput(session,'PanelD',selected = 'NONE',choices=c('NONE',updatepanels()))
+      updateSelectInput(session,'PanelT',selected = 'NONE',choices=c('NONE',updatepanels()))
     }
     else{
       removeModal()
@@ -266,28 +273,29 @@ server <- function(input,output, session){
     else{
       rv$textstream = "Variants file not found. Try to build variantsDB first."
     }
-
+    
   })
   observeEvent(input$addbtn, {
     if((input$url=="")&(is.null(input$file1))){
-      rv2$started<-FALSE
-      rv3$started<-FALSE
-      rv$textstream2 <- "No input selected to download."
+      removeModal()
+      modalDialog('No input data to download.')
     }
     else if((input$url=="")&!(is.null(input$file1))){
-      rv2$started<-FALSE
-      rv3$started<-TRUE
       system2('MODApy',args = paste('addPatient',input$file1$datapath),wait = FALSE,stdout = FALSE,stderr = FALSE)
+      removeModal()
+      showModal(modalDialog('Downloading'))
     }
     else if(!(input$url=="")&(is.null(input$file1))){
-      rv2$started<-FALSE
-      rv3$started<-TRUE
       system2('MODApy',args = paste('addPatient',input$url),wait = FALSE,stdout = FALSE,stderr = FALSE)
+      removeModal()
+      showModal(modalDialog('Downloading'))
     }
     else if(!(input$url=="")&!(is.null(input$file1))){
-      rv2$started<-FALSE
-      rv3$started<-TRUE
-      system2('MODApy',args = paste('addPatient',input$file1$datapath),wait = FALSE,stdout = FALSE,stderr = FALSE)}
+      system2('MODApy',args = paste('addPatient',input$file1$datapath),wait = FALSE,stdout = FALSE,stderr = FALSE)
+      removeModal()
+      showModal(modalDialog('Downloading'))
+    }
+    
   })
   observeEvent(input$buttonrun, {
     shinyjs::disable('buttonrun')
@@ -312,35 +320,35 @@ server <- function(input,output, session){
   observeEvent(
     input$Patient1D,{
       current <- isolate(input$Patient2D)
-      updateSelectInput(session,'Patient2D',selected = current, choices = patientsvcf()[!(patientsvcf() %in% input$Patient1D)])
-  })
+      updateSelectInput(session,'Patient2D',selected = current, choices = patientsvcf[!(patientsvcf %in% input$Patient1D)])
+    })
   observeEvent(
     input$Patient2D,{
       current <- isolate(input$Patient1D)
-      updateSelectInput(session,'Patient1D',selected = current, choices = patientsvcf()[!(patientsvcf() %in% input$Patient2D)])  
+      updateSelectInput(session,'Patient1D',selected = current, choices = patientsvcf[!(patientsvcf %in% input$Patient2D)])  
     }
   )
   observeEvent(
     input$Patient1T,{
       current2 <- isolate(input$Patient2T)
       current3 <- isolate(input$Patient3T)
-      updateSelectInput(session,'Patient2T',selected = current2,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient1T,input$Patient3T))])
-      updateSelectInput(session,'Patient3T',selected = current3,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient1T,input$Patient2T))])
-  })
+      updateSelectInput(session,'Patient2T',selected = current2,choices = patientsvcf[!(patientsvcf %in% c(input$Patient1T,input$Patient3T))])
+      updateSelectInput(session,'Patient3T',selected = current3,choices = patientsvcf[!(patientsvcf %in% c(input$Patient1T,input$Patient2T))])
+    })
   observeEvent(
     input$Patient2T,{
       current1 <- isolate(input$Patient1T)
       current3 <- isolate(input$Patient3T)
-      updateSelectInput(session,'Patient1T',selected = current1,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient2T,input$Patient3T))])
-      updateSelectInput(session,'Patient3T',selected = current3,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient1T,input$Patient2T))])
-  })
+      updateSelectInput(session,'Patient1T',selected = current1,choices = patientsvcf[!(patientsvcf %in% c(input$Patient2T,input$Patient3T))])
+      updateSelectInput(session,'Patient3T',selected = current3,choices = patientsvcf[!(patientsvcf %in% c(input$Patient1T,input$Patient2T))])
+    })
   observeEvent(
     input$Patient3T,{
       current1 <- isolate(input$Patient1T)
       current2 <- isolate(input$Patient2T)
-      updateSelectInput(session,'Patient1T',selected = current1,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient2T,input$Patient3T))])
-      updateSelectInput(session,'Patient2T',selected = current2,choices = patientsvcf()[!(patientsvcf() %in% c(input$Patient1T,input$Patient3T))])
-  })
+      updateSelectInput(session,'Patient1T',selected = current1,choices = patientsvcf[!(patientsvcf %in% c(input$Patient2T,input$Patient3T))])
+      updateSelectInput(session,'Patient2T',selected = current2,choices = patientsvcf[!(patientsvcf %in% c(input$Patient1T,input$Patient3T))])
+    })
   observe({
     rv$timer()
     if(isolate(rv$started))rv$textstream <- paste(readLines(logfile),collapse="<br/>")

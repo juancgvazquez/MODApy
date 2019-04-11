@@ -35,7 +35,7 @@ def get_links(filename):
                 for row in ws.rows:
                     for cell in row:
                         if cell.data_type == 'f':
-                            link_list.append(cell.value.strip('=HYPERLINK("').split(',')[0])
+                            link_list.append(cell.value.strip('=HYPERLINK("').replace('"', '').split(',')[0])
             pdxl = pd.read_excel(filename, sheet_name='Download_Address')
             md5 = list(pdxl.iloc[pdxl.index[pdxl['download address'] == 'md5sum'].item() + 1:]['download address'])
             link_list = [x for x in link_list if '.tar' in x]
