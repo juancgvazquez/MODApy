@@ -93,7 +93,8 @@ class ParsedVCF(pd.DataFrame):
         splitdf.drop(columns='index', inplace=True)
         odd = splitdf.iloc[::2].copy()
         even = splitdf.iloc[1::2].copy()
-        splitlist = ['ID', 'AC', 'SAMPLES_AF', 'MLEAC', 'MLEAF', 'VARTYPE', 'dbSNPBuildID']
+        splitlist = ['ID', 'AC', 'AF', 'SAMPLES_AF', 'MLEAC', 'MLEAF', 'VARTYPE', 'dbSNPBuildID']
+        splitlist = [x for x in splitlist if x in df1.columns]
         splitlist += [x for x in df1.columns if x.startswith(('1000', 'CLINVAR'))]
         for col in splitlist:
             odd[col] = odd[col].astype(str).str.split(',', n=1).str[0]
@@ -165,6 +166,8 @@ class ParsedVCF(pd.DataFrame):
             df1.drop(columns=['sorter', 'sorter2'], inplace=True)
             del IMPACT_SEVERITY
         df1.columns = df1.columns.str.upper()
+        if 'HGVS.P' in df1.columns:
+            df1['AMINOCHANGE'] = df1['HGVS.P'].apply(aminoChange)
         if 'HOM' in df1.columns:
             df1['HOM'] = df1['HOM'].replace({True: 'HOM', np.nan: 'HET', None: 'HET'})
             df1.drop(columns='HET', inplace=True)
@@ -201,7 +204,6 @@ class ParsedVCF(pd.DataFrame):
             for k, v in clinvartranslation.items():
                 df1['CLINVAR_CLNSIG'] = df1['CLINVAR_CLNSIG'].str.replace(k, v)
 
-        df1['AMINOCHANGE'] = df1['HGVS.P'].apply(aminoChange)
         df1.replace(['nan', '', np.nan], '.', inplace=True)
         df1.replace([[None], '.'], inplace=True, regex=True)
         df1 = df1.astype('str')

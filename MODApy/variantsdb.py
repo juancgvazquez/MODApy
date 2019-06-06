@@ -75,12 +75,12 @@ class VariantsDB(pd.DataFrame):
         def dbbuilder(patientslist, db=None):
             logger.info('Parsing Patients')
             pvcfs = ParsedVCF.mp_parser(*patientslist)
-            pvcfs = [x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY']] for x in pvcfs]
+            pvcfs = [x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY', 'GENE_NAME']] for x in pvcfs]
             for df in pvcfs:
                 if 'ZIGOSITY' not in df.columns:
                     df['ZIGOSITY'] = 'UNKWN'
             pvcfs = [x.rename(columns={'ZIGOSITY': x.name}) for x in pvcfs if 'ZIGOSITY' in x.columns]
-            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT']) for x in pvcfs]
+            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT','GENE_NAME']) for x in pvcfs]
             if db is not None:
                 pvcfs.insert(0, db)
             logger.info('Merging parsed patients toDB')
@@ -125,7 +125,7 @@ class VariantsDB(pd.DataFrame):
             logger.error('Patient must be either a path to vcf or a ParsedVCF object')
             logger.debug('', exc_info=True)
             exit(1)
-        pvcf = pvcf[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY']]
+        pvcf = pvcf[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY', 'GENE_NAME']]
         if 'ZIGOSITY' not in pvcf.columns:
             pvcf['ZIGOSITY'] = 'UNKWN'
         pvcf.rename(columns={'ZIGOSITY': pvcf.name}, inplace=True)

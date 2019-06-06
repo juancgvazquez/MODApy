@@ -47,9 +47,13 @@ class Parser(object):
 
     def launcher(self):
         logger.info('Launching Web Interface')
-        cmd = 'R --vanilla -e shiny::runApp(\\"' + cfg.rootDir + '/MODApy-Shiny.R\\"\\,port=8081\\,launch\\.browser=TRUE)'
-        webapp = subprocess.Popen(shlex.split(cmd), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        cmd = 'R -e shiny::runApp(\\"' + cfg.rootDir + '/MODApy-Shiny.R\\"\\,port=3838\\,host=\\"0.0.0.0\\")'
+        print(cmd)
+        webapp = subprocess.Popen(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         webapp.wait()
+        output, error = webapp.communicate()
+        logger.debug(output)
+        logger.debug(error)
         logger.info('Web Interface Closed')
 
     def addPatient(self):
@@ -88,6 +92,7 @@ class Parser(object):
         parser.add_argument("-keeptmp", action="store_true", default=False,
                             help="Keep Temp files, otherwise just creates annotated vcf file.")
         parser.add_argument("-startStep", default=0, type=int, help="Defines step to start running pipeline.")
+        parser.add_argument("-endStep", default=0, type=int, help="Defines step to start running pipeline.")
 
         # ignore first argument
         args = parser.parse_args(argv[2:])
@@ -107,18 +112,18 @@ class Parser(object):
             checkFile(fq1, '.' + fq1.split('.')[-1])
             checkFile(fq2, '.' + fq2.split('.')[-1])
             if args.keeptmp:
-                newpipe.runpipeline(fq1, fq2, keeptmp=True, startStep=args.startStep)
+                newpipe.runpipeline(fq1, fq2, keeptmp=True, startStep=args.startStep, endStep=args.endStep)
             else:
-                newpipe.runpipeline(fq1, fq2, startStep=args.startStep)
+                newpipe.runpipeline(fq1, fq2, startStep=args.startStep, endStep=args.endStep)
             return 0
         else:
             fq1 = cfg.patientPath + args.FQ[0]
             fq2 = ''
             checkFile(fq1, '.' + fq1.split('.')[-1])
             if args.keeptmp:
-                newpipe.runpipeline(fq1, keeptmp=True, startStep=args.startStep)
+                newpipe.runpipeline(fq1, keeptmp=True, startStep=args.startStep, endStep=args.endStep)
             else:
-                newpipe.runpipeline(fq1, startStep=args.startStep)
+                newpipe.runpipeline(fq1, startStep=args.startStep, endStep=args.endStep)
             return 0
 
     def single(self):
@@ -274,10 +279,10 @@ def checkFile(filePath, extension):
         fileName, fileExtension = os.path.splitext(filePath)
         if extension == fileExtension:
             return True
-
-    logger.error("%s couldn't be found. Please check if file exists and that it's extension is %s" % (filePath,
-                                                                                                      extension))
-    exit(1)
+    else:
+        logger.error("%s couldn't be found. Please check if file exists and that it's extension is %s" % (filePath,
+                                                                                                          extension))
+        exit(1)
 
 
 def main():

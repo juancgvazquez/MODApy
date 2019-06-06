@@ -82,7 +82,7 @@ class Pipeline(object):
 
         steps = list(pipedict['STEPS'].values())
 
-        for i in range(0, len(steps) - 1):
+        for i in range(0, len(steps)):
             name = steps[i]['name']
             command = steps[i]['command']
             subcommand = steps[i]['subcommand']
@@ -147,7 +147,7 @@ class Pipeline(object):
 
         return builtpipe
 
-    def runpipeline(self, fastq1: str, fastq2=None, keeptmp=False, startStep=0):
+    def runpipeline(self, fastq1: str, fastq2=None, keeptmp=False, startStep=0, endStep=0):
         """
         Method to run the Pipeline
         Parameters
@@ -161,6 +161,8 @@ class Pipeline(object):
         '''
         Method to run selected Pipeline on fastq files
         '''
+        print(self.steps)
+        print(len(self.steps))
         patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
         ref = cfg.referencesPath + self.reference + '/' + self.reference + '.fa'
         pipedir = "".join(x for x in self.name if x.isalnum())
@@ -176,7 +178,9 @@ class Pipeline(object):
             first = True
         else:
             first = False
-        for step in self.steps[startStep:]:
+        if endStep == 0:
+            endStep = len(self.steps)+1
+        for step in self.steps[startStep:endStep]:
             # Checks if first step, we should input the exact input as inputfiles
             if first is True:
                 first = False
@@ -209,7 +213,7 @@ class Pipeline(object):
             cmdver = step.version.replace('.', '_')
             javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
             if any(javacmd in step.command for javacmd in javacmds):
-                cmd = 'java -jar ' + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
+                cmd = 'java -jar -Xmx12G ' + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
                       + '.jar ' + step.subcommand
             else:
                 cmd = cfg.binPath + step.command + '/' + step.command + '_' + cmdver + ' ' + step.subcommand
@@ -219,7 +223,7 @@ class Pipeline(object):
             cmd = shlex.split(cmdstr)
 
             logging.info('Subprocess: ' + cmdstr)
-            stdcmds = ['bwa', 'snpEff', 'SnpSift']
+            stdcmds = ['bwa', 'bedtools', 'snpEff', 'SnpSift']
             try:
                 if any(stdcmd in s for s in cmd for stdcmd in stdcmds):
                     output = cmd[-1]
@@ -247,11 +251,11 @@ class Pipeline(object):
             else:
                 logging.info('Subprocess finished')
         if cfg.testFlag:
-            shutil.move(tmpdir + patientname + "_MODApy.final.vcf", cfg.testPath + patientname)
-            shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam", cfg.testPath + patientname)
+            shutil.move(tmpdir + patientname + "_MODApy.final.vcf", cfg.testPath + patientname + "_MODApy.final.vcf")
+            shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam", cfg.testPath + patientname + "_realigned_reads_recal.bam")
         else:
-            shutil.move(tmpdir + patientname + "_MODApy.final.vcf", cfg.patientPath + patientname)
-            shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam", cfg.patientPath + patientname)
+            shutil.move(tmpdir + patientname + "_MODApy.final.vcf", cfg.patientPath + patientname + "_MODApy.final.vcf")
+            shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam", cfg.patientPath + patientname + "_realigned_reads_recal.bam")
         if keeptmp is False:
             shutil.rmtree(tmpdir)
 
