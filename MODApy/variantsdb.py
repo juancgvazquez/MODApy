@@ -30,7 +30,7 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error('Path to excel file incorrect.')
             exit(1)
-        db.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT','GENE_NAME'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -46,7 +46,7 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error('Path to CSV file incorrect.')
             exit(1)
-        db.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT','GENE_NAME'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -129,7 +129,7 @@ class VariantsDB(pd.DataFrame):
         if 'ZIGOSITY' not in pvcf.columns:
             pvcf['ZIGOSITY'] = 'UNKWN'
         pvcf.rename(columns={'ZIGOSITY': pvcf.name}, inplace=True)
-        pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT'], inplace=True)
+        pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT','GENE_NAME'], inplace=True)
         db = pd.concat([self, pvcf], axis=1, join='outer')
         db = db.pipe(VariantsDB)
         db = db.calcfreqs()
