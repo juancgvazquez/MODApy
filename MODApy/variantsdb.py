@@ -1,6 +1,7 @@
 import logging
 import os
 
+import cyvcf2
 import numpy as np
 import pandas as pd
 
@@ -30,7 +31,7 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error('Path to excel file incorrect.')
             exit(1)
-        db.set_index(['CHROM', 'POS', 'REF', 'ALT','GENE_NAME'], inplace=True)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -46,7 +47,7 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error('Path to CSV file incorrect.')
             exit(1)
-        db.set_index(['CHROM', 'POS', 'REF', 'ALT','GENE_NAME'], inplace=True)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -57,7 +58,11 @@ class VariantsDB(pd.DataFrame):
             for dirpath, dirnames, filenames in os.walk(patientPath):
                 for filename in [f for f in filenames if f.lower().endswith('final.vcf')]:
                     vcfspath.append(os.path.join(dirpath, filename))
-            vcfsnames = [x.rsplit('/', maxsplit=1)[-1].strip('.final.vcf') for x in vcfspath]
+            try:
+                vcfsnames = [cyvcf2.Reader(x).samples[0] for x in vcfspath]
+            except:
+                logger.info('No Sample name in one of the vcfs files. Using File Names Instead')
+                vcfsnames = [x.rsplit('/', maxsplit=1)[-1].strip('.final.vcf') for x in vcfspath]
 
             if db is not None:
                 addpatnames = [x for x in vcfsnames if x not in db.columns]
@@ -80,7 +85,7 @@ class VariantsDB(pd.DataFrame):
                 if 'ZIGOSITY' not in df.columns:
                     df['ZIGOSITY'] = 'UNKWN'
             pvcfs = [x.rename(columns={'ZIGOSITY': x.name}) for x in pvcfs if 'ZIGOSITY' in x.columns]
-            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT','GENE_NAME']) for x in pvcfs]
+            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME']) for x in pvcfs]
             if db is not None:
                 pvcfs.insert(0, db)
             logger.info('Merging parsed patients toDB')
@@ -129,7 +134,7 @@ class VariantsDB(pd.DataFrame):
         if 'ZIGOSITY' not in pvcf.columns:
             pvcf['ZIGOSITY'] = 'UNKWN'
         pvcf.rename(columns={'ZIGOSITY': pvcf.name}, inplace=True)
-        pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT','GENE_NAME'], inplace=True)
+        pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME'], inplace=True)
         db = pd.concat([self, pvcf], axis=1, join='outer')
         db = db.pipe(VariantsDB)
         db = db.calcfreqs()
