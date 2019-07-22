@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from sys import argv
 
-from MODApy import cfg, pipeline, vcfmgr, downloader, variantsdb
+from MODApy import cfg, pipeline, vcfmgr, downloader, variantsdb, coverage
 from MODApy.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -21,13 +21,14 @@ class Parser(object):
         parser = argparse.ArgumentParser(description="Multi-Omics Data Analisis for Python", usage='''MODApy <command> [<args>]
 
         Commands:
-        launcher    Run MoDAPy Web Interface
-        variantsDB  Work with Variants Database
-        addPatient  Download Patient Data to Patients folder. Receives both url or xls/xlsx
-        pipeline    Run pipeline on FastQ file/s
-        single      Run study on a single patient
-        duos        Run Duos analysis on two selected patients
-        trios       Run Trios analysis on three selected patients
+        launcher        Run MoDAPy Web Interface
+        variantsDB      Work with Variants Database
+        addPatient      Download Patient Data to Patients folder. Receives both url or xls/xlsx
+        pipeline        Run pipeline on FastQ file/s
+        single          Run study on a single patient
+        duos            Run Duos analysis on two selected patients
+        trios           Run Trios analysis on three selected patients
+        coverageStats   Generate coverages stats for bam file or list of files
 
         For more info on any of these commands, use "cmd_line.py <command> -h
         
@@ -55,6 +56,22 @@ class Parser(object):
         logger.debug(output)
         logger.debug(error)
         logger.info('Web Interface Closed')
+
+    def coverageStats(self):
+        parser = argparse.ArgumentParser(
+            description="Downloads Patient Data to Patients folder. Receives both url or xls/xlsx")
+        parser.add_argument('Gene_Exon_Bed_File',
+                            help='A Gene and Exon Bed file, in the format CHROM START END GENE_EXON STRAND')
+        parser.add_argument("-Panel",
+                            help="Filepath of a bed file containing a group of genes or exons of interest")
+        parser.add_argument('Bam_files',
+                            help='Bam files or list of files to calculate coverage stats (can use wildcard) Example: /home/bams/*.bam',
+                            nargs='*')
+        args = parser.parse_args(argv[2:])
+        Bam_files = list(args.Bam_files)
+        bed_file = args.Gene_Exon_Bed_File
+        panel_file = args.Panel
+        coverage.main(Bam_files, bed_file, panel_file)
 
     def addPatient(self):
         parser = argparse.ArgumentParser(

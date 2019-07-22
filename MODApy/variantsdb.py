@@ -31,7 +31,7 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error('Path to excel file incorrect.')
             exit(1)
-        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME'], inplace=True)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -47,7 +47,7 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error('Path to CSV file incorrect.')
             exit(1)
-        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME'], inplace=True)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -80,12 +80,12 @@ class VariantsDB(pd.DataFrame):
         def dbbuilder(patientslist, db=None):
             logger.info('Parsing Patients')
             pvcfs = ParsedVCF.mp_parser(*patientslist)
-            pvcfs = [x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY', 'GENE_NAME']] for x in pvcfs]
+            pvcfs = [x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY', 'GENE_NAME', 'HGVS.C', 'HGVS.P']] for x in pvcfs]
             for df in pvcfs:
                 if 'ZIGOSITY' not in df.columns:
                     df['ZIGOSITY'] = 'UNKWN'
             pvcfs = [x.rename(columns={'ZIGOSITY': x.name}) for x in pvcfs if 'ZIGOSITY' in x.columns]
-            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME']) for x in pvcfs]
+            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
             if db is not None:
                 pvcfs.insert(0, db)
             logger.info('Merging parsed patients toDB')
@@ -130,11 +130,11 @@ class VariantsDB(pd.DataFrame):
             logger.error('Patient must be either a path to vcf or a ParsedVCF object')
             logger.debug('', exc_info=True)
             exit(1)
-        pvcf = pvcf[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY', 'GENE_NAME']]
+        pvcf = pvcf[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY', 'GENE_NAME', 'HGVS.C', 'HGVS.P']]
         if 'ZIGOSITY' not in pvcf.columns:
             pvcf['ZIGOSITY'] = 'UNKWN'
         pvcf.rename(columns={'ZIGOSITY': pvcf.name}, inplace=True)
-        pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME'], inplace=True)
+        pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'], inplace=True)
         db = pd.concat([self, pvcf], axis=1, join='outer')
         db = db.pipe(VariantsDB)
         db = db.calcfreqs()
