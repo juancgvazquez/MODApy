@@ -465,6 +465,20 @@ class ParsedVCF(pd.DataFrame):
             return vcfstats
 
     def vcf_to_excel(self, outpath):
+        logger.info('Getting Frequencies from VariantsDB')
+        if os.path.exists(cfg['PATHS']['dbpath']):
+            if cfg['PATHS']['dbpath'].rsplit('.')[-1].lower() == 'xlsx':
+                variantsDB = pd.read_excel(cfg['PATHS']['dbpath'])
+            elif cfg['PATHS']['dbpath'].rsplit('.')[-1].lower() == 'csv':
+                variantsDB = pd.read_csv(cfg['PATHS']['dbpath'])
+            else:
+                logger.error('VariantsDBPath must be a xlsx or csv file')
+                exit(1)
+        self = self.merge(variantsDB[['CHROM', 'POS', 'REF', 'ALT', 'FREQ']], on=['CHROM', 'POS', 'REF', 'ALT'])
+        self.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
+        self['VARDB_FREQ'] = pd.to_numeric(self['VARDB_FREQ'], errors='coerce')
+        self['VARDB_FREQ'].round(6)
+        # self['VARDB_FREQ'] = self['VARDB_FREQ'].astype(str).str.replace(',', '.')
         logger.info('Formating Excel File')
         os.makedirs(outpath.rsplit('/', maxsplit=1)[0], exist_ok=True)
         output = pd.ExcelWriter(outpath)
@@ -481,9 +495,9 @@ class ParsedVCF(pd.DataFrame):
 
         output.sheets['DATA'] = datasheet
 
-        formatnum = workbook.add_format({'num_format': '#,#####0.00000'})
-        for i, col in enumerate(self.columns):
-            datasheet.set_column(i, i, 15, formatnum)
+        formatnum = workbook.add_format({'num_format': '0.00000'})
+        # for i, col in enumerate(self.columns):
+        datasheet.set_column(0, len(self.columns), 15, formatnum)
 
         formatpos = workbook.add_format({'num_format': '###,###,###'})
         datasheet.set_column(finalcols.index('POS'), finalcols.index('POS'), 15, formatpos)

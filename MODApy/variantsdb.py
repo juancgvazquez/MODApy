@@ -85,14 +85,25 @@ class VariantsDB(pd.DataFrame):
                 if 'ZIGOSITY' not in df.columns:
                     df['ZIGOSITY'] = 'UNKWN'
             pvcfs = [x.rename(columns={'ZIGOSITY': x.name}) for x in pvcfs if 'ZIGOSITY' in x.columns]
-            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
-            if db is not None:
-                pvcfs.insert(0, db)
             logger.info('Merging parsed patients toDB')
-            db = pd.concat(pvcfs, axis=1, join='outer')
+            if db is not None:
+                db = db.reset_index()
+                pvcfs.insert(0, db)
+            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
+            tempdb1 = pd.concat(pvcfs, axis=1, join='outer')
+            tempdb2 = tempdb1.reset_index().groupby(['CHROM', 'POS', 'REF', 'ALT']).agg(
+                {'GENE_NAME': ' | '.join, 'HGVS.P': ' | '.join, 'HGVS.C': ' | '.join}).reset_index()
+            pvcfs2 = [x.reset_index().drop(columns=['GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
+            pvcfs2.insert(0, tempdb2)
+            pvcfs2 = [x.set_index(['CHROM', 'POS', 'REF', 'ALT']) for x in pvcfs2]
+            db = pd.concat(pvcfs2, axis=1, join='outer')
+            colslist = ['GENE_NAME', 'HGVS.C', 'HGVS.P']
+            for col in colslist:
+                db[col] = db[col].apply(lambda x: ' | '.join(set(x.split(' | '))))
             db.replace({'.': np.nan}, inplace=True)
             db = db.pipe(VariantsDB)
             db = db.calcfreqs()
+            print(db)
             return db
 
         if os.path.exists(variantsDBPath):
