@@ -103,7 +103,6 @@ class VariantsDB(pd.DataFrame):
             db.replace({'.': np.nan}, inplace=True)
             db = db.pipe(VariantsDB)
             db = db.calcfreqs()
-            print(db)
             return db
 
         if os.path.exists(variantsDBPath):
