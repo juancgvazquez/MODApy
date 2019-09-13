@@ -1,8 +1,7 @@
-import logging
-import os
-
 import cyvcf2
+import logging
 import numpy as np
+import os
 import pandas as pd
 
 from MODApy.cfg import variantsDBPath, patientPath, cfg
@@ -100,6 +99,7 @@ class VariantsDB(pd.DataFrame):
             colslist = ['GENE_NAME', 'HGVS.C', 'HGVS.P']
             for col in colslist:
                 db[col] = db[col].apply(lambda x: ' | '.join(set(x.split(' | '))))
+            db = db.reset_index().set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'])
             db.replace({'.': np.nan}, inplace=True)
             db = db.pipe(VariantsDB)
             db = db.calcfreqs()
@@ -173,7 +173,7 @@ class VariantsDB(pd.DataFrame):
         self['POS'] = self['POS'].astype(int)
         self.sort_values(['CHROM', 'POS'], inplace=True)
         os.makedirs(variantsDBPath.rsplit('/', maxsplit=1)[0], exist_ok=True)
-        self.to_csv(variantsDBPath, index=False)
+        self.to_csv(variantsDBPath, index=False,float_format='%.5f')
         logger.info('DB construction complete')
 
     def calcfreqs(self):
@@ -181,11 +181,15 @@ class VariantsDB(pd.DataFrame):
         patients = self.columns.tolist()
         if 'FREQ' in patients:
             patients.remove('FREQ')
+        if 'ALLELE_FREQ' in patients:
+            patients.remove('ALLELE_FREQ')
         self.replace({'.': np.nan}, inplace=True)
         self['FREQ'] = (self[patients].notnull().sum(axis=1) / len(patients))
+        self['ALLELE_FREQ'] = self[patients].apply(lambda x: ((x.str.contains('HOM')*1 + x.str.contains('HET')*2).sum())/len(patients*2),axis=1)
         cols = self.columns.tolist()
         cols.remove('FREQ')
-        self = self[['FREQ'] + cols]
+        cols.remove('ALLELE_FREQ')
+        self = self[['ALLELE_FREQ', 'FREQ'] + cols]
         self.replace({np.nan: '.'}, inplace=True)
         self.pipe(VariantsDB)
         return self

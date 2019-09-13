@@ -218,6 +218,7 @@ class Parser(object):
                     result.name = resultname
                     outpath = outpath + '_F' + str(x[0]) + str(x[1])
             outpath = outpath + '.xlsx'
+            logger.info('Writing Result File')
             result.vcf_to_excel(outpath)
             logger.info('Duos Analisis Complete')
             logger.info('File available at:%s' % outpath)
@@ -238,7 +239,7 @@ class Parser(object):
                             help="Filter to apply. This function will filter out every row that includes the given text"
                                  " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
                             metavar=("COLUMN TEXT"), action='append')
-        parser.add_argument("--VennPlace", default='ALL', const='ALL', nargs='?',
+        parser.add_argument("--VennPlace", default=None, const=None, nargs='?',
                             choices=['A', 'B', 'C', 'A:B', 'A:C', 'B:C', 'A:B:C', 'ALL'],
                             help="Place in a Venn Diagram to obtain variants from")
         try:

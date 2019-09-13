@@ -38,7 +38,7 @@ def create_coverage_reports(file):
     # file = file.rsplit('.', maxsplit=1)[0]
     logger.debug(file)
     csv = pd.read_csv(file, sep='\t', names=['CHROM', 'START', 'END', 'DEPTH', 'EXON'])
-    csv['GENE'] = csv['EXON'].str.split('_', n=1)[0]
+    csv['GENE'] = csv['EXON'].str.split('_', n=1).str[0]
     csv.groupby(['GENE', 'CHROM']).DEPTH.describe().drop(columns='count').to_csv(file.rsplit('.',maxsplit=1)[0] + '_coverage_per_gene.csv')
     csv.groupby(['EXON', 'CHROM']).DEPTH.describe().drop(columns='count').to_csv(file.rsplit('.',maxsplit=1)[0] + '_coverage_per_exon.csv')
 

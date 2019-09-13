@@ -304,7 +304,7 @@ class ParsedVCF(pd.DataFrame):
             triosgraph.clf()
 
         def _duos_stats(self, names):
-            logger.info('Calculating Duos statistics')
+            logger.info('Calculating Duos statistics')    
             duos = self.groupby('VENN', sort=False).size()
             A, B = names.split(':')
             names = [A, B, names]
@@ -313,7 +313,7 @@ class ParsedVCF(pd.DataFrame):
             venn.venn2(duos, set_labels=[A, B], set_colors=['b', 'r'])
             duosgraph.savefig('./venn.png', dpi=duosgraph.dpi)
             duosgraph.clf()
-
+        
         if isinstance(vcf2, str):
             pvcf2 = ParsedVCF.from_vcf(vcf2)
         elif isinstance(vcf2, ParsedVCF):
@@ -384,6 +384,7 @@ class ParsedVCF(pd.DataFrame):
             names = ':'.join([self.name, pvcf2.name])
             _duos_stats(mergedVCF, names)
             if VENNPLACE is not None:
+                print(VENNPLACE)
                 if VENNPLACE == 'A':
                     mergedVCF = mergedVCF[mergedVCF['VENN'] == self.name]
                 elif VENNPLACE == 'B':
@@ -405,8 +406,8 @@ class ParsedVCF(pd.DataFrame):
             mergedVCF.rename(columns={'PATIENT': 'VENN', 'ZIGOSITY': 'ZIGOSITY_' + left.name}, inplace=True)
             names = self.name + ':' + pvcf2.name
             _trios_stats(mergedVCF, names)
+            
             if VENNPLACE is not None:
-                print(names)
                 names = names.split(':')
                 if VENNPLACE == 'A':
                     mergedVCF = mergedVCF[
@@ -474,11 +475,10 @@ class ParsedVCF(pd.DataFrame):
             else:
                 logger.error('VariantsDBPath must be a xlsx or csv file')
                 exit(1)
-        self = self.merge(variantsDB[['CHROM', 'POS', 'REF', 'ALT', 'FREQ']], on=['CHROM', 'POS', 'REF', 'ALT'])
-        self.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
+        self = self.merge(variantsDB[['CHROM', 'POS', 'REF', 'ALT', 'FREQ','ALLELE_FREQ']], on=['CHROM', 'POS', 'REF', 'ALT'])
+        self.rename(columns={'FREQ':'VARDB_FREQ'},inplace=True)
         self['VARDB_FREQ'] = pd.to_numeric(self['VARDB_FREQ'], errors='coerce')
         self['VARDB_FREQ'].round(6)
-        # self['VARDB_FREQ'] = self['VARDB_FREQ'].astype(str).str.replace(',', '.')
         logger.info('Formating Excel File')
         os.makedirs(outpath.rsplit('/', maxsplit=1)[0], exist_ok=True)
         output = pd.ExcelWriter(outpath)
