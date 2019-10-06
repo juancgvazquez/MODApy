@@ -1,10 +1,12 @@
-import cyvcf2
+import glob
 import logging
-import numpy as np
 import os
+
+import cyvcf2
+import numpy as np
 import pandas as pd
 
-from MODApy.cfg import variantsDBPath, patientPath, cfg
+from MODApy.cfg import variantsDBPath, patientPath, cfg, resultsPath
 from MODApy.vcfmgr import ParsedVCF
 
 logger = logging.getLogger(__name__)
@@ -38,7 +40,14 @@ class VariantsDB(pd.DataFrame):
     def from_csvdb(cls, csvpath):
         if os.path.exists(csvpath):
             try:
-                db = pd.read_csv(csvpath)
+                print(csvpath)
+                files = [f for f in glob.glob(csvpath + '/*.csv')]
+                if len(files) == 0:
+                    return None
+                dfs = [pd.read_csv(x) for x in files]
+                db = pd.concat(dfs)
+                del files
+                del dfs
             except:
                 logger.error('There was an error parsing CSV File')
                 logger.debug('', exc_info=True)
@@ -105,20 +114,19 @@ class VariantsDB(pd.DataFrame):
             db = db.calcfreqs()
             return db
 
-        if os.path.exists(variantsDBPath):
+        try:
+            logger.info('Checking DB File')
             if variantsDBPath.rsplit('.')[-1].lower() == 'xlsx':
-                logger.info('Parsing XLSX DB File')
-                db = VariantsDB.from_exceldb(variantsDBPath)
+                db = VariantsDB.from_exceldb(variantsDBPath.rsplit('/', maxsplit=1)[0])
                 patientslist = patientLister(db)
             elif variantsDBPath.rsplit('.')[-1].lower() == 'csv':
-                logger.info('Parsing CSV DB File')
-                db = VariantsDB.from_csvdb(variantsDBPath)
+                db = VariantsDB.from_csvdb(variantsDBPath.rsplit('/', maxsplit=1)[0])
                 patientslist = patientLister(db)
             else:
                 logger.error('VariantsDBPath must be a xlsx or csv file')
                 exit(1)
-
-        else:
+        except:
+            exit()
             logger.info('No DB Found, Building new Variants DB')
             patientslist = patientLister()
             db = None
@@ -156,6 +164,7 @@ class VariantsDB(pd.DataFrame):
         self['POS'] = self['POS'].astype(int)
         self.sort_values(['CHROM', 'POS'], inplace=True)
         os.makedirs(variantsDBPath.rsplit('/', maxsplit=1)[0], exist_ok=True)
+        vdbpath = variantsDBPath.rsplit('.', maxsplit=1)[0]
         output = pd.ExcelWriter(variantsDBPath)
         workbook = output.book
         datasheet = workbook.add_worksheet('VariantSDB')
@@ -163,7 +172,9 @@ class VariantsDB(pd.DataFrame):
         formatpos = workbook.add_format({'num_format': '###,###,###'})
         self['POS'] = self['POS'].astype(int)
         datasheet.set_column('B:B', 15, formatpos)
-        self.to_excel(output, sheet_name='VariantsDB', index=False, merge_cells=False)
+        for chrom in self['CHROM'].unique():
+            self[self['CHROM'] == chrom].to_excel(vdbpath + str(chrom) + '.csv', index=False, float_format='%.5f',
+                                                  merge_cells=False)
         output.save()
         logger.info('Xlsx DB construction complete')
 
@@ -172,8 +183,10 @@ class VariantsDB(pd.DataFrame):
         self.reset_index(inplace=True)
         self['POS'] = self['POS'].astype(int)
         self.sort_values(['CHROM', 'POS'], inplace=True)
+        vdbpath = variantsDBPath.rsplit('.', maxsplit=1)[0]
         os.makedirs(variantsDBPath.rsplit('/', maxsplit=1)[0], exist_ok=True)
-        self.to_csv(variantsDBPath, index=False,float_format='%.5f')
+        for chrom in self['CHROM'].unique():
+            self[self['CHROM'] == chrom].to_csv(vdbpath + str(chrom) + '.csv', index=False, float_format='%.5f')
         logger.info('DB construction complete')
 
     def calcfreqs(self):
@@ -185,7 +198,8 @@ class VariantsDB(pd.DataFrame):
             patients.remove('ALLELE_FREQ')
         self.replace({'.': np.nan}, inplace=True)
         self['FREQ'] = (self[patients].notnull().sum(axis=1) / len(patients))
-        self['ALLELE_FREQ'] = self[patients].apply(lambda x: ((x.str.contains('HOM')*1 + x.str.contains('HET')*2).sum())/len(patients*2),axis=1)
+        self['ALLELE_FREQ'] = self[patients].apply(
+            lambda x: ((x.str.contains('HOM') * 2 + x.str.contains('HET') * 1).sum()) / len(patients * 2), axis=1)
         cols = self.columns.tolist()
         cols.remove('FREQ')
         cols.remove('ALLELE_FREQ')
@@ -193,3 +207,17 @@ class VariantsDB(pd.DataFrame):
         self.replace({np.nan: '.'}, inplace=True)
         self.pipe(VariantsDB)
         return self
+
+    def annotate_excel(self, df, fileName):
+        logger.info('Annotating Excel file')
+        df = df.merge(self.reset_index()[['CHROM', 'POS', 'REF', 'ALT', 'FREQ', 'ALLELE_FREQ']],
+                      on=['CHROM', 'POS', 'REF', 'ALT'], how='left')
+        df.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
+        df['VARDB_FREQ'] = pd.to_numeric(df['VARDB_FREQ'], errors='coerce')
+        df['VARDB_FREQ'].round(6)
+        outpath = resultsPath + 'vDBannotated' + '/' + fileName.rsplit('.', maxsplit=1)[-2] + '.annotated.xlsx'
+        firstcols = ['GENE_NAME', 'AMINOCHANGE', 'HGVS.P', 'HGVS.C', 'RSID', 'IMPACT', 'EFFECT', 'VARDB_FREQ',
+                     'ALLELE_FREQ']
+        lastcols = [x for x in df.columns if x not in firstcols]
+        df[firstcols + lastcols].to_excel(outpath)
+        logger.info('File saved to %s' % outpath)

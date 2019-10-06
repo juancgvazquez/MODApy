@@ -6,6 +6,8 @@ import shlex
 import subprocess
 from sys import argv
 
+import pandas as pd
+
 from MODApy import cfg, pipeline, vcfmgr, downloader, variantsdb, coverage
 from MODApy.version import __version__
 
@@ -87,6 +89,8 @@ class Parser(object):
                             help='Build Variants DataBase with all patients that are not currently in it.')
         parser.add_argument('-addPatientToDB',
                             help='Adds a single patient to DB. Must supply path to vcf')
+        parser.add_argument('-annotate',
+                            help='Adds data from variantsdb to analysis done in modapy. Must supply path to excel output from modapy')
         args = parser.parse_args(argv[2:])
         if args.buildDB:
             db = variantsdb.VariantsDB.buildDB()
@@ -96,6 +100,11 @@ class Parser(object):
             db = variantsdb.VariantsDB.from_exceldb(variantsdb.variantsDBPath)
             db = db.addPatientToDB(patient)
             db.to_VarDBCSV()
+        if args.annotate:
+            fileName = args.annotate.rsplit('/', maxsplit=1)[1]
+            patient = pd.read_excel(args.annotate)
+            db = variantsdb.VariantsDB.from_csvdb(variantsdb.variantsDBPath.rsplit('/', maxsplit=1)[0])
+            patient = db.annotate_excel(patient, fileName)
 
     def pipeline(self):
         # Description for pipeline usage

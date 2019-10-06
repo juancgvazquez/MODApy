@@ -16,6 +16,7 @@ MODApy<-import('MODApy')
 
 # combo box options -------------------------------------------------------------------
 patientsvcf <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))
+chromdbs <- gsub('\\..*','',basename(list.files(dirname(cfg$PATHS$dbpath),pattern="\\.csv",recursive = TRUE)))
 updatepanels <<- function(){
   result<-gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
   return(result)
@@ -178,7 +179,9 @@ ui <- tagList(shinyjs::useShinyjs(),
                                     )),
                          tabPanel('VariantsDB',
                                   actionButton("buildDBbtn","Build DataBase"),
+                                  div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "ChromSel", label = NULL, choices = chromdbs)),                                  
                                   actionButton("openDBbtn","Open Database"),
+                                  actionButton("annotateFile",'Annotate File'),
                                   htmlOutput("dbout"),
                                   DT::dataTableOutput("mytable")
                          ),
@@ -212,6 +215,16 @@ server <- function(input,output, session){
       footer = tagList(
         modalButton("Cancel"),
         actionButton("addbtn","Add Patient")
+      ))
+  }
+  annotateModal <- function(failed = FALSE) {
+    modalDialog(
+      title = "Annotate a file with Variants DB Freqs",
+      p('This will annotate an excel file with the variant Frequencies available in Variants DB, both allelic and total'),
+      fileInput('file1','Choose File to Annotate',accept=c('.xls','.xlsx')),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("annotatebtn","Annotate")
       ))
   }
   newpanelModal <- function(failed = FALSE) {
@@ -263,11 +276,11 @@ server <- function(input,output, session){
     system2('MODApy',args = 'variantsDB -buildDB',wait = FALSE,stdout = FALSE,stderr = FALSE)
   })
   observeEvent(input$openDBbtn, {
-    if(file.exists(cfg$PATHS$dbpath)){
+    dbfile = paste(dirname(cfg$PATHS$dbpath),'/',input$ChromSel,'.csv',sep="")
+    if(file.exists(dbfile)){
       rv$textstream = ""
       rv$started<-FALSE
-      #df1 <-read.xlsx(cfg$PATHS$dbpath, sheet=1,skipEmptyRows=FALSE)
-      df1 <- read.csv(cfg$PATHS$dbpath,check.names = FALSE)
+      df1 <- read.csv(dbfile)
       output$mytable = DT::renderDataTable({df1})
     }
     else{
@@ -275,6 +288,23 @@ server <- function(input,output, session){
     }
     
   })
+  observeEvent(input$annotateFile, {
+    showModal(annotateModal())
+    })
+  
+  observeEvent(input$annotatebtn, {
+    if(is.null(input$file1)){
+      removeModal()
+      modalDialog('No input data to download.')
+    }
+    else if(!(is.null(input$file1))){
+      file.copy(input$file1$datapath, paste0("./", input$file1$name))
+      system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)
+      file.remove(paste0('./',input$file1$name))
+      removeModal()
+      showModal(modalDialog('File Annotated'))
+    }
+    })
   observeEvent(input$addbtn, {
     if((input$url=="")&(is.null(input$file1))){
       removeModal()

@@ -466,21 +466,21 @@ class ParsedVCF(pd.DataFrame):
             return vcfstats
 
     def vcf_to_excel(self, outpath):
-        logger.info('Getting Frequencies from VariantsDB')
-        if os.path.exists(cfg['PATHS']['dbpath']):
-            if cfg['PATHS']['dbpath'].rsplit('.')[-1].lower() == 'xlsx':
-                variantsDB = pd.read_excel(cfg['PATHS']['dbpath'])
-            elif cfg['PATHS']['dbpath'].rsplit('.')[-1].lower() == 'csv':
-                variantsDB = pd.read_csv(cfg['PATHS']['dbpath'])
-            else:
-                logger.error('VariantsDBPath must be a xlsx or csv file')
-                exit(1)
-        self = self.merge(variantsDB[['CHROM', 'POS', 'REF', 'ALT', 'FREQ', 'ALLELE_FREQ']],
-                          on=['CHROM', 'POS', 'REF', 'ALT'], how='left')
-        self.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
-        self['VARDB_FREQ'] = pd.to_numeric(self['VARDB_FREQ'], errors='coerce')
-        self['VARDB_FREQ'].round(6)
-        logger.info('Formating Excel File')
+        # logger.info('Getting Frequencies from VariantsDB')
+        # if os.path.exists(cfg['PATHS']['dbpath']):
+        #     if cfg['PATHS']['dbpath'].rsplit('.')[-1].lower() == 'xlsx':
+        #         variantsDB = pd.read_excel(cfg['PATHS']['dbpath'])
+        #     elif cfg['PATHS']['dbpath'].rsplit('.')[-1].lower() == 'csv':
+        #         variantsDB = pd.read_csv(cfg['PATHS']['dbpath'])
+        #     else:
+        #         logger.error('VariantsDBPath must be a xlsx or csv file')
+        #         exit(1)
+        # #self = self.merge(variantsDB[['CHROM', 'POS', 'REF', 'ALT', 'FREQ', 'ALLELE_FREQ']],
+        #                   on=['CHROM', 'POS', 'REF', 'ALT'], how='left')
+        # #self.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
+        # #self['VARDB_FREQ'] = pd.to_numeric(self['VARDB_FREQ'], errors='coerce')
+        # #self['VARDB_FREQ'].round(6)
+        # logger.info('Formating Excel File')
         os.makedirs(outpath.rsplit('/', maxsplit=1)[0], exist_ok=True)
         output = pd.ExcelWriter(outpath)
         cols_selected = cfg["OUTPUT"]["columnsorder"].replace(',', ' ').split()
