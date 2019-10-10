@@ -219,5 +219,87 @@ class VariantsDB(pd.DataFrame):
         firstcols = ['GENE_NAME', 'AMINOCHANGE', 'HGVS.P', 'HGVS.C', 'RSID', 'IMPACT', 'EFFECT', 'VARDB_FREQ',
                      'ALLELE_FREQ']
         lastcols = [x for x in df.columns if x not in firstcols]
-        df[firstcols + lastcols].to_excel(outpath)
+        output = pd.ExcelWriter(outpath)
+        workbook = output.book
+        datasheet = workbook.add_worksheet('DATA')
+        statsheet = workbook.add_worksheet('STATISTICS')
+        output.sheets['STATISTICS'] = statsheet
+
+        output.sheets['DATA'] = datasheet
+        formatnum = workbook.add_format({'num_format': '0.00000'})
+        # for i, col in enumerate(self.columns):
+        datasheet.set_column(0, len(df.columns), 15, formatnum)
+
+        formatpos = workbook.add_format({'num_format': '###,###,###'})
+        datasheet.set_column(df.columns.to_list().index('POS'), df.columns.to_list().index('POS'), 15, formatpos)
+        datasheet.set_column(df.columns.to_list().index('RSID'), df.columns.to_list().index('RSID'), 15)
+        # Light red fill with dark red text.
+        highformat = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006', 'bold': True})
+        # Light yellow fill with dark yellow text.
+        modformat = workbook.add_format({'bg_color': '#FFFF99', 'font_color': '#9C6500', 'bold': True})
+        # Light orange fill with dark orange text.
+        moderformat = workbook.add_format({'bg_color': '#FFCC99', 'font_color': '#FF6600', 'bold': True})
+        # Green fill with dark green text.
+        lowformat = workbook.add_format({'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
+        datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
+                                     len(df), df.columns.to_list().index('IMPACT'),
+                                     {'type': 'text', 'criteria': 'containing', 'value': 'HIGH',
+                                      'format': highformat, })
+        datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
+                                     len(df), df.columns.to_list().index('IMPACT'),
+                                     {'type': 'text', 'criteria': 'containing', 'value': 'MODIFIER',
+                                      'format': modformat})
+        datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
+                                     len(df), df.columns.to_list().index('IMPACT'),
+                                     {'type': 'text', 'criteria': 'containing', 'value': 'MODERATE',
+                                      'format': moderformat})
+        datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
+                                     len(df), df.columns.to_list().index('IMPACT'),
+                                     {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
+        logger.info('Writing Excel File')
+        df[firstcols + lastcols].to_excel(output, sheet_name='DATA', merge_cells=False, index=False, header=True)
+
+        if (df.reset_index().index.max() < 32150):
+            logger.info('Redirecting IDs and GENEs to URLs')
+            try:
+                colid = df.columns.to_list().index('RSID')
+                colgen = df.columns.to_list().index('GENE_NAME')
+                row = 2
+                for x in zip(df['RSID'], df['GENE_NAME']):
+                    if type(x[0]) == str:
+                        urlrs = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=%s"
+                        rsvalue = (x[0].replace(';', ',').split(','))[0]
+                        datasheet.write_url('%s%i' % (chr(colid + 65), (row)),
+                                            urlrs % rsvalue, string=rsvalue)
+                    if type(x[1]) == str:
+                        urlgen = "https://www.genecards.org/cgi-bin/carddisp.pl?gene=%s"
+                        datasheet.write_url('%s%i' % (chr(colgen + 65), (row)),
+                                            urlgen % x[1], string=x[1])
+                    row += 1
+            except Exception as e:
+                logger.error(e, exc_info=True)
+        stats = ParsedVCF.general_stats(df)
+        stats.to_excel(output, sheet_name='STATISTICS')
+        output.sheets['STATISTICS'] = statsheet
+        try:
+            stats.to_excel(output, sheet_name='STATISTICS')
+        except Exception as e:
+            logger.error('Could not print statistics. Error was {}'.format(e), exc_info=True)
+        try:
+            statsheet.insert_image('H2', './general.png')
+        except Exception as e:
+            logger.error('Could not print stats graphs. Error was {}'.format(e), exc_info=True)
+        if os.path.isfile('./venn.png'):
+            statsheet.insert_image('H25', './venn.png')
+        output.save()
+        try:
+            os.remove('./general.png')
+        except:
+            logger.debug('Could not remove general.png')
+        try:
+            os.remove('./venn.png')
+        except:
+            logger.debug('Could not remove venn.png')
+        datasheet.autofilter(0, 0, len(self), len(df.columns))
+        output.save()
         logger.info('File saved to %s' % outpath)

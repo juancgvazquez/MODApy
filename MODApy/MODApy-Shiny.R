@@ -4,6 +4,7 @@ library(ConfigParser)
 library(reticulate)
 library(DT)
 library(openxlsx)
+library(shinycssloaders)
 #python config -------------------------------------------------------------------
 cfgpath = '/DiscoDatos/Development/modapy/MODApy/config.ini'
 logfile = "/DiscoDatos/Development/modapy/MODApy/logs/currentrun.log"
@@ -182,7 +183,7 @@ ui <- tagList(shinyjs::useShinyjs(),
                                   div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "ChromSel", label = NULL, choices = chromdbs)),                                  
                                   actionButton("openDBbtn","Open Database"),
                                   actionButton("annotateFile",'Annotate File'),
-                                  htmlOutput("dbout"),
+                                  htmlOutput("dbout") %>% withSpinner(color="#0dc5c1"),
                                   DT::dataTableOutput("mytable")
                          ),
                          tabPanel('About',
@@ -193,17 +194,26 @@ ui <- tagList(shinyjs::useShinyjs(),
                                   p('Frontend is developed in R through Shiny.'),
                                   p('Authors: Juan Carlos Vázquez - Elmer A. Fernández'),
                                   p('Bioscience Data Mining Group - Universidad Católica de Córdoba'),
-                                  p('Centro de Investigación y Desarrollo en Inmunología y Enfermedades Infecciosas - CONICET')
+                                  p('Centro de Investigación y Desarrollo en Inmunología y Enfermedades Infecciosas - CONICET'),
+                                  actionButton("cfgButton",label=NULL,icon=icon('cog'))
                          )
-              )
+                         
+                         
+              ),
+              tags$head(tags$style(".modal-dialog{width:1000px}"))
+              
 )
 # server -------------------------------------------------------------------
 server <- function(input,output, session){
+  
+  dbfile = paste(dirname(cfg$PATHS$dbpath),'/',chromdbs[1],'.csv',sep="")
+  df1 <- read.csv(dbfile)
+  output$mytable = DT::renderDataTable({df1})
+  
   rv <- reactiveValues(textstream = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv2 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv3 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
   downpath <- reactiveValues()
-  
   newpatientModal <- function(failed = FALSE) {
     modalDialog(
       title = "Add New Patient",
@@ -240,6 +250,16 @@ server <- function(input,output, session){
         modalButton("Cancel"),
         actionButton("addpanelbtn","Add Panel")
       ))
+  }
+  configModal <- function(failed = FALSE) {
+    modalDialog(
+      title = "Config",
+      textInput("cfgcores","Number of Cores:",cfg$GENERAL$cores),
+      textInput("cfgpatientspath","Patients Files Path:",cfg$PATHS$patientpath),
+      textInput("cfgpanelspath","Paneles Files Path:",cfg$PATHS$panelspath),
+      textInput("cfgresultspath","Results Files Path:",cfg$PATHS$resultspath),
+      actionButton('savecfg',"Save Changes")
+    )
   }
   observeEvent(c(input$newpatient,
                  input$newpatient1D,
@@ -299,10 +319,21 @@ server <- function(input,output, session){
     }
     else if(!(is.null(input$file1))){
       file.copy(input$file1$datapath, paste0("./", input$file1$name))
-      system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)
-      file.remove(paste0('./',input$file1$name))
+      withProgress(message='Annotating',value=0, {
+        system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
+        incProgress(0.5,detail="Erasing Temporal Files")
+        file.remove(paste0('./',input$file1$name))
+        incProgress(1,detail = 'Done')
+      })
       removeModal()
-      showModal(modalDialog('File Annotated'))
+      showModal(modalDialog('File Annotated',
+                            p('File Available at: ',paste0(cfg$PATHS$resultspath,'vDBannotated/',sub('\\.xlsx','',input$file1$name),'.annotated.xlsx')
+                            ),
+                            downloadButton('downloadannotatedVDB','Download Result')
+                            )
+                
+                            
+                )
     }
     })
   observeEvent(input$addbtn, {
@@ -333,6 +364,17 @@ server <- function(input,output, session){
     rv$started<-TRUE
     getcommand(input)
   })
+  #Download Result Annotated
+  output$downloadannotatedVDB <- downloadHandler(
+    filename <- paste0(cfg$PATHS$resultspath,'vDBannotated/',sub('\\.xlsx','',input$file1$name),'annotated.xlsx'),
+    content<-function(downfile){
+      filepath <- paste0(cfg$PATHS$resultspath,'vDBannotated/',sub('\\.xlsx','',input$file1$name),'.annotated.xlsx')
+      print(filepath)
+      file.copy(filepath,downfile)
+      file.size(filepath)
+    },
+    contentType = "application/xlsx"
+  )
   #Download Result
   output$downloadData <- downloadHandler(
     filename<-function(){
@@ -424,6 +466,13 @@ server <- function(input,output, session){
   output$vennTrios <- renderUI({
     selectInput("vennplaceT",NULL, choices = list(input$Patient1T, input$Patient2T, input$Patient3T, paste(input$Patient1T, input$Patient2T,sep=":"), paste(input$Patient1T, input$Patient3T,sep=":"), paste(input$Patient2T, input$Patient3T,sep=":"), paste(input$Patient1T, input$Patient2T, input$Patient3T,sep=":"), "All"), selected='All')
   })
+  observeEvent(input$cfgButton,{
+    showModal(configModal())  
+  })
+  observeEvent(input$savecfg,{
+    print(typeof(cfg$GENERAL))
+  })
+  
   session$onSessionEnded(function(){stopApp()})
 }
 
