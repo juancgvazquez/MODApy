@@ -1,3 +1,10 @@
+from MODApy.cfg import cfg
+import pandas as pd
+import numpy as np
+import cyvcf2
+from collections import OrderedDict
+import matplotlib_venn as venn
+import matplotlib.pyplot as plt
 import logging
 import multiprocessing as mp
 import os
@@ -5,16 +12,7 @@ import os
 import matplotlib
 
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import matplotlib_venn as venn
 
-from collections import OrderedDict
-
-import cyvcf2
-import numpy as np
-import pandas as pd
-
-from MODApy.cfg import cfg
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +80,8 @@ class ParsedVCF(pd.DataFrame):
         df1.index.names = ['CHROM', 'POS', 'REF', 'ALT']
         df1.reset_index(inplace=True)
         splitdf = df1.loc[df1['ALT'].str.contains(',') == True].copy()
-        ALT = splitdf['ALT'].astype(str).str.split(',', n=1, expand=True).stack().rename('ALT')
+        ALT = splitdf['ALT'].astype(str).str.split(
+            ',', n=1, expand=True).stack().rename('ALT')
         ALT.index = ALT.index.droplevel(-1)
         ALT = ALT.to_frame()
         splitdf = splitdf.join(ALT, lsuffix='_x', rsuffix='_y')
@@ -93,14 +92,17 @@ class ParsedVCF(pd.DataFrame):
         splitdf.drop(columns='index', inplace=True)
         odd = splitdf.iloc[::2].copy()
         even = splitdf.iloc[1::2].copy()
-        splitlist = ['ID', 'AC', 'AF', 'SAMPLES_AF', 'MLEAC', 'MLEAF', 'VARTYPE', 'dbSNPBuildID']
+        splitlist = ['ID', 'AC', 'AF', 'SAMPLES_AF',
+                     'MLEAC', 'MLEAF', 'VARTYPE', 'dbSNPBuildID']
         splitlist = [x for x in splitlist if x in df1.columns]
-        splitlist += [x for x in df1.columns if x.startswith(('1000', 'CLINVAR'))]
+        splitlist += [x for x in df1.columns if x.startswith(
+            ('1000', 'CLINVAR'))]
         for col in splitlist:
             odd[col] = odd[col].astype(str).str.split(',', n=1).str[0]
             even[col] = even[col].apply(lambda x:
                                         x if len(str(x).split(',')) <= 1 else str(x).split(',', maxsplit=1)[1])
-        splitdf = pd.concat([odd, even]).sort_index().replace(to_replace=['\(', '\)'], value='', regex=True)
+        splitdf = pd.concat([odd, even]).sort_index().replace(
+            to_replace=['\(', '\)'], value='', regex=True)
         del odd, even
         splitdf = splitdf[['CHROM', 'POS', 'REF', 'ALT'] + splitlist]
         df1 = df1.merge(splitdf, on=['CHROM', 'POS', 'REF'], how='left')
@@ -116,7 +118,8 @@ class ParsedVCF(pd.DataFrame):
         df1['POS'] = df1['POS'].astype(int)
         if 'ANN' in df1.columns:
             anndf = df1['ANN']
-            annhead = pVCF.get_header_type('ANN')['Description'].strip('"Functional annotations: \'"')
+            annhead = pVCF.get_header_type('ANN')['Description'].strip(
+                '"Functional annotations: \'"')
             annheaderlist = [x.strip() for x in annhead.split('|')]
             anndf = anndf.str.split(',', expand=True).stack()
             anndf = anndf.str.split('|', expand=True)
@@ -158,9 +161,11 @@ class ParsedVCF(pd.DataFrame):
                 'intergenic_region': 28,
                 'transcript': 29
             }
-            df1['sorter'] = df1['Annotation'].str.split('&').str[0].replace(IMPACT_SEVERITY)
+            df1['sorter'] = df1['Annotation'].str.split(
+                '&').str[0].replace(IMPACT_SEVERITY)
             df1.loc[df1['HGVS.c'].str.contains('null'), 'HGVS.c'] = None
-            df1['sorter2'] = [x[0] == x[1] for x in zip(df1['ALT'], df1['Allele'])]
+            df1['sorter2'] = [x[0] == x[1]
+                              for x in zip(df1['ALT'], df1['Allele'])]
             df1 = df1.sort_values(by=['CHROM', 'POS', 'sorter2', 'sorter'],
                                   ascending=[True, True, False, True]).drop_duplicates(['CHROM', 'POS', 'REF', 'ALT'])
             df1.drop(columns=['sorter', 'sorter2'], inplace=True)
@@ -169,19 +174,25 @@ class ParsedVCF(pd.DataFrame):
         if 'HGVS.P' in df1.columns:
             df1['AMINOCHANGE'] = df1['HGVS.P'].apply(aminoChange)
         if 'HOM' in df1.columns:
-            df1['HOM'] = df1['HOM'].replace({True: 'HOM', np.nan: 'HET', None: 'HET'})
+            df1['HOM'] = df1['HOM'].replace(
+                {True: 'HOM', np.nan: 'HET', None: 'HET'})
             df1.drop(columns='HET', inplace=True)
             df1.rename(columns={'HOM': 'ZIGOSITY'}, inplace=True)
         if 'ESP6500_MAF' in df1.columns:
             df1[['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']] = df1['ESP6500_MAF'].str.split(',',
                                                                                                         expand=True)
-            df1['ESP6500_MAF_EA'] = df1['ESP6500_MAF_EA'].apply(divide, args=(100,))
-            df1['ESP6500_MAF_AA'] = df1['ESP6500_MAF_AA'].apply(divide, args=(100,))
-            df1['ESP6500_MAF_ALL'] = df1['ESP6500_MAF_ALL'].apply(divide, args=(100,))
+            df1['ESP6500_MAF_EA'] = df1['ESP6500_MAF_EA'].apply(
+                divide, args=(100,))
+            df1['ESP6500_MAF_AA'] = df1['ESP6500_MAF_AA'].apply(
+                divide, args=(100,))
+            df1['ESP6500_MAF_ALL'] = df1['ESP6500_MAF_ALL'].apply(
+                divide, args=(100,))
             df1.drop(columns=['ESP6500_MAF'], inplace=True)
         if 'ESP6500_PH' in df1.columns:
-            df1[['POLYPHEN_PRED', 'POLYPHEN_SCORE']] = df1['ESP6500_PH'].str.split(':', 1, expand=True)
-            df1['POLYPHEN_PRED'] = df1['POLYPHEN_PRED'].str.strip('.').str.strip('.,')
+            df1[['POLYPHEN_PRED', 'POLYPHEN_SCORE']
+                ] = df1['ESP6500_PH'].str.split(':', 1, expand=True)
+            df1['POLYPHEN_PRED'] = df1['POLYPHEN_PRED'].str.strip(
+                '.').str.strip('.,')
             df1['POLYPHEN_SCORE'] = df1['POLYPHEN_SCORE'].str.split(',').str[0]
             df1.drop(columns=['ESP6500_PH'], inplace=True)
             df1.rename(columns={'ANNOTATION': 'EFFECT', 'ANNOTATION_IMPACT': 'IMPACT', 'ID': 'RSID'},
@@ -192,8 +203,10 @@ class ParsedVCF(pd.DataFrame):
                 if x['Type'] in ['Float', 'Integer']:
                     numcols.append(x['ID'])
         numcols += ['ESP6500_MAF_EA', 'ESP6500_MAF_AA', 'ESP6500_MAF_ALL']
-        numcols = list(set([x.upper() for x in numcols for y in df1.columns if x.upper() == y]))
-        df1[numcols] = df1[numcols].apply(pd.to_numeric, errors='coerce', axis=1)
+        numcols = list(
+            set([x.upper() for x in numcols for y in df1.columns if x.upper() == y]))
+        df1[numcols] = df1[numcols].apply(
+            pd.to_numeric, errors='coerce', axis=1)
         df1 = df1.round(6)
 
         if ('CLINVAR_CLNSIG' in df1.columns):
@@ -271,7 +284,8 @@ class ParsedVCF(pd.DataFrame):
         panel_df = panel_df.pipe(ParsedVCF)
         panel_df.name = self.name
         if len(panel_df) < 1:
-            logger.error('After running Panel, resulting Dataframe holds no variants')
+            logger.error(
+                'After running Panel, resulting Dataframe holds no variants')
         return panel_df
 
     def duos(self, vcf2, VENNPLACE=None):
@@ -333,17 +347,20 @@ class ParsedVCF(pd.DataFrame):
                 'in a trios). Both arguments provided where duos or trios')
             exit(1)
         elif 'VENN' in self.columns:
-            logger.info('Running TRIOS analysis on %s' % ':'.join([self.name, pvcf2.name]))
+            logger.info('Running TRIOS analysis on %s' %
+                        ':'.join([self.name, pvcf2.name]))
             indicator = 'TRIOS'
             left = pvcf2
             right = self
         elif 'VENN' in pvcf2.columns:
-            logger.info('Running TRIOS analysis on %s' % ':'.join([self.name, pvcf2.name]))
+            logger.info('Running TRIOS analysis on %s' %
+                        ':'.join([self.name, pvcf2.name]))
             indicator = 'TRIOS'
             left = self
             right = pvcf2
         else:
-            logger.info('Running DUOS analysis on %s' % ':'.join([self.name, pvcf2.name]))
+            logger.info('Running DUOS analysis on %s' %
+                        ':'.join([self.name, pvcf2.name]))
             indicator = 'DUOS'
             left = self
             right = pvcf2
@@ -354,8 +371,10 @@ class ParsedVCF(pd.DataFrame):
                                indicator=indicator)
 
         # columnas que deberían ser iguales y columnas que podrían ser distintas
-        difcols = [x.replace('_' + self.name, '') for x in mergedVCF.columns if '_' + self.name in x]
-        eqcols = [x for x in difcols if any(y in x for y in ['1000GP3', 'CLINVAR', 'ESP6500', 'RSID', 'POLYPHEN'])]
+        difcols = [x.replace('_' + self.name, '')
+                   for x in mergedVCF.columns if '_' + self.name in x]
+        eqcols = [x for x in difcols if any(
+            y in x for y in ['1000GP3', 'CLINVAR', 'ESP6500', 'RSID', 'POLYPHEN'])]
         difcols = set(difcols) - set(eqcols)
         # columnas a eliminar
         dropcols = [x + '_' + self.name for x in difcols]
@@ -366,11 +385,13 @@ class ParsedVCF(pd.DataFrame):
         tmp = mergedVCF.loc[mergedVCF[indicator] == 'both'][dropcols]
         # combino las que deberían ser iguales
         for col in eqcols:
-            mergedVCF[col] = mergedVCF[col + '_' + self.name].combine_first(mergedVCF[col + '_' + pvcf2.name])
+            mergedVCF[col] = mergedVCF[col + '_' +
+                                       self.name].combine_first(mergedVCF[col + '_' + pvcf2.name])
         # combino las que podrían ser diferentes, si son diferentes (para variantes en ambos archivos, no las combino.
         for col in difcols:
             if all(tmp[col + '_' + self.name] == tmp[col + '_' + pvcf2.name]):
-                mergedVCF[col] = mergedVCF[col + '_' + self.name].combine_first(mergedVCF[col + '_' + pvcf2.name])
+                mergedVCF[col] = mergedVCF[col + '_' +
+                                           self.name].combine_first(mergedVCF[col + '_' + pvcf2.name])
             else:
                 dropcols.remove(col + '_' + self.name)
                 dropcols.remove(col + '_' + pvcf2.name)
@@ -390,20 +411,24 @@ class ParsedVCF(pd.DataFrame):
                 elif VENNPLACE == 'B':
                     mergedVCF = mergedVCF[mergedVCF['VENN'] == pvcf2.name]
                 elif VENNPLACE == 'A:B':
-                    mergedVCF = mergedVCF[mergedVCF['VENN'] == self.name + ':' + pvcf2.name]
+                    mergedVCF = mergedVCF[mergedVCF['VENN']
+                                          == self.name + ':' + pvcf2.name]
                 else:
-                    logger.error('VENNPLACE can only be A, B or A:B for a trios analysis')
+                    logger.error(
+                        'VENNPLACE can only be A, B or A:B for a trios analysis')
                     logger.debug('', exc_info=True)
                     exit(1)
         if indicator == 'TRIOS':
             mergedVCF['PATIENT'] = None
-            mergedVCF['PATIENT'] = np.where(mergedVCF['TRIOS'] == 'left_only', left.name, mergedVCF['PATIENT'])
+            mergedVCF['PATIENT'] = np.where(
+                mergedVCF['TRIOS'] == 'left_only', left.name, mergedVCF['PATIENT'])
             mergedVCF['PATIENT'] = np.where((mergedVCF['TRIOS'] == 'both'), mergedVCF['VENN'] + ':' + left.name,
                                             mergedVCF['PATIENT'])
             mergedVCF['PATIENT'] = np.where((mergedVCF['TRIOS'] == 'right_only'), mergedVCF['VENN'],
                                             mergedVCF['PATIENT'])
             mergedVCF.drop(columns=['VENN', 'TRIOS'], inplace=True)
-            mergedVCF.rename(columns={'PATIENT': 'VENN', 'ZIGOSITY': 'ZIGOSITY_' + left.name}, inplace=True)
+            mergedVCF.rename(
+                columns={'PATIENT': 'VENN', 'ZIGOSITY': 'ZIGOSITY_' + left.name}, inplace=True)
             names = self.name + ':' + pvcf2.name
             _trios_stats(mergedVCF, names)
 
@@ -438,11 +463,13 @@ class ParsedVCF(pd.DataFrame):
                         (mergedVCF['VENN'].str.contains(names[0])) & (mergedVCF['VENN'].str.contains(names[1])) & (
                             mergedVCF['VENN'].str.contains(names[2]))]
                 else:
-                    logger.error('VENNPLACE can only be A, B, C, A:B, A:C, B:C or A:B:C in a trios analysis')
+                    logger.error(
+                        'VENNPLACE can only be A, B, C, A:B, A:C, B:C or A:B:C in a trios analysis')
                     logger.debug('', exc_info=True)
                     exit(1)
         if len(mergedVCF) < 1:
-            logger.error('After running Duos/Trios, resulting Dataframe does not hold any variants')
+            logger.error(
+                'After running Duos/Trios, resulting Dataframe does not hold any variants')
             exit(1)
         mergedVCF.fillna('.', inplace=True)
         mergedVCF = mergedVCF.pipe(ParsedVCF)
@@ -458,7 +485,8 @@ class ParsedVCF(pd.DataFrame):
             logger.info('Calculating General Statistics')
             vcfstats = self.groupby(colstats).size().to_frame(name='count')
             vcfstats.name = 'stats'
-            plt.pie(vcfstats.groupby('CHROM').count(), labels=vcfstats.groupby('CHROM').size().index.values)
+            plt.pie([item for sublist in vcfstats.groupby('CHROM').count().values for item in sublist],
+                    labels=vcfstats.groupby('CHROM').size().index.values)
             my_circle = plt.Circle((0, 0), 0.7, color='white')
             chromVars = plt.gcf()
             chromVars.gca().add_artist(my_circle)
@@ -501,16 +529,22 @@ class ParsedVCF(pd.DataFrame):
         datasheet.set_column(0, len(self.columns), 15, formatnum)
 
         formatpos = workbook.add_format({'num_format': '###,###,###'})
-        datasheet.set_column(finalcols.index('POS'), finalcols.index('POS'), 15, formatpos)
-        datasheet.set_column(finalcols.index('RSID'), finalcols.index('RSID'), 15)
+        datasheet.set_column(finalcols.index(
+            'POS'), finalcols.index('POS'), 15, formatpos)
+        datasheet.set_column(finalcols.index(
+            'RSID'), finalcols.index('RSID'), 15)
         # Light red fill with dark red text.
-        highformat = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006', 'bold': True})
+        highformat = workbook.add_format(
+            {'bg_color': '#FFC7CE', 'font_color': '#9C0006', 'bold': True})
         # Light yellow fill with dark yellow text.
-        modformat = workbook.add_format({'bg_color': '#FFFF99', 'font_color': '#9C6500', 'bold': True})
+        modformat = workbook.add_format(
+            {'bg_color': '#FFFF99', 'font_color': '#9C6500', 'bold': True})
         # Light orange fill with dark orange text.
-        moderformat = workbook.add_format({'bg_color': '#FFCC99', 'font_color': '#FF6600', 'bold': True})
+        moderformat = workbook.add_format(
+            {'bg_color': '#FFCC99', 'font_color': '#FF6600', 'bold': True})
         # Green fill with dark green text.
-        lowformat = workbook.add_format({'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
+        lowformat = workbook.add_format(
+            {'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
         datasheet.conditional_format(0, cols_selected.index('IMPACT'),
                                      len(self), cols_selected.index('IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'HIGH',
@@ -527,7 +561,8 @@ class ParsedVCF(pd.DataFrame):
                                      len(self), cols_selected.index('IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
         logger.info('Writing Excel File')
-        self.to_excel(output, sheet_name='DATA', merge_cells=False, index=False, header=True)
+        self.to_excel(output, sheet_name='DATA',
+                      merge_cells=False, index=False, header=True)
 
         if (self.reset_index().index.max() < 32150):
             logger.info('Redirecting IDs and GENEs to URLs')
@@ -554,11 +589,13 @@ class ParsedVCF(pd.DataFrame):
         try:
             stats.to_excel(output, sheet_name='STATISTICS')
         except Exception as e:
-            logger.error('Could not print statistics. Error was {}'.format(e), exc_info=True)
+            logger.error(
+                'Could not print statistics. Error was {}'.format(e), exc_info=True)
         try:
             statsheet.insert_image('H2', './general.png')
         except Exception as e:
-            logger.error('Could not print stats graphs. Error was {}'.format(e), exc_info=True)
+            logger.error(
+                'Could not print stats graphs. Error was {}'.format(e), exc_info=True)
         if os.path.isfile('./venn.png'):
             statsheet.insert_image('H25', './venn.png')
         output.save()

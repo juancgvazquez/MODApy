@@ -32,7 +32,8 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error('Path to excel file incorrect.')
             exit(1)
-        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'], inplace=True)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME',
+                      'HGVS.C', 'HGVS.P'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -40,12 +41,11 @@ class VariantsDB(pd.DataFrame):
     def from_csvdb(cls, csvpath):
         if os.path.exists(csvpath):
             try:
-                print(csvpath)
                 files = [f for f in glob.glob(csvpath + '/*.csv')]
                 if len(files) == 0:
                     return None
                 dfs = [pd.read_csv(x) for x in files]
-                db = pd.concat(dfs)
+                db = pd.concat(dfs, sort=True)
                 del files
                 del dfs
             except:
@@ -55,7 +55,8 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error('Path to CSV file incorrect.')
             exit(1)
-        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'], inplace=True)
+        db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME',
+                      'HGVS.C', 'HGVS.P'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -69,17 +70,21 @@ class VariantsDB(pd.DataFrame):
             try:
                 vcfsnames = [cyvcf2.Reader(x).samples[0] for x in vcfspath]
             except:
-                logger.info('No Sample name in one of the vcfs files. Using File Names Instead')
-                vcfsnames = [x.rsplit('/', maxsplit=1)[-1].strip('.final.vcf') for x in vcfspath]
+                logger.info(
+                    'No Sample name in one of the vcfs files. Using File Names Instead')
+                vcfsnames = [x.rsplit('/', maxsplit=1)
+                             [-1].strip('.final.vcf') for x in vcfspath]
 
             if db is not None:
                 addpatnames = [x for x in vcfsnames if x not in db.columns]
                 if len(addpatnames) >= 1:
-                    logger.info('Adding Patients: {}'.format([x for x in addpatnames]))
+                    logger.info('Adding Patients: {}'.format(
+                        [x for x in addpatnames]))
                 else:
                     logger.error('No Patients to Add')
                     exit(1)
-                patientslist = [x for x in vcfspath for y in addpatnames if y in x]
+                patientslist = [
+                    x for x in vcfspath for y in addpatnames if y in x]
             else:
                 patientslist = vcfspath
 
@@ -88,27 +93,34 @@ class VariantsDB(pd.DataFrame):
         def dbbuilder(patientslist, db=None):
             logger.info('Parsing Patients')
             pvcfs = ParsedVCF.mp_parser(*patientslist)
-            pvcfs = [x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY', 'GENE_NAME', 'HGVS.C', 'HGVS.P']] for x in pvcfs]
+            pvcfs = [x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY',
+                        'GENE_NAME', 'HGVS.C', 'HGVS.P']] for x in pvcfs]
             for df in pvcfs:
                 if 'ZIGOSITY' not in df.columns:
                     df['ZIGOSITY'] = 'UNKWN'
-            pvcfs = [x.rename(columns={'ZIGOSITY': x.name}) for x in pvcfs if 'ZIGOSITY' in x.columns]
+            pvcfs = [x.rename(columns={'ZIGOSITY': x.name})
+                     for x in pvcfs if 'ZIGOSITY' in x.columns]
             logger.info('Merging parsed patients toDB')
             if db is not None:
                 db = db.reset_index()
                 pvcfs.insert(0, db)
-            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
+            pvcfs = [x.set_index(
+                ['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
             tempdb1 = pd.concat(pvcfs, axis=1, join='outer')
             tempdb2 = tempdb1.reset_index().groupby(['CHROM', 'POS', 'REF', 'ALT']).agg(
                 {'GENE_NAME': ' | '.join, 'HGVS.P': ' | '.join, 'HGVS.C': ' | '.join}).reset_index()
-            pvcfs2 = [x.reset_index().drop(columns=['GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
+            pvcfs2 = [x.reset_index().drop(
+                columns=['GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
             pvcfs2.insert(0, tempdb2)
-            pvcfs2 = [x.set_index(['CHROM', 'POS', 'REF', 'ALT']) for x in pvcfs2]
+            pvcfs2 = [x.set_index(['CHROM', 'POS', 'REF', 'ALT'])
+                      for x in pvcfs2]
             db = pd.concat(pvcfs2, axis=1, join='outer')
             colslist = ['GENE_NAME', 'HGVS.C', 'HGVS.P']
             for col in colslist:
-                db[col] = db[col].apply(lambda x: ' | '.join(set(x.split(' | '))))
-            db = db.reset_index().set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'])
+                db[col] = db[col].apply(
+                    lambda x: ' | '.join(set(x.split(' | '))))
+            db = db.reset_index().set_index(
+                ['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'])
             db.replace({'.': np.nan}, inplace=True)
             db = db.pipe(VariantsDB)
             db = db.calcfreqs()
@@ -117,10 +129,12 @@ class VariantsDB(pd.DataFrame):
         try:
             logger.info('Checking DB File')
             if variantsDBPath.rsplit('.')[-1].lower() == 'xlsx':
-                db = VariantsDB.from_exceldb(variantsDBPath.rsplit('/', maxsplit=1)[0])
+                db = VariantsDB.from_exceldb(
+                    variantsDBPath.rsplit('/', maxsplit=1)[0])
                 patientslist = patientLister(db)
             elif variantsDBPath.rsplit('.')[-1].lower() == 'csv':
-                db = VariantsDB.from_csvdb(variantsDBPath.rsplit('/', maxsplit=1)[0])
+                db = VariantsDB.from_csvdb(
+                    variantsDBPath.rsplit('/', maxsplit=1)[0])
                 patientslist = patientLister(db)
             else:
                 logger.error('VariantsDBPath must be a xlsx or csv file')
@@ -145,14 +159,17 @@ class VariantsDB(pd.DataFrame):
         elif isinstance(patient, ParsedVCF):
             pvcf = patient
         else:
-            logger.error('Patient must be either a path to vcf or a ParsedVCF object')
+            logger.error(
+                'Patient must be either a path to vcf or a ParsedVCF object')
             logger.debug('', exc_info=True)
             exit(1)
-        pvcf = pvcf[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY', 'GENE_NAME', 'HGVS.C', 'HGVS.P']]
+        pvcf = pvcf[['CHROM', 'POS', 'REF', 'ALT',
+                     'ZIGOSITY', 'GENE_NAME', 'HGVS.C', 'HGVS.P']]
         if 'ZIGOSITY' not in pvcf.columns:
             pvcf['ZIGOSITY'] = 'UNKWN'
         pvcf.rename(columns={'ZIGOSITY': pvcf.name}, inplace=True)
-        pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'], inplace=True)
+        pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT',
+                        'GENE_NAME', 'HGVS.C', 'HGVS.P'], inplace=True)
         db = pd.concat([self, pvcf], axis=1, join='outer')
         db = db.pipe(VariantsDB)
         db = db.calcfreqs()
@@ -186,7 +203,8 @@ class VariantsDB(pd.DataFrame):
         vdbpath = variantsDBPath.rsplit('.', maxsplit=1)[0]
         os.makedirs(variantsDBPath.rsplit('/', maxsplit=1)[0], exist_ok=True)
         for chrom in self['CHROM'].unique():
-            self[self['CHROM'] == chrom].to_csv(vdbpath + str(chrom) + '.csv', index=False, float_format='%.5f')
+            self[self['CHROM'] == chrom].to_csv(
+                vdbpath + str(chrom) + '.csv', index=False, float_format='%.5f')
         logger.info('DB construction complete')
 
     def calcfreqs(self):
@@ -210,12 +228,17 @@ class VariantsDB(pd.DataFrame):
 
     def annotate_excel(self, df, fileName):
         logger.info('Annotating Excel file')
+        cols_to_drop = ['FREQ', 'ALLELE_FREQ', 'VARDB_FREQ']
+        df.drop(
+            columns=[x for x in cols_to_drop if x in df.columns], inplace=True)
         df = df.merge(self.reset_index()[['CHROM', 'POS', 'REF', 'ALT', 'FREQ', 'ALLELE_FREQ']],
                       on=['CHROM', 'POS', 'REF', 'ALT'], how='left')
         df.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
         df['VARDB_FREQ'] = pd.to_numeric(df['VARDB_FREQ'], errors='coerce')
         df['VARDB_FREQ'].round(6)
-        outpath = resultsPath + 'vDBannotated' + '/' + fileName.rsplit('.', maxsplit=1)[-2] + '.annotated.xlsx'
+        outpath = resultsPath + 'vDBannotated' + '/' + \
+            fileName.rsplit(
+                '.', maxsplit=1)[-2].strip('.annotated') + '.annotated.xlsx'
         firstcols = ['GENE_NAME', 'AMINOCHANGE', 'HGVS.P', 'HGVS.C', 'RSID', 'IMPACT', 'EFFECT', 'VARDB_FREQ',
                      'ALLELE_FREQ']
         lastcols = [x for x in df.columns if x not in firstcols]
@@ -231,33 +254,44 @@ class VariantsDB(pd.DataFrame):
         datasheet.set_column(0, len(df.columns), 15, formatnum)
 
         formatpos = workbook.add_format({'num_format': '###,###,###'})
-        datasheet.set_column(df.columns.to_list().index('POS'), df.columns.to_list().index('POS'), 15, formatpos)
-        datasheet.set_column(df.columns.to_list().index('RSID'), df.columns.to_list().index('RSID'), 15)
+        datasheet.set_column(df.columns.to_list().index(
+            'POS'), df.columns.to_list().index('POS'), 15, formatpos)
+        datasheet.set_column(df.columns.to_list().index(
+            'RSID'), df.columns.to_list().index('RSID'), 15)
         # Light red fill with dark red text.
-        highformat = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006', 'bold': True})
+        highformat = workbook.add_format(
+            {'bg_color': '#FFC7CE', 'font_color': '#9C0006', 'bold': True})
         # Light yellow fill with dark yellow text.
-        modformat = workbook.add_format({'bg_color': '#FFFF99', 'font_color': '#9C6500', 'bold': True})
+        modformat = workbook.add_format(
+            {'bg_color': '#FFFF99', 'font_color': '#9C6500', 'bold': True})
         # Light orange fill with dark orange text.
-        moderformat = workbook.add_format({'bg_color': '#FFCC99', 'font_color': '#FF6600', 'bold': True})
+        moderformat = workbook.add_format(
+            {'bg_color': '#FFCC99', 'font_color': '#FF6600', 'bold': True})
         # Green fill with dark green text.
-        lowformat = workbook.add_format({'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
+        lowformat = workbook.add_format(
+            {'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
-                                     len(df), df.columns.to_list().index('IMPACT'),
+                                     len(df), df.columns.to_list().index(
+                                         'IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'HIGH',
                                       'format': highformat, })
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
-                                     len(df), df.columns.to_list().index('IMPACT'),
+                                     len(df), df.columns.to_list().index(
+                                         'IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'MODIFIER',
                                       'format': modformat})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
-                                     len(df), df.columns.to_list().index('IMPACT'),
+                                     len(df), df.columns.to_list().index(
+                                         'IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'MODERATE',
                                       'format': moderformat})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
-                                     len(df), df.columns.to_list().index('IMPACT'),
+                                     len(df), df.columns.to_list().index(
+                                         'IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
         logger.info('Writing Excel File')
-        df[firstcols + lastcols].to_excel(output, sheet_name='DATA', merge_cells=False, index=False, header=True)
+        df[firstcols + lastcols].to_excel(output, sheet_name='DATA',
+                                          merge_cells=False, index=False, header=True)
 
         if (df.reset_index().index.max() < 32150):
             logger.info('Redirecting IDs and GENEs to URLs')
@@ -284,11 +318,13 @@ class VariantsDB(pd.DataFrame):
         try:
             stats.to_excel(output, sheet_name='STATISTICS')
         except Exception as e:
-            logger.error('Could not print statistics. Error was {}'.format(e), exc_info=True)
+            logger.error(
+                'Could not print statistics. Error was {}'.format(e), exc_info=True)
         try:
             statsheet.insert_image('H2', './general.png')
         except Exception as e:
-            logger.error('Could not print stats graphs. Error was {}'.format(e), exc_info=True)
+            logger.error(
+                'Could not print stats graphs. Error was {}'.format(e), exc_info=True)
         if os.path.isfile('./venn.png'):
             statsheet.insert_image('H25', './venn.png')
         output.save()
