@@ -6,7 +6,8 @@ import os
 
 # config parsing from here on, parses paths and things from config.ini
 cfg = configparser.ConfigParser()
-cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.ini')
+cfgPath = os.path.join(os.path.dirname(
+    os.path.realpath(__file__)), 'config.ini')
 cfg.read(cfgPath)
 
 rootDir = os.path.dirname(os.path.abspath(__file__))
@@ -38,9 +39,11 @@ def setConfig(section, key, value):
             cfg[section][key] = value
             logging.info('Changed %s to %s' % (key, value))
         else:
-            logging.error('Key error: Requested %s key is not present in config file' % key)
+            logging.error(
+                'Key error: Requested %s key is not present in config file' % key)
     else:
-        logging.error('Section error: Section %s not present in config file' % section)
+        logging.error(
+            'Section error: Section %s not present in config file' % section)
     with open(cfgPath, 'w') as cfgfile:
         cfg.write(cfgfile)
 
@@ -85,6 +88,13 @@ def setup_logging():
                 "level": "INFO",
                 "formatter": "console",
                 "stream": "ext://sys.stdout"
+            },
+            "pipe_run": {
+                "class": "logging.FileHandler",
+                "level": "INFO",
+                "formatter": "current_run",
+                "filename": rootDir + "/logs/pipe_run.log",
+                "mode": 'w'
             },
             "current_run": {
                 "class": "logging.FileHandler",

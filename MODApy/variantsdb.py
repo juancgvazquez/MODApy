@@ -237,8 +237,9 @@ class VariantsDB(pd.DataFrame):
         df['VARDB_FREQ'] = pd.to_numeric(df['VARDB_FREQ'], errors='coerce')
         df['VARDB_FREQ'].round(6)
         outpath = resultsPath + 'vDBannotated' + '/' + \
-            fileName.rsplit(
-                '.', maxsplit=1)[-2].strip('.annotated') + '.annotated.xlsx'
+                  fileName.rsplit(
+                      '.', maxsplit=1)[0].replace('.annotated', '') + '.annotated.xlsx'
+        logger.info(outpath)
         firstcols = ['GENE_NAME', 'AMINOCHANGE', 'HGVS.P', 'HGVS.C', 'RSID', 'IMPACT', 'EFFECT', 'VARDB_FREQ',
                      'ALLELE_FREQ']
         lastcols = [x for x in df.columns if x not in firstcols]
@@ -272,22 +273,22 @@ class VariantsDB(pd.DataFrame):
             {'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
                                      len(df), df.columns.to_list().index(
-                                         'IMPACT'),
+                'IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'HIGH',
                                       'format': highformat, })
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
                                      len(df), df.columns.to_list().index(
-                                         'IMPACT'),
+                'IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'MODIFIER',
                                       'format': modformat})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
                                      len(df), df.columns.to_list().index(
-                                         'IMPACT'),
+                'IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'MODERATE',
                                       'format': moderformat})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
                                      len(df), df.columns.to_list().index(
-                                         'IMPACT'),
+                'IMPACT'),
                                      {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
         logger.info('Writing Excel File')
         df[firstcols + lastcols].to_excel(output, sheet_name='DATA',

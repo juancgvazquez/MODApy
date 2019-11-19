@@ -11,6 +11,12 @@ import yaml
 from MODApy import cfg
 
 logger = logging.getLogger(__name__)
+logger2 = logging.getLogger('Pipeline Module')
+hdlr = logging.FileHandler(cfg.rootDir + '/logs/pipe_run.log')
+formatter = logging.Formatter("%(asctime)s %(name)-25s %(levelname)-8s %(message)s")
+hdlr.setFormatter(formatter)
+logger2.addHandler(hdlr)
+logger2.setLevel(logging.DEBUG)
 
 
 # TODO: restructure pipeline, being less open, so less prone to errors
@@ -90,7 +96,8 @@ class Pipeline(object):
             inputfile = steps[i]['input']
             outputfile = steps[i]['output']
             args = steps[i]['args']
-            newstep = PipeStep(name, command, subcommand, version, inputfile, outputfile, args)
+            newstep = PipeStep(name, command, subcommand,
+                               version, inputfile, outputfile, args)
             newpipe.add_steps(newstep)
 
         return newpipe
@@ -161,8 +168,10 @@ class Pipeline(object):
         '''
         Method to run selected Pipeline on fastq files
         '''
-        print(self.steps)
-        print(len(self.steps))
+        logger.info(self.steps)
+        logger.info("Nro de Pasos: %s" % str(len(self.steps)))
+        logger2.info(self.steps)
+        logger2.info("Nro de Pasos: %s" % str(len(self.steps)))
         patientname = fastq1.split('/')[-1].split('.')[0].split('_')[0]
         ref = cfg.referencesPath + self.reference + '/' + self.reference + '.fa'
         pipedir = "".join(x for x in self.name if x.isalnum())
@@ -172,90 +181,126 @@ class Pipeline(object):
             tmpdir = cfg.resultsPath + 'Pipelines/' + patientname + '/' + pipedir + '/tmp/'
 
         os.makedirs(tmpdir, exist_ok=True)
-        print('Running', self.name, 'pipeline on patient:', patientname)
-        # bool to check if first step
+        samplename = patientname
+        logger2.info('Running ' + str(self.name) + ' pipeline on patient: ' + str(patientname))
+            # bool to check if first step
         if startStep == 0:
             first = True
         else:
             first = False
         if endStep == 0:
-            endStep = len(self.steps)+1
+            endStep = len(self.steps) + 1
         for step in self.steps[startStep:endStep]:
-            # Checks if first step, we should input the exact input as inputfiles
-            if first is True:
+            if first == True:
+                logger2.debug('First Step')
                 first = False
                 if type(step.inputfile) == list:
-                    if (fastq1 is not None) & (fastq2 is not None):
-                        inputfile = fastq1 + ' ' + fastq2
-                    else:
-                        print('WARNING: This pipeline was designed for Pair End and you are running it as Single End')
-                        inputfile = fastq1
+                    if any(x in y for y in [fastq1, fastq2] for x in ['.fastq', '.fastq.gz', '.fq', '.fq.gz']):
+                        if (fastq1 is not None) & (fastq2 is not None):
+                            inputfile = fastq1 + ' ' + fastq2
+                        else:
+                            print(
+                                'WARNING: This pipeline was designed for Pair End and you are running it as Single End')
+                            inputfile = fastq1
                 elif type(step.inputfile) == str:
-                    if (fastq1 is not None) & (fastq2 is not None):
-                        print('WARNING: This pipeline was designed for Single End and you are running it as Pair End')
-                        inputfile = fastq1 + ' ' + fastq2
+                    if any(x in y for y in [fastq1] for x in ['.fastq', '.fastq.gz', '.fq', '.fq.gz']):
+                        if (fastq1 is not None) & (fastq2 is not None):
+                            print(
+                                'WARNING: This pipeline was designed for Single End and you are running it as Pair End')
+                            inputfile = fastq1 + ' ' + fastq2
                     else:
                         inputfile = fastq1
-                else:
-                    return 'Error Parsing input file. It should be a string or list of strings.'
             # If it's not first step, input depends on output of previous step + patientname
             else:
-                inputfile = step.inputfile.replace('patientname', tmpdir + patientname)
-
+                if type(step.inputfile) == list:
+                    inputfile1 = step.inputfile[0].replace(
+                        'patientname', tmpdir + patientname + '/' + patientname)
+                    inputfile2 = step.inputfile[1].replace(
+                        'patientname', tmpdir + patientname + '/' + patientname)
+                    inputfile = inputfile1 + ' ' + inputfile2
+                elif type(step.inputfile) == str:
+                    inputfile = step.inputfile.replace(
+                        'patientname', tmpdir + patientname)
             # replaces patient name in outputfiles
             if type(step.outputfile) == str:
-                outputfile = step.outputfile.replace('patientname', tmpdir + patientname)
+                outputfile = step.outputfile.replace(
+                    'patientname', tmpdir + patientname)
             else:
                 return 'Error Parsing output file. It should be a string.'
 
-            print(step.name)
-            args = step.args.replace('patientname', tmpdir + patientname).replace('reference', ref)
+            logger2.info(step.name)
+            args = step.args.replace(
+                'patientname', tmpdir + patientname).replace('reference', ref).replace('samplename', patientname)
             cmdver = step.version.replace('.', '_')
             javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
             if any(javacmd in step.command for javacmd in javacmds):
-                cmd = 'java -jar -Xmx12G ' + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
+                cmd = 'java -jar -Xmx12G -Djava.io.tmpdir=%s ' % tmpdir + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
                       + '.jar ' + step.subcommand
             else:
-                cmd = cfg.binPath + step.command + '/' + step.command + '_' + cmdver + ' ' + step.subcommand
+                cmd = cfg.binPath + step.command + '/' + \
+                      step.command + '_' + cmdver + ' ' + step.subcommand
 
             cmdstr = cmd + ' ' + args + ' ' + ' ' + inputfile + ' ' + outputfile
 
             cmd = shlex.split(cmdstr)
 
             logging.info('Subprocess: ' + cmdstr)
+            logger2.info('Subprocess: ' + cmdstr)
             stdcmds = ['bwa', 'bedtools', 'snpEff', 'SnpSift']
+            print(cmd)
             try:
                 if any(stdcmd in s for s in cmd for stdcmd in stdcmds):
                     output = cmd[-1]
                     del cmd[-1]
                     with open(output, 'w+') as out:
-                        cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=out, universal_newlines=True)
+                        cmdrun = subprocess.Popen(
+                            cmd, stderr=subprocess.PIPE, stdout=out, universal_newlines=True)
                 else:
                     cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
                                               universal_newlines=True)
                 out, err = cmdrun.communicate()
                 if out is not None:
                     logging.debug('Output: ' + out.strip())
+                    logger2.debug('Output: ' + out.strip())
                 if err is not None:
                     logging.debug('Stderr: ' + err.strip())
+                    logger2.debug('Stderr: ' + err.strip())
                 if cmdrun.returncode != 0:
-                    logging.error('Subprocess failed with error code: ' + str(cmdrun.returncode))
+                    logging.error(
+                        'Subprocess failed with error code: ' + str(cmdrun.returncode))
+                    logger2.error(
+                        'Subprocess failed with error code: ' + str(cmdrun.returncode))
                     logging.error('Check log for more details')
+                    logger2.error('Check log for more details')
                     exit(cmdrun.returncode)
 
             except (OSError, subprocess.CalledProcessError) as exception:
                 logging.debug('Subprocess failed')
                 logging.debug('Exception ocurred: ' + str(exception))
-                logging.info('There was an error when running the pipeline. Please check logs for more info')
+                logger2.debug('Subprocess failed')
+                logger2.debug('Exception ocurred: ' + str(exception))
+                logging.info(
+                    'There was an error when running the pipeline. Please check logs for more info')
+                logger2.info(
+                    'There was an error when running the pipeline. Please check logs for more info')
                 exit(1)
             else:
                 logging.info('Subprocess finished')
+                logger2.info('Subprocess finished')
         if cfg.testFlag:
-            shutil.move(tmpdir + patientname + "_MODApy.final.vcf", cfg.testPath + patientname + "_MODApy.final.vcf")
-            shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam", cfg.testPath + patientname + "_realigned_reads_recal.bam")
+            if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
+                shutil.move(tmpdir + patientname + "_MODApy.final.vcf",
+                            cfg.testPath + patientname + "_MODApy.final.vcf")
+            if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
+                shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
+                            cfg.testPath + patientname + "_realigned_reads_recal.bam")
         else:
-            shutil.move(tmpdir + patientname + "_MODApy.final.vcf", cfg.patientPath + patientname + "_MODApy.final.vcf")
-            shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam", cfg.patientPath + patientname + "_realigned_reads_recal.bam")
+            if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
+                shutil.move(tmpdir + patientname + "_MODApy.final.vcf",
+                            cfg.patientPath + patientname + "_MODApy.final.vcf")
+            if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
+                shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
+                            cfg.patientPath + patientname + "_realigned_reads_recal.bam")
         if keeptmp is False:
             shutil.rmtree(tmpdir)
 

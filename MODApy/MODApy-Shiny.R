@@ -9,6 +9,8 @@ library(shinycssloaders)
 modapydir ='/DiscoDatos/Development/modapy/MODApy/'
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
+pipelog = paste0(modapydir,'logs/pipe_run.log')
+pipeflag = paste0(modapydir,'logs/pipe.flag')
 dlog = paste0(modapydir,'logs/downloads.log')
 cfg = read.ini(cfgpath)
 use_virtualenv("/DiscoDatos/Development/modapy/venv/")
@@ -191,15 +193,21 @@ ui <- tagList(shinyjs::useShinyjs(),
                                     ),
                                     conditionalPanel(
                                       'input.origin == "fromfq"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq))
+                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
+                                      fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
+                                      actionButton("runPipelinefq",'Run Pipeline')
                                     ),
                                     conditionalPanel(
                                       'input.origin == "frombam"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "bamfile", label = NULL, choices = patientsbam))
+                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "bamfile", label = NULL, choices = patientsbam)),
+                                      fileInput('bamuploaded','Choose File to Upload',accept=c('.bam')),
+                                      actionButton("runPipelinebam",'Run Pipeline')
                                     ),
                                     conditionalPanel(
                                       'input.origin == "fromvcf"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "vcffile", label = NULL, choices = patientsvcf))
+                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "vcffile", label = NULL, choices = patientsvcf)),
+                                      fileInput('vcfuploaded','Choose File to Upload',accept=c('.vcf')),
+                                      actionButton("runPipelinevcf",'Run Pipeline')
                                       )
                                   )),
                                   mainPanel(
@@ -286,7 +294,7 @@ server <- function(input,output, session){
   
   rv <- reactiveValues(textstream = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv2 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
-  rv3 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
+  rv3 <- reactiveValues(textstream3 = c(""), timer = reactiveTimer(1000),started=FALSE)
   downpath <- reactiveValues()
   newpatientModal <- function(failed = FALSE) {
     modalDialog(
@@ -333,6 +341,14 @@ server <- function(input,output, session){
       textInput("cfgpanelspath","Paneles Files Path:",cfg$PATHS$panelspath),
       textInput("cfgresultspath","Results Files Path:",cfg$PATHS$resultspath),
       actionButton('savecfg',"Save Changes")
+    )
+  }
+  pipelineRunningModal <- function(failed = FALSE) {
+    modalDialog(
+      title = "Warning",
+      p('There is a pipeline already running'),
+      p('Currently at:'),
+      HTML(paste(readLines(pipelog),collapse='<br>'))
     )
   }
   observeEvent(c(input$newpatient,
@@ -438,6 +454,77 @@ server <- function(input,output, session){
     rv$started<-TRUE
     getcommand(input)
   })
+  ##Runs Pipeline for Fast Q
+  observeEvent(input$runPipelinefq, {
+    #shinyjs::disable('buttonrun')
+    patpath = gsub('_1','',input$fqfile)
+    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
+      showModal(pipelineRunningModal())
+    }
+    else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq", sep=""))){
+      file.create(logfile)
+      cmd =  paste("pipeline -Pipeline",
+                   "BestPractices-Trim.json", "-FQ",
+                   paste(patpath, "/",patpath,"_1", ".fastq", sep=""), "-FQ",
+                   paste(patpath, "/",patpath,"_2", ".fastq", sep=""))
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+      
+    }
+    else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""))){
+      file.create(logfile)
+      cmd = paste("pipeline -Pipeline",
+                  "BestPractices-Trim.json", "-FQ",
+                  paste(patpath, "/",patpath,"_1", ".fastq.gz", sep=""), "-FQ",
+                  paste(patpath, "/",patpath,"_2", ".fastq.gz", sep=""))
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+      
+    }
+    else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""))){
+      file.create(logfile)
+      cmd = paste("pipeline -Pipeline",
+                  "BestPractices-Trim.json", "-FQ",
+                  paste(patpath, "/",patpath,"_1", ".fq.gz", sep=""), "-FQ",
+                  paste(patpath, "/",patpath,"_2", ".fq.gz", sep=""))
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+      
+    }
+    else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq", sep=""))){
+      file.create(logfile)
+      cmd = paste("pipeline -Pipeline",
+                  "BestPractices-Trim.json", "-FQ",
+                  paste(patpath, "/",patpath,"_1", ".fq", sep=""), "-FQ",
+                  paste(patpath, "/",patpath,"_2", ".fq", sep=""))
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+    }
+  })
+  ##Runs Pipeline for Bam
+  observeEvent(input$runPipelinebam, {
+    #shinyjs::disable('buttonrun')
+    patpath=paste0(cfg$PATHS$patientpath,input$bamfile,'/',input$bamfile,'.bam')
+    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
+      showModal(pipelineRunningModal())
+    }
+    else if(file.exists(patpath)){
+      cmd =  paste("pipeline -Pipeline",
+                   "BestPractices-Annotation.json", "-FQ",
+                   paste0(input$bamfile,'/',input$bamfile,'.bam'))
+      file.create(logfile)
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+    }})
+    ##Runs Pipeline for VCF
+  observeEvent(input$runPipelinevcf, {
+    #shinyjs::disable('buttonrun')
+    patpath=paste0(cfg$PATHS$patientpath,input$vcffile,'/',input$vcffile,'.final.vcf')
+    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
+      showModal(pipelineRunningModal())
+    }
+    else if(file.exists(patpath)){
+      file.create(logfile)
+      cmd =  paste("pipeline -Pipeline",
+                    "BestPractices-Annotation.json", "-FQ",
+                    paste0(input$vcffile,'/',input$vcffile,'.final.vcf'))
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+  }})
   #Download Result Annotated
   output$downloadannotatedVDB <- downloadHandler(
     filename <- paste0(cfg$PATHS$resultspath,'vDBannotated/',sub('\\.xlsx','',input$file1$name),'annotated.xlsx'),
@@ -523,13 +610,16 @@ server <- function(input,output, session){
   observe({
     rv3$timer()
     Sys.sleep(0.2)
-    if(isolate(rv3$started))rv$textstream2 <- paste(readLines(logfile),collapse="<br/>")
+    if(isolate(rv3$started))rv$textstream3 <- paste(readLines(pipelog),collapse="<br/>")
   })
   output$downout <- renderUI({
     HTML(rv$textstream2)
   })
   output$consoleout <- renderUI({
     HTML(rv$textstream)
+  })
+  output$pipeout <- renderUI({
+    HTML(rv$textstream3)
   })
   output$dbout <- renderUI({
     HTML(rv$textstream)

@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 import cyvcf2
 from collections import OrderedDict
-import matplotlib_venn as venn
-import matplotlib.pyplot as plt
 import logging
 import multiprocessing as mp
 import os
@@ -12,6 +10,8 @@ import os
 import matplotlib
 
 matplotlib.use('agg')
+import matplotlib_venn as venn
+import matplotlib.pyplot as plt
 
 
 logger = logging.getLogger(__name__)
