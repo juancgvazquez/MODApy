@@ -417,7 +417,7 @@ server <- function(input,output, session){
       })
       removeModal()
       showModal(modalDialog('File Annotated',
-                            p('File Available at: ',paste0(cfg$PATHS$resultspath,'vDBannotated/',sub('\\.xlsx','',input$file1$name),'.annotated.xlsx')
+                            p('File Available at: ',paste0(cfg$PATHS$resultspath,'vDBannotated/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
                             ),
                             downloadButton('downloadannotatedVDB','Download Result')
                             )
@@ -527,9 +527,9 @@ server <- function(input,output, session){
   }})
   #Download Result Annotated
   output$downloadannotatedVDB <- downloadHandler(
-    filename <- paste0(cfg$PATHS$resultspath,'vDBannotated/',sub('\\.xlsx','',input$file1$name),'annotated.xlsx'),
+    filename <- paste0(cfg$PATHS$resultspath,'vDBannotated/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx'),
     content<-function(downfile){
-      filepath <- paste0(cfg$PATHS$resultspath,'vDBannotated/',sub('\\.xlsx','',input$file1$name),'.annotated.xlsx')
+      filepath <- paste0(cfg$PATHS$resultspath,'vDBannotated/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
       print(filepath)
       file.copy(filepath,downfile)
       file.size(filepath)
