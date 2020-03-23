@@ -181,13 +181,10 @@ class Pipeline(object):
             tmpdir = cfg.resultsPath + 'Pipelines/' + patientname + '/' + pipedir + '/tmp/'
 
         os.makedirs(tmpdir, exist_ok=True)
-        samplename = patientname
+        samplename = patientname + '_MODApy'
         logger2.info('Running ' + str(self.name) + ' pipeline on patient: ' + str(patientname))
-            # bool to check if first step
-        if startStep == 0:
-            first = True
-        else:
-            first = False
+        # bool to check if first step
+        first = True
         if endStep == 0:
             endStep = len(self.steps) + 1
         for step in self.steps[startStep:endStep]:
@@ -230,7 +227,7 @@ class Pipeline(object):
 
             logger2.info(step.name)
             args = step.args.replace(
-                'patientname', tmpdir + patientname).replace('reference', ref).replace('samplename', patientname)
+                'patientname', tmpdir + patientname).replace('reference', ref).replace('samplename', samplename)
             cmdver = step.version.replace('.', '_')
             javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
             if any(javacmd in step.command for javacmd in javacmds):
@@ -239,9 +236,11 @@ class Pipeline(object):
             else:
                 cmd = cfg.binPath + step.command + '/' + \
                       step.command + '_' + cmdver + ' ' + step.subcommand
-
-            cmdstr = cmd + ' ' + args + ' ' + ' ' + inputfile + ' ' + outputfile
-
+            if 'HaplotypeCaller' in cmd:
+                cmdstr = cmd + ' ' + args + ' ' + ' -I ' + inputfile + ' ' + outputfile
+            else:
+                cmdstr = cmd + ' ' + args + ' ' + ' ' + inputfile + ' ' + outputfile
+                print(cmd)
             cmd = shlex.split(cmdstr)
 
             logging.info('Subprocess: ' + cmdstr)
@@ -290,17 +289,17 @@ class Pipeline(object):
         if cfg.testFlag:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
                 shutil.move(tmpdir + patientname + "_MODApy.final.vcf",
-                            cfg.testPath + patientname + "_MODApy.final.vcf")
+                            cfg.testPath + patientname+'_MODApy/' + patientname + "_MODApy.final.vcf")
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
-                            cfg.testPath + patientname + "_realigned_reads_recal.bam")
+                            cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
         else:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
                 shutil.move(tmpdir + patientname + "_MODApy.final.vcf",
-                            cfg.patientPath + patientname + "_MODApy.final.vcf")
+                            cfg.patientPath + patientname+'_MODApy/' + patientname + "_MODApy.final.vcf")
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
-                            cfg.patientPath + patientname + "_realigned_reads_recal.bam")
+                            cfg.patientPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
         if keeptmp is False:
             shutil.rmtree(tmpdir)
 

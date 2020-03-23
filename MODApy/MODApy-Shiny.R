@@ -6,15 +6,15 @@ library(DT)
 library(openxlsx)
 library(shinycssloaders)
 #python config -------------------------------------------------------------------
-modapydir ='/DiscoDatos/Development/modapy/MODApy/'
+modapydir ='/home/darrow/miniconda3/envs/MODApy/lib/python3.7/site-packages/MODApy/'
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
 pipelog = paste0(modapydir,'logs/pipe_run.log')
 pipeflag = paste0(modapydir,'logs/pipe.flag')
 dlog = paste0(modapydir,'logs/downloads.log')
 cfg = read.ini(cfgpath)
-use_virtualenv("/DiscoDatos/Development/modapy/venv/")
-use_python("/DiscoDatos/Development/modapy/venv/python3")
+use_virtualenv("/home/darrow/miniconda3/envs/MODApy")
+use_python("/home/darrow/miniconda3/envs/MODApy/bin/python3")
 py_config()
 MODApy<-import('MODApy')
 
@@ -180,7 +180,7 @@ ui <- tagList(shinyjs::useShinyjs(),
                                     )),
                          tabPanel('VariantsDB',
                                   actionButton("buildDBbtn","Build DataBase"),
-                                  div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "ChromSel", label = NULL, choices = chromdbs)),                                  
+                                  div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "ChromSel", label = NULL, choices = chromdbs)),
                                   actionButton("openDBbtn","Open Database"),
                                   actionButton("annotateFile",'Annotate File'),
                                   htmlOutput("dbout") %>% withSpinner(color="#0dc5c1"),
@@ -215,9 +215,9 @@ ui <- tagList(shinyjs::useShinyjs(),
                                       'input.origin=="fromfq"',
                                       sidebarPanel(
                                         h2("Steps"),
-                                        checkboxInput('trim','Trim with TrimGalore',value=TRUE), 
-                                        checkboxInput('align','Align with BWA',value=TRUE),
-                                        checkboxInput('sort','Sort Generated Sam File',value=TRUE),
+                                        checkboxInput('trim','Trim with TrimGalore',value=TRUE),
+                                        #checkboxInput('align','Align with BWA',value=TRUE),
+                                        #checkboxInput('sort','Sort Generated Sam File',value=TRUE),
                                         checkboxInput('dedup','Mark Duplicates with Picard',value=TRUE),
                                         checkboxInput('recal','Recalibrate Bam File',value=TRUE),
                                         checkboxInput('callvars','Call Variants',value=TRUE),
@@ -279,19 +279,19 @@ ui <- tagList(shinyjs::useShinyjs(),
                                   p('Centro de Investigación y Desarrollo en Inmunología y Enfermedades Infecciosas - CONICET'),
                                   actionButton("cfgButton",label=NULL,icon=icon('cog'))
                          )
-                         
-                         
+
+
               ),
               tags$head(tags$style(".modal-dialog{width:1000px}"))
-              
+
 )
 # server -------------------------------------------------------------------
 server <- function(input,output, session){
-  
   dbfile = paste(dirname(cfg$PATHS$dbpath),'/',chromdbs[1],'.csv',sep="")
-  df1 <- read.csv(dbfile)
-  output$mytable = DT::renderDataTable({df1},options=list(scrollX=TRUE))
-  
+  if(file.exists(dbfile)){
+    df1 <- read.csv(dbfile)
+    output$mytable = DT::renderDataTable({df1},options=list(scrollX=TRUE))
+  }
   rv <- reactiveValues(textstream = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv2 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv3 <- reactiveValues(textstream3 = c(""), timer = reactiveTimer(1000),started=FALSE)
@@ -396,12 +396,12 @@ server <- function(input,output, session){
     else{
       rv$textstream = "Variants file not found. Try to build variantsDB first."
     }
-    
+
   })
   observeEvent(input$annotateFile, {
     showModal(annotateModal())
     })
-  
+
   observeEvent(input$annotatebtn, {
     if(is.null(input$file1)){
       removeModal()
@@ -421,8 +421,8 @@ server <- function(input,output, session){
                             ),
                             downloadButton('downloadannotatedVDB','Download Result')
                             )
-                
-                            
+
+
                 )
     }
     })
@@ -446,7 +446,7 @@ server <- function(input,output, session){
       removeModal()
       showModal(modalDialog('Downloading'))
     }
-    
+
   })
   observeEvent(input$buttonrun, {
     shinyjs::disable('buttonrun')
@@ -467,8 +467,9 @@ server <- function(input,output, session){
                    "BestPractices-Trim.json", "-FQ",
                    paste(patpath, "/",patpath,"_1", ".fastq", sep=""), "-FQ",
                    paste(patpath, "/",patpath,"_2", ".fastq", sep=""))
+      print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-      
+
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""))){
       file.create(logfile)
@@ -477,7 +478,7 @@ server <- function(input,output, session){
                   paste(patpath, "/",patpath,"_1", ".fastq.gz", sep=""), "-FQ",
                   paste(patpath, "/",patpath,"_2", ".fastq.gz", sep=""))
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-      
+
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""))){
       file.create(logfile)
@@ -486,7 +487,7 @@ server <- function(input,output, session){
                   paste(patpath, "/",patpath,"_1", ".fq.gz", sep=""), "-FQ",
                   paste(patpath, "/",patpath,"_2", ".fq.gz", sep=""))
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-      
+
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq", sep=""))){
       file.create(logfile)
@@ -506,7 +507,7 @@ server <- function(input,output, session){
     }
     else if(file.exists(patpath)){
       cmd =  paste("pipeline -Pipeline",
-                   "BestPractices-Annotation.json", "-FQ",
+                   "BestPracticesBam-Annotated.json", "-FQ",
                    paste0(input$bamfile,'/',input$bamfile,'.bam'))
       file.create(logfile)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
@@ -558,7 +559,7 @@ server <- function(input,output, session){
   observeEvent(
     input$Patient2D,{
       current <- isolate(input$Patient1D)
-      updateSelectInput(session,'Patient1D',selected = current, choices = patientsvcf[!(patientsvcf %in% input$Patient2D)])  
+      updateSelectInput(session,'Patient1D',selected = current, choices = patientsvcf[!(patientsvcf %in% input$Patient2D)])
     }
   )
   observeEvent(
@@ -601,7 +602,7 @@ server <- function(input,output, session){
       shinyjs::enable('buttonrun')
     }
   })
-  
+
   observe({
     rv2$timer()
     Sys.sleep(0.2)
@@ -631,12 +632,12 @@ server <- function(input,output, session){
     selectInput("vennplaceT",NULL, choices = list(input$Patient1T, input$Patient2T, input$Patient3T, paste(input$Patient1T, input$Patient2T,sep=":"), paste(input$Patient1T, input$Patient3T,sep=":"), paste(input$Patient2T, input$Patient3T,sep=":"), paste(input$Patient1T, input$Patient2T, input$Patient3T,sep=":"), "All"), selected='All')
   })
   observeEvent(input$cfgButton,{
-    showModal(configModal())  
+    showModal(configModal())
   })
   observeEvent(input$savecfg,{
     print(typeof(cfg$GENERAL))
   })
-  
+
   session$onSessionEnded(function(){stopApp()})
 }
 

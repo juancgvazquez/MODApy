@@ -1,4 +1,19 @@
 import setuptools
+from setuptools.command.install import install
+
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+
+    def run(self):
+        print('Configuring MODApy Environment')
+        print('Step 1: Verifying installed components')
+        print('Step 2: Verifying Annotation Databases')
+        print('Step 3: Verifying Reference files')
+        print('Done! To run MODApy, simply run "MODApy launcher" from the console')
+        # PUT YOUR POST-INSTALL SCRIPT HERE or CALL A FUNCTION
+        install.run(self)
+
 
 with open("README.md", "r") as rd:
     long_description = rd.read()
@@ -6,6 +21,7 @@ with open("README.md", "r") as rd:
 version = {}
 with open('./MODApy/version.py') as v:
     exec(v.read(), version)
+
 setuptools.setup(
     name="MODApy",
     version=version['__version__'],

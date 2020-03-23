@@ -80,16 +80,17 @@ class ParsedVCF(pd.DataFrame):
         df1.index.names = ['CHROM', 'POS', 'REF', 'ALT']
         df1.reset_index(inplace=True)
         splitdf = df1.loc[df1['ALT'].str.contains(',') == True].copy()
-        ALT = splitdf['ALT'].astype(str).str.split(
-            ',', n=1, expand=True).stack().rename('ALT')
-        ALT.index = ALT.index.droplevel(-1)
-        ALT = ALT.to_frame()
-        splitdf = splitdf.join(ALT, lsuffix='_x', rsuffix='_y')
-        del ALT
-        splitdf['ALT'] = splitdf['ALT_y'].combine_first(splitdf['ALT_x'])
-        splitdf.drop(columns=['ALT_y', 'ALT_x'], inplace=True)
-        splitdf.reset_index(inplace=True)
-        splitdf.drop(columns='index', inplace=True)
+        if(len(splitdf)>0):
+            ALT = splitdf['ALT'].astype(str).str.split(
+                ',', n=1, expand=True).stack().rename('ALT')
+            ALT.index = ALT.index.droplevel(-1)
+            ALT = ALT.to_frame()
+            splitdf = splitdf.join(ALT, lsuffix='_x', rsuffix='_y')
+            del ALT
+            splitdf['ALT'] = splitdf['ALT_y'].combine_first(splitdf['ALT_x'])
+            splitdf.drop(columns=['ALT_y', 'ALT_x'], inplace=True)
+            splitdf.reset_index(inplace=True)
+            splitdf.drop(columns='index', inplace=True)
         odd = splitdf.iloc[::2].copy()
         even = splitdf.iloc[1::2].copy()
         splitlist = ['ID', 'AC', 'AF', 'SAMPLES_AF',
