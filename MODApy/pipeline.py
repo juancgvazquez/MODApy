@@ -227,7 +227,7 @@ class Pipeline(object):
 
             logger2.info(step.name)
             args = step.args.replace(
-                'patientname', tmpdir + patientname).replace('reference', ref).replace('samplename', samplename)
+                'patientname', tmpdir + patientname).replace('reference', ref).replace('samplename', patientname)
             cmdver = step.version.replace('.', '_')
             javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
             if any(javacmd in step.command for javacmd in javacmds):
