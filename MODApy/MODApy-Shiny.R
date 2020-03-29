@@ -5,6 +5,7 @@ library(reticulate)
 library(DT)
 library(openxlsx)
 library(shinycssloaders)
+library(stringr)
 #python config -------------------------------------------------------------------
 modapydir ='/home/darrow/miniconda3/envs/MODApy/lib/python3.7/site-packages/MODApy/'
 cfgpath = paste0(modapydir,'config.ini')
@@ -22,6 +23,8 @@ MODApy<-import('MODApy')
 patientsvcf <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))
 patientsbam <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.bam",recursive = TRUE)))
 patientsfastq <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.fastq.gz|\\.fastq|\\.fq|\\.fq.gz",recursive = TRUE)))
+patientsfastq <- str_subset(patientsfastq,pattern='_1')
+patientsfastq <- str_remove(patientsfastq,pattern='_1')
 chromdbs <- gsub('\\..*','',basename(list.files(dirname(cfg$PATHS$dbpath),pattern="\\.csv",recursive = TRUE)))
 updatepanels <<- function(){
   result<-gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
@@ -195,19 +198,22 @@ ui <- tagList(shinyjs::useShinyjs(),
                                       'input.origin == "fromfq"',
                                       div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
                                       fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
-                                      actionButton("runPipelinefq",'Run Pipeline')
+                                      actionButton("runPipelinefq",'Run Pipeline'),
+                                      actionButton("runPipelinelog",'Check Status')
                                     ),
                                     conditionalPanel(
                                       'input.origin == "frombam"',
                                       div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "bamfile", label = NULL, choices = patientsbam)),
                                       fileInput('bamuploaded','Choose File to Upload',accept=c('.bam')),
-                                      actionButton("runPipelinebam",'Run Pipeline')
+                                      actionButton("runPipelinebam",'Run Pipeline'),
+                                      actionButton("runPipelinelog",'Check Status')
                                     ),
                                     conditionalPanel(
                                       'input.origin == "fromvcf"',
                                       div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "vcffile", label = NULL, choices = patientsvcf)),
                                       fileInput('vcfuploaded','Choose File to Upload',accept=c('.vcf')),
-                                      actionButton("runPipelinevcf",'Run Pipeline')
+                                      actionButton("runPipelinevcf",'Run Pipeline'),
+                                      actionButton("runPipelinelog",'Check Status')
                                       )
                                   )),
                                   mainPanel(
@@ -345,9 +351,8 @@ server <- function(input,output, session){
   }
   pipelineRunningModal <- function(failed = FALSE) {
     modalDialog(
-      title = "Warning",
-      p('There is a pipeline already running'),
-      p('Currently at:'),
+      title = "Pipe Log",
+      p('The log for pipelines is currently at:'),
       HTML(paste(readLines(pipelog),collapse='<br>'))
     )
   }
@@ -401,7 +406,9 @@ server <- function(input,output, session){
   observeEvent(input$annotateFile, {
     showModal(annotateModal())
     })
-
+  observeEvent(input$runPipelinelog, {
+    showModal(pipelineRunningModal())
+    })
   observeEvent(input$annotatebtn, {
     if(is.null(input$file1)){
       removeModal()
