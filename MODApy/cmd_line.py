@@ -27,6 +27,7 @@ class Parser(object):
         variantsDB      Work with Variants Database
         addPatient      Download Patient Data to Patients folder. Receives both url or xls/xlsx
         pipeline        Run pipeline on FastQ file/s
+        parsevcf        Parse a VCF and write it's Raw Output to CSV.
         single          Run study on a single patient
         duos            Run Duos analysis on two selected patients
         trios           Run Trios analysis on three selected patients
@@ -82,6 +83,15 @@ class Parser(object):
         args = parser.parse_args(argv[2:])
         fileorurl = args.FileorURL
         downloader.get_links(fileorurl)
+
+    def parsevcf(self):
+        parser = argparse.ArgumentParser(
+            description="Parses a VCF file using MODApy parser and exports output as a csv file with all fields tabulated.")
+        parser.add_argument('File', help="Path to VCF file to Parse")
+        args = parser.parse_args(argv[2:])
+        file = args.File
+        vcfmgr.ParsedVCF.from_vcf(file).to_csv(file.split('.vcf')[0] + '.csv',index=False)
+        logger.info('Output file is in %s' % file.split('.vcf')[0])
 
     def variantsDB(self):
         parser = argparse.ArgumentParser(description="Work with Variants DB")

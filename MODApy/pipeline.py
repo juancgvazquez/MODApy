@@ -293,10 +293,16 @@ class Pipeline(object):
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
                             cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
+            if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
+                shutil.move(tmpdir + patientname + "_realigned_reads_recal.bai",
+                            cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai")
         else:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
                 shutil.move(tmpdir + patientname + "_MODApy.final.vcf",
                             cfg.patientPath + patientname+'_MODApy/' + patientname + "_MODApy.final.vcf")
+            if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
+                shutil.move(tmpdir + patientname + "_realigned_reads_recal.bai",
+                            cfg.patientPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai")
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
                             cfg.patientPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
