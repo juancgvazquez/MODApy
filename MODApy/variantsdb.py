@@ -236,9 +236,13 @@ class VariantsDB(pd.DataFrame):
         df.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
         df['VARDB_FREQ'] = pd.to_numeric(df['VARDB_FREQ'], errors='coerce')
         df['VARDB_FREQ'].round(6)
-        outpath = resultsPath + 'vDBannotated' + '/' + \
-                  fileName.rsplit(
-                      '.', maxsplit=1)[0].replace('.annotated', '') + '.annotated.xlsx'
+        if '_' in filename:
+            foldername = filename.split('_')[0]
+        else:
+            foldername = filename
+        outpath = patientsPath + foldername + '/' + \
+            fileName.rsplit(
+                '.', maxsplit=1)[0].replace('.annotated', '') + '.annotated.xlsx'
         logger.info(outpath)
         firstcols = ['GENE_NAME', 'AMINOCHANGE', 'HGVS.P', 'HGVS.C', 'RSID', 'IMPACT', 'EFFECT', 'VARDB_FREQ',
                      'ALLELE_FREQ']
@@ -273,23 +277,23 @@ class VariantsDB(pd.DataFrame):
             {'bg_color': '#C6EFCE', 'font_color': '#006100', 'bold': True})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
                                      len(df), df.columns.to_list().index(
-                'IMPACT'),
-                                     {'type': 'text', 'criteria': 'containing', 'value': 'HIGH',
-                                      'format': highformat, })
+            'IMPACT'),
+            {'type': 'text', 'criteria': 'containing', 'value': 'HIGH',
+             'format': highformat, })
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
                                      len(df), df.columns.to_list().index(
-                'IMPACT'),
-                                     {'type': 'text', 'criteria': 'containing', 'value': 'MODIFIER',
-                                      'format': modformat})
+            'IMPACT'),
+            {'type': 'text', 'criteria': 'containing', 'value': 'MODIFIER',
+             'format': modformat})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
                                      len(df), df.columns.to_list().index(
-                'IMPACT'),
-                                     {'type': 'text', 'criteria': 'containing', 'value': 'MODERATE',
-                                      'format': moderformat})
+            'IMPACT'),
+            {'type': 'text', 'criteria': 'containing', 'value': 'MODERATE',
+             'format': moderformat})
         datasheet.conditional_format(0, df.columns.to_list().index('IMPACT'),
                                      len(df), df.columns.to_list().index(
-                'IMPACT'),
-                                     {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
+            'IMPACT'),
+            {'type': 'text', 'criteria': 'containing', 'value': 'LOW', 'format': lowformat})
         logger.info('Writing Excel File')
         df[firstcols + lastcols].to_excel(output, sheet_name='DATA',
                                           merge_cells=False, index=False, header=True)
@@ -302,12 +306,12 @@ class VariantsDB(pd.DataFrame):
                 row = 2
                 for x in zip(df['RSID'], df['GENE_NAME']):
                     if type(x[0]) == str:
-                        urlrs = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=%s"
+                        urlrs = "https://varsome.com/variant/hg19/%s"
                         rsvalue = (x[0].replace(';', ',').split(','))[0]
                         datasheet.write_url('%s%i' % (chr(colid + 65), (row)),
                                             urlrs % rsvalue, string=rsvalue)
                     if type(x[1]) == str:
-                        urlgen = "https://www.genecards.org/cgi-bin/carddisp.pl?gene=%s"
+                        urlgen = "https://www.ncbi.nlm.nih.gov/omim/?term=%s"
                         datasheet.write_url('%s%i' % (chr(colgen + 65), (row)),
                                             urlgen % x[1], string=x[1])
                     row += 1
