@@ -409,29 +409,36 @@ server <- function(input,output, session){
   observeEvent(input$runPipelinelog, {
     showModal(pipelineRunningModal())
     })
-  observeEvent(input$annotatebtn, {
-    if(is.null(input$file1)){
-      removeModal()
-      modalDialog('No input data to download.')
-    }
-    else if(!(is.null(input$file1))){
-      file.copy(input$file1$datapath, paste0("./", input$file1$name))
-      withProgress(message='Annotating',value=0, {
-        system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
-        incProgress(0.5,detail="Erasing Temporal Files")
-        file.remove(paste0('./',input$file1$name))
-        incProgress(1,detail = 'Done')
-      })
-      removeModal()
-      showModal(modalDialog('File Annotated',
-                            p('File Available at: ',paste0(cfg$PATHS$resultspath,'vDBannotated/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
-                            ),
-                            downloadButton('downloadannotatedVDB','Download Result')
-                            )
-
-
-                )
-    }
+  
+    observeEvent(input$annotatebtn, {
+      if(is.null(input$file1)){
+        removeModal()
+        modalDialog('No input data to download.')
+      }
+      else if(!(is.null(input$file1))){
+        file.copy(input$file1$datapath, paste0("./", input$file1$name))
+        withProgress(message='Annotating',value=0, {
+          system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
+          incProgress(0.5,detail="Erasing Temporal Files")
+          file.remove(paste0('./',input$file1$name))
+          incProgress(1,detail = 'Done')
+        })
+        removeModal()
+        if(grepl('_',input$file1$name)){
+          patfolder <- strsplit(input$file1$name, "_")[[1]][1]
+        }
+        else{
+          patfolder <- strsplit(input$file1$name, ".")[[1]][1]
+        }
+        showModal(modalDialog('File Annotated',
+                              p('File Available at: ',paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+                              ),
+                              downloadButton('downloadannotatedVDB','Download Result')
+        )
+        
+        
+        )
+      }
     })
   observeEvent(input$addbtn, {
     if((input$url=="")&(is.null(input$file1))){
@@ -533,11 +540,26 @@ server <- function(input,output, session){
                     paste0(input$vcffile,'/',input$vcffile,'.final.vcf'))
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
   }})
-  #Download Result Annotated
-  output$downloadannotatedVDB <- downloadHandler(
-    filename <- paste0(cfg$PATHS$resultspath,'vDBannotated/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx'),
+   #Download Result Annotated
+  output$downloadannotatedVDB <- 
+    downloadHandler(
+    filename <- function(){
+      if(grepl('_',input$file1$name)){
+        patfolder <- strsplit(input$file1$name, "_")[[1]][1]
+      }
+      else{
+        patfolder <- strsplit(input$file1$name, ".")[[1]][1]
+      }
+      paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+      },
     content<-function(downfile){
-      filepath <- paste0(cfg$PATHS$resultspath,'vDBannotated/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+      if(grepl('_',input$file1$name)){
+        patfolder <- strsplit(input$file1$name, "_")[[1]][1]
+      }
+      else{
+        patfolder <- strsplit(input$file1$name, ".")[[1]][1]
+      }
+      filepath <- paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
       print(filepath)
       file.copy(filepath,downfile)
       file.size(filepath)
