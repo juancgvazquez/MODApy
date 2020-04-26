@@ -240,7 +240,7 @@ class VariantsDB(pd.DataFrame):
             foldername = fileName.split('_')[0]
         else:
             foldername = fileName.split('.')[0]
-        outpath = patientsPath + foldername + '/' + \
+        outpath = patientPath + foldername + '/' + \
             fileName.rsplit(
                 '.', maxsplit=1)[0].replace('.annotated', '') + '.annotated.xlsx'
         logger.info(outpath)
