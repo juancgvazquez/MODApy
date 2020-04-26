@@ -236,10 +236,10 @@ class VariantsDB(pd.DataFrame):
         df.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
         df['VARDB_FREQ'] = pd.to_numeric(df['VARDB_FREQ'], errors='coerce')
         df['VARDB_FREQ'].round(6)
-        if '_' in filename:
-            foldername = filename.split('_')[0]
+        if '_' in fileName:
+            foldername = fileName.split('_')[0]
         else:
-            foldername = filename.split('.')[0]
+            foldername = fileName.split('.')[0]
         outpath = patientsPath + foldername + '/' + \
             fileName.rsplit(
                 '.', maxsplit=1)[0].replace('.annotated', '') + '.annotated.xlsx'
