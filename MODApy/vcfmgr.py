@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-import matplotlib_venn as venn
 from MODApy.cfg import cfg
 import pandas as pd
 import numpy as np
@@ -12,6 +10,8 @@ import os
 import matplotlib
 
 matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import matplotlib_venn as venn
 
 
 logger = logging.getLogger(__name__)

@@ -239,7 +239,7 @@ class VariantsDB(pd.DataFrame):
         if '_' in filename:
             foldername = filename.split('_')[0]
         else:
-            foldername = filename
+            foldername = filename.split('.')[0]
         outpath = patientsPath + foldername + '/' + \
             fileName.rsplit(
                 '.', maxsplit=1)[0].replace('.annotated', '') + '.annotated.xlsx'
