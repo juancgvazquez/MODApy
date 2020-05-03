@@ -608,3 +608,5 @@ class ParsedVCF(pd.DataFrame):
             os.remove('./venn.png')
         except:
             logger.debug('Could not remove venn.png')
+
+        

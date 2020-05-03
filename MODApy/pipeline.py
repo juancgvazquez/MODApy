@@ -239,7 +239,7 @@ class Pipeline(object):
                 cmd = cfg.binPath + step.command + '/' + \
                     step.command + '_' + cmdver + ' ' + step.subcommand
             if 'HaplotypeCaller' in cmd:
-                cmdstr = cmd + ' ' + args + ' ' + ' -I ' + inputfile + ' ' + outputfile
+                cmdstr = cmd + ' ' + args + ' ' + inputfile + ' ' + outputfile
             else:
                 cmdstr = cmd + ' ' + args + ' ' + ' ' + inputfile + ' ' + outputfile
                 print(cmd)
