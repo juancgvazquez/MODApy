@@ -233,7 +233,7 @@ class Pipeline(object):
             cmdver = step.version.replace('.', '_')
             javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
             if any(javacmd in step.command for javacmd in javacmds):
-                cmd = 'java -jar -Xmx12G -Djava.io.tmpdir=%s ' % tmpdir + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
+                cmd = 'java -jar -Xmx12G -Djava.io.tmpdir=%s ' % '~/.tmp' + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
                       + '.jar ' + step.subcommand
             else:
                 cmd = cfg.binPath + step.command + '/' + \
