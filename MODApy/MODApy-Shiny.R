@@ -326,8 +326,8 @@ server <- function(input,output, session){
       )
     )
   }
-  shinyFileChoose(input, 'vcfFile1', roots=volumes, filetypes=c('','py'))
-  shinyFileChoose(input, 'vcfFile2', roots=volumes, filetypes=c('','py'))
+  shinyFileChoose(input, 'vcfFile1', roots=volumes, filetypes=c('','vcf'))
+  shinyFileChoose(input, 'vcfFile2', roots=volumes, filetypes=c('','vcf'))
   
   
   newpatientModal <- function(failed = FALSE) {
@@ -437,7 +437,7 @@ server <- function(input,output, session){
   observeEvent(input$diffbtn, {
     vcf1 <- parseFilePaths(volumes,input$vcfFile1)
     vcf2 <- parseFilePaths(volumes,input$vcfFile2)
-    system2('MODApy',args = paste('diffvcf',paste0(vcf1,' ',vcf2)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
+    system2('MODApy',args = paste('diffvcf',paste0(vcf1$datapath,' ',vcf2$datapath)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
   })
   observeEvent(input$annotateFile, {
     showModal(annotateModal())
