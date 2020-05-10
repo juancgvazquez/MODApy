@@ -284,7 +284,7 @@ def diffvcf(self):
             pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2)
             result = pvcfs[0].duos(pvcfs[1], VENNPLACE=args.VennPlace)
             resultname = result.name
-            outpath = cfg.resultsPath + 'Duos/' + \
+            outpath = cfg.resultsPath + 'Diffs/' + \
                 result.name.replace(':', '_') + '/' + \
                 result.name.replace(':', '_')
             result.name = resultname
