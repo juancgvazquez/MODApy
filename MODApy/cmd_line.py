@@ -300,76 +300,76 @@ class Parser(object):
 
 
     def trios(self):
-    parser = argparse.ArgumentParser(
-        description="Run Trios Study on two patients")
-    parser.add_argument("-Patient1", required=True,
-                        help="Patient 1 File Path - It needs to match exactly to the one found inside Patients folder")
-    parser.add_argument("-Patient2", required=True,
-                        help="Patient 2 File Path - It needs to match exactly to the one found inside Patients folder")
-    parser.add_argument("-Patient3", required=True,
-                        help="Patient 3 File Path - It needs to match exactly to the one found inside Patients folder")
-    parser.add_argument("--Panel", nargs='?', const=None,
-                        help="Panel to run on Trios study")
-    parser.add_argument("--Filter", nargs='?', const=None,
-                        help="Filter to apply. This function will filter out every row that includes the given text"
-                                " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
-                        metavar=("COLUMN TEXT"), action='append')
-    parser.add_argument("--VennPlace", default=None, const=None, nargs='?',
-                        choices=['A', 'B', 'C', 'A:B',
-                                    'A:C', 'B:C', 'A:B:C', 'ALL'],
-                        help="Place in a Venn Diagram to obtain variants from")
-    try:
-        # ignore first argument
-        args = parser.parse_args(argv[2:])
-        patient1 = cfg.patientPath + args.Patient1
-        patient2 = cfg.patientPath + args.Patient2
-        patient3 = cfg.patientPath + args.Patient3
-        # Checks file existence and type for patients
-        pt1Check = checkFile(patient1, '.vcf')
-        pt2Check = checkFile(patient2, '.vcf')
-        pt3Check = checkFile(patient3, '.vcf')
-        logger.info(
-            "Running Trios Study on %s, %s and %s" % (str(args.Patient1), str(args.Patient2), str(args.Patient3)))
-        pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2, patient3)
-        result = pvcfs[0].duos(pvcfs[1]).duos(
-            pvcfs[2], VENNPLACE=args.VennPlace)
-        resultname = result.name
-        outpath = cfg.resultsPath + 'Trios/' + \
-            result.name.replace(':', '_') + '/' + \
-            result.name.replace(':', '_')
-        result.name = resultname
-        if args.VennPlace is not None:
-            outpath = outpath + '_Venn' + args.VennPlace.replace(':', '_')
-        # check if there is a Panel Requested
-        if args.Panel:
-            logger.info('Running panel {}'.format(args.Panel))
-            panel = cfg.panelsPath + args.Panel + '.xlsx'
-            checkFile(panel, '.xlsx')
-            result = result.panel(panel)
+        parser = argparse.ArgumentParser(
+            description="Run Trios Study on two patients")
+        parser.add_argument("-Patient1", required=True,
+                            help="Patient 1 File Path - It needs to match exactly to the one found inside Patients folder")
+        parser.add_argument("-Patient2", required=True,
+                            help="Patient 2 File Path - It needs to match exactly to the one found inside Patients folder")
+        parser.add_argument("-Patient3", required=True,
+                            help="Patient 3 File Path - It needs to match exactly to the one found inside Patients folder")
+        parser.add_argument("--Panel", nargs='?', const=None,
+                            help="Panel to run on Trios study")
+        parser.add_argument("--Filter", nargs='?', const=None,
+                            help="Filter to apply. This function will filter out every row that includes the given text"
+                                    " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
+                            metavar=("COLUMN TEXT"), action='append')
+        parser.add_argument("--VennPlace", default=None, const=None, nargs='?',
+                            choices=['A', 'B', 'C', 'A:B',
+                                        'A:C', 'B:C', 'A:B:C', 'ALL'],
+                            help="Place in a Venn Diagram to obtain variants from")
+        try:
+            # ignore first argument
+            args = parser.parse_args(argv[2:])
+            patient1 = cfg.patientPath + args.Patient1
+            patient2 = cfg.patientPath + args.Patient2
+            patient3 = cfg.patientPath + args.Patient3
+            # Checks file existence and type for patients
+            pt1Check = checkFile(patient1, '.vcf')
+            pt2Check = checkFile(patient2, '.vcf')
+            pt3Check = checkFile(patient3, '.vcf')
+            logger.info(
+                "Running Trios Study on %s, %s and %s" % (str(args.Patient1), str(args.Patient2), str(args.Patient3)))
+            pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2, patient3)
+            result = pvcfs[0].duos(pvcfs[1]).duos(
+                pvcfs[2], VENNPLACE=args.VennPlace)
+            resultname = result.name
+            outpath = cfg.resultsPath + 'Trios/' + \
+                result.name.replace(':', '_') + '/' + \
+                result.name.replace(':', '_')
             result.name = resultname
-            outpath = outpath + '_Panel' + args.Panel
-        # check if there is a Filter Requested
-        if args.Filter[0] is not None:
-            for x in args.Filter:
-                if (len(x.split())) != 2:
-                    logger.error(
-                        '--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
-                    exit(1)
-                else:
-                    x = x.split()
-                    if x[1] == 'Empty':
-                        result = result[result[x[0]] != '']
+            if args.VennPlace is not None:
+                outpath = outpath + '_Venn' + args.VennPlace.replace(':', '_')
+            # check if there is a Panel Requested
+            if args.Panel:
+                logger.info('Running panel {}'.format(args.Panel))
+                panel = cfg.panelsPath + args.Panel + '.xlsx'
+                checkFile(panel, '.xlsx')
+                result = result.panel(panel)
+                result.name = resultname
+                outpath = outpath + '_Panel' + args.Panel
+            # check if there is a Filter Requested
+            if args.Filter[0] is not None:
+                for x in args.Filter:
+                    if (len(x.split())) != 2:
+                        logger.error(
+                            '--Filter accepts only two arguments. Usage: --Filter COLUMN_NAME TEXT_TO_FILTER')
+                        exit(1)
                     else:
-                        result = result[~result[x[0]].str.contains(x[1])]
-                    result.name = resultname
-                    outpath = outpath + '_Filter' + str(x[0]) + str(x[1])
-        outpath = outpath + '.xlsx'
-        result.vcf_to_excel(outpath)
-        logger.info('Trios Analisis Complete')
-        logger.info('File available at:%s' % outpath)
-    except:
-        logger.info('Trios Analisis Failed')
-    return 0
+                        x = x.split()
+                        if x[1] == 'Empty':
+                            result = result[result[x[0]] != '']
+                        else:
+                            result = result[~result[x[0]].str.contains(x[1])]
+                        result.name = resultname
+                        outpath = outpath + '_Filter' + str(x[0]) + str(x[1])
+            outpath = outpath + '.xlsx'
+            result.vcf_to_excel(outpath)
+            logger.info('Trios Analisis Complete')
+            logger.info('File available at:%s' % outpath)
+        except:
+            logger.info('Trios Analisis Failed')
+        return 0
 
 
 def checkFile(filePath, extension):
