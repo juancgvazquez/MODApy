@@ -291,32 +291,32 @@ class Pipeline(object):
         if cfg.testFlag:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
                 file = cfg.testPath + patientname+'_MODApy/' + patientname + "_MODApy.final.vcf"
-                shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file)
+                shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file, exist_ok=True)
                 logger2.info('Parsing final VCF file')
                 logging.info('Parsing final VCF file')
                 vcfmgr.ParsedVCF.from_vcf(file).to_csv(
                     file.split('.vcf')[0] + '.csv', index=False)
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
-                            cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
+                            cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam", exist_ok=True)
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bai",
-                            cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai")
+                            cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai", exist_ok=True)
         else:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
                 file = cfg.patientPath + patientname + \
                     '_MODApy/' + patientname + "_MODApy.final.vcf"
-                shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file)
+                shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file, exist_ok=True)
                 logger2.info('Parsing final VCF file')
                 logging.info('Parsing final VCF file')
                 vcfmgr.ParsedVCF.from_vcf(file).to_csv(
                     file.split('.vcf')[0] + '.csv', index=False)
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bai",
-                            cfg.patientPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai")
+                            cfg.patientPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai", exist_ok=True)
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
-                            cfg.patientPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
+                            cfg.patientPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam", exist_ok=True)
         if keeptmp is False:
             shutil.rmtree(tmpdir)
 

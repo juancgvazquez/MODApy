@@ -28,6 +28,7 @@ class Parser(object):
         addPatient      Download Patient Data to Patients folder. Receives both url or xls/xlsx
         pipeline        Run pipeline on FastQ file/s
         parsevcf        Parse a VCF and write it's Raw Output to CSV.
+        diffvcf         Generate a Duos analysis on any given vcf
         single          Run study on a single patient
         duos            Run Duos analysis on two selected patients
         trios           Run Trios analysis on three selected patients
@@ -269,6 +270,33 @@ class Parser(object):
         except:
             logger.info('Duos Analisis Failed')
         return 0
+
+def diffvcf(self):
+        # Description for duos usage
+        try:
+            patient1 = sys.argv[2]
+            patient2 = sys.argv[3]
+            # Checks file existence and type for patients
+            pt1Check = checkFile(patient1, '.vcf')
+            pt2Check = checkFile(patient2, '.vcf')
+            logger.info("Evaluating differences between %s and %s" %
+                        (str(args.Patient1), str(args.Patient2)))
+            pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2)
+            result = pvcfs[0].duos(pvcfs[1], VENNPLACE=args.VennPlace)
+            resultname = result.name
+            outpath = cfg.resultsPath + 'Duos/' + \
+                result.name.replace(':', '_') + '/' + \
+                result.name.replace(':', '_')
+            result.name = resultname
+            outpath = outpath + '.xlsx'
+            logger.info('Writing Result File')
+            result.vcf_to_excel(outpath)
+            logger.info('Diff Analisis Complete')
+            logger.info('File available at:%s' % outpath)
+        except:
+            logger.info('Diff Analisis Failed')
+        return 0
+
 
     def trios(self):
         parser = argparse.ArgumentParser(

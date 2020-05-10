@@ -6,16 +6,18 @@ library(DT)
 library(openxlsx)
 library(shinycssloaders)
 library(stringr)
+library(shinyFiles)
+
 #python config -------------------------------------------------------------------
-modapydir ='/home/darrow/miniconda3/envs/MODApy/lib/python3.7/site-packages/MODApy/'
+modapydir ='/home/jvazquez/Datos/Development/MODApy/MODApy/'
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
 pipelog = paste0(modapydir,'logs/pipe_run.log')
 pipeflag = paste0(modapydir,'logs/pipe.flag')
 dlog = paste0(modapydir,'logs/downloads.log')
 cfg = read.ini(cfgpath)
-use_virtualenv("/home/darrow/miniconda3/envs/MODApy")
-use_python("/home/darrow/miniconda3/envs/MODApy/bin/python3")
+use_virtualenv("/home/jvazquez/Datos/Development/MODApy/_venv/")
+use_python("/home/jvazquez/Datos/Development/MODApy/_venv/bin/python3")
 py_config()
 MODApy<-import('MODApy')
 
@@ -31,6 +33,7 @@ updatepanels <<- function(){
   return(result)
 }
 panels <- gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
+
 # utils ---------------------------------------------------------------------------
 getcommand <- function(input){
   cmd = ''
@@ -93,6 +96,7 @@ getcommand <- function(input){
 
 # ui -------------------------------------------------------------------
 ui <- tagList(shinyjs::useShinyjs(),
+              volumes <- c(wd='/home/jvazquez/Datos/Development/MODApy/'),
               navbarPage("MODApy",
                          tabPanel("Analisis",
                                   sidebarLayout(
@@ -274,6 +278,10 @@ ui <- tagList(shinyjs::useShinyjs(),
                                   #selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
                                    # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
                          ),
+                         tabPanel('Utils',
+                                  actionButton("customDuos",label='VCF-DIFF'),
+                                  verbatimTextOutput('filepaths')
+                         ),
                          tabPanel('About',
                                   h2('MODApy'),
                                   h3('Multi-Omics Data Analysis in Python - Shiny Frontend'),
@@ -302,6 +310,26 @@ server <- function(input,output, session){
   rv2 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv3 <- reactiveValues(textstream3 = c(""), timer = reactiveTimer(1000),started=FALSE)
   downpath <- reactiveValues()
+  ### Modal to do diff between two user vcfs.
+  vcfDiffModal <- function(failed= FALSE) {
+    modalDialog(
+      title = "VCF Diff",
+      p('This will create an excel file with the comparison between two vcfs, similar
+        to the Duos function, in the Panel Tab.'),
+      shinyFilesButton('vcfFile1', 'First VCF', 'Please select a dataset', FALSE),
+      shinyFilesButton('vcfFile2', 'Second VCF', 'Please select a dataset', FALSE),
+      #fileInput('vcfFile1','Choose first vcf file',accept=c('.vcf')),
+      #fileInput('vcfFile2','Choose second vcf file',accept=c('.vcf')),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton('diffbtn',"Compare")
+      )
+    )
+  }
+  shinyFileChoose(input, 'vcfFile1', roots=volumes, filetypes=c('','py'))
+  shinyFileChoose(input, 'vcfFile2', roots=volumes, filetypes=c('','py'))
+  
+  
   newpatientModal <- function(failed = FALSE) {
     modalDialog(
       title = "Add New Patient",
@@ -402,6 +430,14 @@ server <- function(input,output, session){
       rv$textstream = "Variants file not found. Try to build variantsDB first."
     }
 
+  })
+  observeEvent(input$customDuos, {
+    showModal(vcfDiffModal())
+  })
+  observeEvent(input$diffbtn, {
+    vcf1 <- parseFilePaths(volumes,input$vcfFile1)
+    vcf2 <- parseFilePaths(volumes,input$vcfFile2)
+    system2('MODApy',args = paste('diffvcf',paste0(vcf1,' ',vcf2)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
   })
   observeEvent(input$annotateFile, {
     showModal(annotateModal())
