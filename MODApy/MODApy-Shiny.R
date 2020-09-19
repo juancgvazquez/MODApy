@@ -7,15 +7,16 @@ library(openxlsx)
 library(shinycssloaders)
 library(stringr)
 #python config -------------------------------------------------------------------
-modapydir ='/home/darrow/miniconda3/envs/MODApy/lib/python3.7/site-packages/MODApy/'
+basedir = '/run/media/charly/5C34188931C8C61A/UCC/BDMG/Investigacion/Desarrollos/modapy/'
+modapydir = paste(basedir,'MODApy/',sep="")
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
 pipelog = paste0(modapydir,'logs/pipe_run.log')
 pipeflag = paste0(modapydir,'logs/pipe.flag')
 dlog = paste0(modapydir,'logs/downloads.log')
 cfg = read.ini(cfgpath)
-use_virtualenv("/home/darrow/miniconda3/envs/MODApy")
-use_python("/home/darrow/miniconda3/envs/MODApy/bin/python3")
+use_virtualenv(paste(basedir,".venv",sep=""))
+use_python(paste(basedir,".venv/MODApy/bin/python3",sep=""))
 py_config()
 MODApy<-import('MODApy')
 
@@ -196,7 +197,8 @@ ui <- tagList(shinyjs::useShinyjs(),
                                     ),
                                     conditionalPanel(
                                       'input.origin == "fromfq"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
+                                      div(style="display: inline-block;vertical-align:top; width: 300px;",
+                                          selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
                                       fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
                                       actionButton("runPipelinefq",'Run Pipeline'),
                                       actionButton("runPipelinelog",'Check Status')
@@ -220,6 +222,8 @@ ui <- tagList(shinyjs::useShinyjs(),
                                     conditionalPanel(
                                       'input.origin=="fromfq"',
                                       sidebarPanel(
+                                        h2('Reference'),
+                                        selectInput('reference','Select Reference',choices = c('hg19full','hg19_noalt')),
                                         h2("Steps"),
                                         checkboxInput('trim','Trim with TrimGalore',value=TRUE),
                                         #checkboxInput('align','Align with BWA',value=TRUE),
@@ -465,13 +469,19 @@ server <- function(input,output, session){
   observeEvent(input$runPipelinefq, {
     #shinyjs::disable('buttonrun')
     patpath = gsub('_1','',input$fqfile)
+    if(input$reference == 'hg19full'){
+      pipesel='BestPractices-Trim.json'
+    }
+    else if(input$reference == 'hg19_noalt'){
+      pipesel='BestPractices-Trim-noalt.json'
+    }
     if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
       showModal(pipelineRunningModal())
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq", sep=""))){
       file.create(logfile)
       cmd =  paste("pipeline -Pipeline",
-                   "BestPractices-Trim.json", "-FQ",
+                   pipesel, "-FQ",
                    paste(patpath, "/",patpath,"_1", ".fastq", sep=""), "-FQ",
                    paste(patpath, "/",patpath,"_2", ".fastq", sep=""))
       print(cmd)
@@ -481,30 +491,35 @@ server <- function(input,output, session){
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""))){
       file.create(logfile)
       cmd = paste("pipeline -Pipeline",
-                  "BestPractices-Trim.json", "-FQ",
+                  pipesel, "-FQ",
                   paste(patpath, "/",patpath,"_1", ".fastq.gz", sep=""), "-FQ",
                   paste(patpath, "/",patpath,"_2", ".fastq.gz", sep=""))
+      print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
 
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""))){
       file.create(logfile)
       cmd = paste("pipeline -Pipeline",
-                  "BestPractices-Trim.json", "-FQ",
+                  pipesel, "-FQ",
                   paste(patpath, "/",patpath,"_1", ".fq.gz", sep=""), "-FQ",
                   paste(patpath, "/",patpath,"_2", ".fq.gz", sep=""))
+      print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
 
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq", sep=""))){
       file.create(logfile)
       cmd = paste("pipeline -Pipeline",
-                  "BestPractices-Trim.json", "-FQ",
+                  pipesel, "-FQ",
                   paste(patpath, "/",patpath,"_1", ".fq", sep=""), "-FQ",
                   paste(patpath, "/",patpath,"_2", ".fq", sep=""))
+      print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
     }
   })
+  
+  
   ##Runs Pipeline for Bam
   observeEvent(input$runPipelinebam, {
     #shinyjs::disable('buttonrun')
@@ -519,6 +534,8 @@ server <- function(input,output, session){
       file.create(logfile)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
     }})
+  
+  
     ##Runs Pipeline for VCF
   observeEvent(input$runPipelinevcf, {
     #shinyjs::disable('buttonrun')
