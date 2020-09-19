@@ -8,12 +8,13 @@ import subprocess
 import xmltodict
 import yaml
 
-from MODApy import cfg
+from MODApy import cfg, vcfmgr
 
 logger = logging.getLogger(__name__)
 logger2 = logging.getLogger('Pipeline Module')
 hdlr = logging.FileHandler(cfg.rootDir + '/logs/pipe_run.log')
-formatter = logging.Formatter("%(asctime)s %(name)-25s %(levelname)-8s %(message)s")
+formatter = logging.Formatter(
+    "%(asctime)s %(name)-25s %(levelname)-8s %(message)s")
 hdlr.setFormatter(formatter)
 logger2.addHandler(hdlr)
 logger2.setLevel(logging.DEBUG)
@@ -182,7 +183,8 @@ class Pipeline(object):
 
         os.makedirs(tmpdir, exist_ok=True)
         samplename = patientname + '_MODApy'
-        logger2.info('Running ' + str(self.name) + ' pipeline on patient: ' + str(patientname))
+        logger2.info('Running ' + str(self.name) +
+                     ' pipeline on patient: ' + str(patientname))
         # bool to check if first step
         first = True
         if endStep == 0:
@@ -231,13 +233,13 @@ class Pipeline(object):
             cmdver = step.version.replace('.', '_')
             javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
             if any(javacmd in step.command for javacmd in javacmds):
-                cmd = 'java -jar -Xmx12G -Djava.io.tmpdir=%s ' % tmpdir + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
+                cmd = 'java -jar -Xmx12G -Djava.io.tmpdir=%s ' % '~/.tmp' + cfg.binPath + step.command + '/' + step.command + '_' + cmdver \
                       + '.jar ' + step.subcommand
             else:
                 cmd = cfg.binPath + step.command + '/' + \
-                      step.command + '_' + cmdver + ' ' + step.subcommand
+                    step.command + '_' + cmdver + ' ' + step.subcommand
             if 'HaplotypeCaller' in cmd:
-                cmdstr = cmd + ' ' + args + ' ' + ' -I ' + inputfile + ' ' + outputfile
+                cmdstr = cmd + ' ' + args + ' ' + inputfile + ' ' + outputfile
             else:
                 cmdstr = cmd + ' ' + args + ' ' + ' ' + inputfile + ' ' + outputfile
                 print(cmd)
@@ -288,8 +290,13 @@ class Pipeline(object):
                 logger2.info('Subprocess finished')
         if cfg.testFlag:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
-                shutil.move(tmpdir + patientname + "_MODApy.final.vcf",
-                            cfg.testPath + patientname+'_MODApy/' + patientname + "_MODApy.final.vcf")
+                file = cfg.testPath + patientname+'_MODApy/' + patientname + "_MODApy.final.vcf"
+                os.makedirs(cfg.testPath + patientname + '_MODApy',exist_ok=True)
+                shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file)
+                logger2.info('Parsing final VCF file')
+                logging.info('Parsing final VCF file')
+                vcfmgr.ParsedVCF.from_vcf(file).to_csv(
+                    file.split('.vcf')[0] + '.csv', index=False)
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
                             cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
@@ -298,8 +305,14 @@ class Pipeline(object):
                             cfg.testPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai")
         else:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
-                shutil.move(tmpdir + patientname + "_MODApy.final.vcf",
-                            cfg.patientPath + patientname+'_MODApy/' + patientname + "_MODApy.final.vcf")
+                os.makedirs(cfg.patientPath + patientname + '_MODApy',exist_ok=True)
+                file = cfg.patientPath + patientname + \
+                    '_MODApy/' + patientname + "_MODApy.final.vcf"
+                shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file)
+                logger2.info('Parsing final VCF file')
+                logging.info('Parsing final VCF file')
+                vcfmgr.ParsedVCF.from_vcf(file).to_csv(
+                    file.split('.vcf')[0] + '.csv', index=False)
             if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
                 shutil.move(tmpdir + patientname + "_realigned_reads_recal.bai",
                             cfg.patientPath + patientname+'_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai")

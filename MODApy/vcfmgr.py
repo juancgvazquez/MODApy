@@ -10,8 +10,8 @@ import os
 import matplotlib
 
 matplotlib.use('agg')
-import matplotlib_venn as venn
 import matplotlib.pyplot as plt
+import matplotlib_venn as venn
 
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class ParsedVCF(pd.DataFrame):
         df1.index.names = ['CHROM', 'POS', 'REF', 'ALT']
         df1.reset_index(inplace=True)
         splitdf = df1.loc[df1['ALT'].str.contains(',') == True].copy()
-        if(len(splitdf)>0):
+        if(len(splitdf) > 0):
             ALT = splitdf['ALT'].astype(str).str.split(
                 ',', n=1, expand=True).stack().rename('ALT')
             ALT.index = ALT.index.droplevel(-1)
@@ -573,12 +573,12 @@ class ParsedVCF(pd.DataFrame):
                 row = 2
                 for x in zip(self['RSID'], self['GENE_NAME']):
                     if type(x[0]) == str:
-                        urlrs = "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=%s"
+                        urlrs = "https://varsome.com/variant/hg19/%s"
                         rsvalue = (x[0].replace(';', ',').split(','))[0]
                         datasheet.write_url('%s%i' % (chr(colid + 65), (row)),
                                             urlrs % rsvalue, string=rsvalue)
                     if type(x[1]) == str:
-                        urlgen = "https://www.genecards.org/cgi-bin/carddisp.pl?gene=%s"
+                        urlgen = "https://www.ncbi.nlm.nih.gov/omim/?term=%s"
                         datasheet.write_url('%s%i' % (chr(colgen + 65), (row)),
                                             urlgen % x[1], string=x[1])
                     row += 1
@@ -608,3 +608,5 @@ class ParsedVCF(pd.DataFrame):
             os.remove('./venn.png')
         except:
             logger.debug('Could not remove venn.png')
+
+        
