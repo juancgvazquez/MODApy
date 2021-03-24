@@ -106,4 +106,15 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# data
 data/
+*.csv
+*.tar.gz
+*.genes.txt
+*.code-workspace
+snpeff_stats
+MODApy/logs/
+.R*
+
+# programs
+MODApy/bin/
