@@ -33,7 +33,7 @@ class VariantsDB(pd.DataFrame):
             logger.error('Path to excel file incorrect.')
             exit(1)
         db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME',
-                      'HGVS.C', 'HGVS.P'], inplace=True)
+                      'HGVS.P'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -56,7 +56,7 @@ class VariantsDB(pd.DataFrame):
             logger.error('Path to CSV file incorrect.')
             exit(1)
         db.set_index(['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME',
-                      'HGVS.C', 'HGVS.P'], inplace=True)
+                      'HGVS.P'], inplace=True)
         db = db.pipe(VariantsDB)
         return db
 
@@ -94,7 +94,7 @@ class VariantsDB(pd.DataFrame):
             logger.info('Parsing Patients')
             pvcfs = ParsedVCF.mp_parser(*patientslist)
             pvcfs = [x[['CHROM', 'POS', 'REF', 'ALT', 'ZIGOSITY',
-                        'GENE_NAME', 'HGVS.C', 'HGVS.P']] for x in pvcfs]
+                        'GENE_NAME', 'HGVS.P']] for x in pvcfs]
             for df in pvcfs:
                 if 'ZIGOSITY' not in df.columns:
                     df['ZIGOSITY'] = 'UNKWN'
@@ -105,22 +105,22 @@ class VariantsDB(pd.DataFrame):
                 db = db.reset_index()
                 pvcfs.insert(0, db)
             pvcfs = [x.set_index(
-                ['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
+                ['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.P']) for x in pvcfs]
             tempdb1 = pd.concat(pvcfs, axis=1, join='outer')
             tempdb2 = tempdb1.reset_index().groupby(['CHROM', 'POS', 'REF', 'ALT']).agg(
-                {'GENE_NAME': ' | '.join, 'HGVS.P': ' | '.join, 'HGVS.C': ' | '.join}).reset_index()
+                {'GENE_NAME': ' | '.join, 'HGVS.P': ' | '.join}).reset_index()
             pvcfs2 = [x.reset_index().drop(
-                columns=['GENE_NAME', 'HGVS.C', 'HGVS.P']) for x in pvcfs]
+                columns=['GENE_NAME', 'HGVS.P']) for x in pvcfs]
             pvcfs2.insert(0, tempdb2)
             pvcfs2 = [x.set_index(['CHROM', 'POS', 'REF', 'ALT'])
                       for x in pvcfs2]
             db = pd.concat(pvcfs2, axis=1, join='outer')
-            colslist = ['GENE_NAME', 'HGVS.C', 'HGVS.P']
+            colslist = ['GENE_NAME', 'HGVS.P']
             for col in colslist:
                 db[col] = db[col].apply(
                     lambda x: ' | '.join(set(x.split(' | '))))
             db = db.reset_index().set_index(
-                ['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.C', 'HGVS.P'])
+                ['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.P'])
             db.replace({'.': np.nan}, inplace=True)
             db = db.pipe(VariantsDB)
             db = db.calcfreqs()
@@ -164,12 +164,12 @@ class VariantsDB(pd.DataFrame):
             logger.debug('', exc_info=True)
             exit(1)
         pvcf = pvcf[['CHROM', 'POS', 'REF', 'ALT',
-                     'ZIGOSITY', 'GENE_NAME', 'HGVS.C', 'HGVS.P']]
+                     'ZIGOSITY', 'GENE_NAME', 'HGVS.P']]
         if 'ZIGOSITY' not in pvcf.columns:
             pvcf['ZIGOSITY'] = 'UNKWN'
         pvcf.rename(columns={'ZIGOSITY': pvcf.name}, inplace=True)
         pvcf.set_index(['CHROM', 'POS', 'REF', 'ALT',
-                        'GENE_NAME', 'HGVS.C', 'HGVS.P'], inplace=True)
+                        'GENE_NAME', 'HGVS.P'], inplace=True)
         db = pd.concat([self, pvcf], axis=1, join='outer')
         db = db.pipe(VariantsDB)
         db = db.calcfreqs()
@@ -209,6 +209,7 @@ class VariantsDB(pd.DataFrame):
 
     def calcfreqs(self):
         logger.info('Calculating Variant Frequencies')
+        logger.debug(f'DB size {self.shape}')
         patients = self.columns.tolist()
         if 'FREQ' in patients:
             patients.remove('FREQ')
@@ -246,7 +247,7 @@ class VariantsDB(pd.DataFrame):
             fileName.rsplit(
                 '.', maxsplit=1)[0].replace('.annotated', '') + '.annotated.xlsx'
         logger.info(outpath)
-        firstcols = ['GENE_NAME', 'AMINOCHANGE', 'HGVS.P', 'HGVS.C', 'RSID', 'IMPACT', 'EFFECT', 'VARDB_FREQ',
+        firstcols = ['GENE_NAME', 'AMINOCHANGE', 'HGVS.P', 'RSID', 'IMPACT', 'EFFECT', 'VARDB_FREQ',
                      'ALLELE_FREQ']
         lastcols = [x for x in df.columns if x not in firstcols]
         output = pd.ExcelWriter(outpath)
