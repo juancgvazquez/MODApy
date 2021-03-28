@@ -169,22 +169,12 @@ async def trios(
 
 @app.post("/modaapi/pipeline")
 async def pipeline(
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af07c75 (changed pipeline)
     Pipeline: str,
     FQ_1: str,
     FQ_2: str = "",
     startStep: int = 0,
     endStep: int = 0,
     keeptmp: bool = False,
-<<<<<<< HEAD
-=======
-    Pipeline: str, FQ: list, startStep: int, endStep: int, keeptmp: bool = False
->>>>>>> c6be044 (initial api design)
-=======
->>>>>>> af07c75 (changed pipeline)
 ):
     pipe = cfg.pipelinesPath + Pipeline
 
@@ -192,28 +182,9 @@ async def pipeline(
 
     newpipe = pipeline.Pipeline.from_json(pipe)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     if FQ_2 != "":
         fq1 = cfg.patientPath + FQ_1
         fq2 = cfg.patientPath + FQ_2
-=======
-    if len(FQ) > 2:
-        logger.error(
-            "Only Two FASTQ files allowed. The Input for FastQ Files was: ",
-            str(FQ),
-        )
-        return exit(1)
-
-    elif len(FQ) == 2:
-        fq1 = cfg.patientPath + FQ[0]
-        fq2 = cfg.patientPath + FQ[1]
->>>>>>> c6be044 (initial api design)
-=======
-    if FQ_2 != "":
-        fq1 = cfg.patientPath + FQ_1
-        fq2 = cfg.patientPath + FQ_2
->>>>>>> af07c75 (changed pipeline)
         checkFile(fq1, "." + fq1.split(".")[-1])
         checkFile(fq2, "." + fq2.split(".")[-1])
         if keeptmp:
@@ -224,16 +195,7 @@ async def pipeline(
             newpipe.runpipeline(fq1, fq2, startStep=startStep, endStep=endStep)
         return 0
     else:
-<<<<<<< HEAD
-<<<<<<< HEAD
         fq1 = cfg.patientPath + FQ_1
-=======
-        fq1 = cfg.patientPath + FQ[0]
-        fq2 = ""
->>>>>>> c6be044 (initial api design)
-=======
-        fq1 = cfg.patientPath + FQ_1
->>>>>>> af07c75 (changed pipeline)
         checkFile(fq1, "." + fq1.split(".")[-1])
         if keeptmp:
             newpipe.runpipeline(fq1, keeptmp=True, startStep=startStep, endStep=endStep)
