@@ -35,7 +35,7 @@ class Parser(object):
         coverageStats   Generate coverages stats for bam file or list of files
 
         For more info on any of these commands, use "cmd_line.py <command> -h
-        
+
         You can check the package version using -v or --version"''')
 
         parser.add_argument("command", help="Select command to run")
@@ -202,8 +202,9 @@ class Parser(object):
             result.vcf_to_excel(outpath)
             logger.info('Single Analisis Complete')
             logger.info('File available at:%s' % outpath)
-        except:
+        except Exception as err:
             logger.info('Single Analisis Failed')
+            logger.debug(f'Error was: {err}')
         return 0
 
     def duos(self):
@@ -267,8 +268,9 @@ class Parser(object):
             result.vcf_to_excel(outpath)
             logger.info('Duos Analisis Complete')
             logger.info('File available at:%s' % outpath)
-        except:
+        except Exception as err:
             logger.info('Duos Analisis Failed')
+            logger.debug(f'Error was: {err}')
         return 0
 
     def diffvcf(self):
@@ -367,8 +369,9 @@ class Parser(object):
             result.vcf_to_excel(outpath)
             logger.info('Trios Analisis Complete')
             logger.info('File available at:%s' % outpath)
-        except:
+        except Exception as err:
             logger.info('Trios Analisis Failed')
+            logger.debug(f'Error was: {err}')
         return 0
 
 
