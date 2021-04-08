@@ -204,7 +204,7 @@ class Parser(object):
             logger.info('File available at:%s' % outpath)
         except Exception as err:
             logger.info('Single Analisis Failed')
-            logger.debug(f'Error was: {err}')
+            logger.debug(f'Error was: {err}', exc_info=True)
         return 0
 
     def duos(self):
@@ -270,7 +270,7 @@ class Parser(object):
             logger.info('File available at:%s' % outpath)
         except Exception as err:
             logger.info('Duos Analisis Failed')
-            logger.debug(f'Error was: {err}')
+            logger.debug(f'Error was: {err}', exc_info=True)
         return 0
 
     def diffvcf(self):
@@ -371,7 +371,7 @@ class Parser(object):
             logger.info('File available at:%s' % outpath)
         except Exception as err:
             logger.info('Trios Analisis Failed')
-            logger.debug(f'Error was: {err}')
+            logger.debug(f'Error was: {err}', exc_info=True)
         return 0
 
 
