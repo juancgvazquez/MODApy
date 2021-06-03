@@ -262,11 +262,18 @@ class Parser(object):
             )
             os.makedirs(os.path.dirname(outpath), exist_ok=True)
             result.vcf_to_excel(outpath)
+<<<<<<< HEAD
             logger.info('Single Analisis Complete')
             logger.info('File available at:%s' % outpath)
         except Exception as err:
             logger.info('Single Analisis Failed')
             logger.debug(f'Error was: {err}', exc_info=True)
+=======
+            logger.info("Single Analisis Complete")
+            logger.info("File available at:%s" % outpath)
+        except:
+            logger.info("Single Analisis Failed")
+>>>>>>> 1dd5f41c8355a90fb4d998cbd938e8695f20d10b
         return 0
 
     def duos(self):
