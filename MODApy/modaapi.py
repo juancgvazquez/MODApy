@@ -176,29 +176,37 @@ async def pipeline(
     endStep: int = 0,
     keeptmp: bool = False,
 ):
-    pipe = cfg.pipelinesPath + Pipeline
+    pipe = Pipeline
 
     checkFile(pipe, Pipeline.split(".")[-1])
 
     newpipe = pipeline.Pipeline.from_json(pipe)
 
     if FQ_2 != "":
-        fq1 = cfg.patientPath + FQ_1
-        fq2 = cfg.patientPath + FQ_2
+        fq1 = FQ_1
+        fq2 = FQ_2
         checkFile(fq1, "." + fq1.split(".")[-1])
         checkFile(fq2, "." + fq2.split(".")[-1])
-        if keeptmp:
-            newpipe.runpipeline(
-                fq1, fq2, keeptmp=True, startStep=startStep, endStep=endStep
-            )
-        else:
-            newpipe.runpipeline(fq1, fq2, startStep=startStep, endStep=endStep)
+        cfg.long_queue.enqueue(
+            newpipe.runpipeline,
+            args=[fq1, fq2],
+            kwargs={
+                "keeptmp": args.keeptmp,
+                "startStep": args.startStep,
+                "endStep": args.endStep,
+            },
+        )
         return 0
     else:
         fq1 = cfg.patientPath + FQ_1
         checkFile(fq1, "." + fq1.split(".")[-1])
-        if keeptmp:
-            newpipe.runpipeline(fq1, keeptmp=True, startStep=startStep, endStep=endStep)
-        else:
-            newpipe.runpipeline(fq1, startStep=startStep, endStep=endStep)
+        cfg.long_queue.enqueue(
+            newpipe.runpipeline,
+            args=[fq1],
+            kwargs={
+                "keeptmp": args.keeptmp,
+                "startStep": args.startStep,
+                "endStep": args.endStep,
+            },
+        )
         return 0

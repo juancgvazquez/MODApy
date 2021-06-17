@@ -38,7 +38,8 @@ class Parser(object):
 
         For more info on any of these commands, use "cmd_line.py <command> -h
 
-        You can check the package version using -v or --version"''')
+        You can check the package version using -v or --version"''',
+        )
 
         parser.add_argument("command", help="Select command to run")
         parser.add_argument(
@@ -187,8 +188,8 @@ class Parser(object):
 
         # ignore first argument
         args = parser.parse_args(argv[2:])
-        pipe = cfg.pipelinesPath + args.Pipeline
-
+        # pipe = cfg.pipelinesPath + args.Pipeline
+        pipe = args.Pipeline
         checkFile(pipe, args.Pipeline.split(".")[-1])
 
         newpipe = pipeline.Pipeline.from_json(pipe)
@@ -201,8 +202,10 @@ class Parser(object):
             return exit(1)
 
         elif len(args.FQ) == 2:
-            fq1 = cfg.patientPath + args.FQ[0]
-            fq2 = cfg.patientPath + args.FQ[1]
+            #            fq1 = cfg.patientPath + args.FQ[0]
+            #            fq2 = cfg.patientPath + args.FQ[1]
+            fq1 = args.FQ[0]
+            fq2 = args.FQ[1]
             checkFile(fq1, "." + fq1.split(".")[-1])
             checkFile(fq2, "." + fq2.split(".")[-1])
             cfg.long_queue.enqueue(
@@ -216,7 +219,7 @@ class Parser(object):
             )
             return 0
         else:
-            fq1 = cfg.patientPath + args.FQ[0]
+            fq1 = args.FQ[0]
             checkFile(fq1, "." + fq1.split(".")[-1])
             cfg.long_queue.enqueue(
                 newpipe.runpipeline,
@@ -262,11 +265,11 @@ class Parser(object):
             )
             os.makedirs(os.path.dirname(outpath), exist_ok=True)
             result.vcf_to_excel(outpath)
-            logger.info('Single Analisis Complete')
-            logger.info('File available at:%s' % outpath)
+            logger.info("Single Analisis Complete")
+            logger.info("File available at:%s" % outpath)
         except Exception as err:
-            logger.info('Single Analisis Failed')
-            logger.debug(f'Error was: {err}', exc_info=True)
+            logger.info("Single Analisis Failed")
+            logger.debug(f"Error was: {err}", exc_info=True)
         return 0
 
     def duos(self):
@@ -351,11 +354,11 @@ class Parser(object):
             outpath = outpath + ".xlsx"
             logger.info("Writing Result File")
             result.vcf_to_excel(outpath)
-            logger.info('Duos Analisis Complete')
-            logger.info('File available at:%s' % outpath)
+            logger.info("Duos Analisis Complete")
+            logger.info("File available at:%s" % outpath)
         except Exception as err:
-            logger.info('Duos Analisis Failed')
-            logger.debug(f'Error was: {err}', exc_info=True)
+            logger.info("Duos Analisis Failed")
+            logger.debug(f"Error was: {err}", exc_info=True)
         return 0
 
     def diffvcf(self):
@@ -481,11 +484,11 @@ class Parser(object):
                         outpath = outpath + "_Filter" + str(x[0]) + str(x[1])
             outpath = outpath + ".xlsx"
             result.vcf_to_excel(outpath)
-            logger.info('Trios Analisis Complete')
-            logger.info('File available at:%s' % outpath)
+            logger.info("Trios Analisis Complete")
+            logger.info("File available at:%s" % outpath)
         except Exception as err:
-            logger.info('Trios Analisis Failed')
-            logger.debug(f'Error was: {err}', exc_info=True)
+            logger.info("Trios Analisis Failed")
+            logger.debug(f"Error was: {err}", exc_info=True)
         return 0
 
 

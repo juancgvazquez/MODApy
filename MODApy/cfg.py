@@ -3,14 +3,14 @@ import json
 import logging
 import logging.config
 import os
-from rq import Queue
+from rq import Queue, Worker
 from redis import Redis
 
 
 # queues config
 redis_conn = Redis()
-short_queue = Queue(name="sq", default_timeout=-1, connection=redis_conn)
-long_queue = Queue(name="lq", default_timeout=-1, connection=redis_conn)
+short_queue = Queue(name="short_queue", default_timeout=-1, connection=redis_conn)
+long_queue = Queue(name="long_queue", default_timeout=-1, connection=redis_conn)
 
 # config parsing from here on, parses paths and things from config.ini
 cfg = configparser.ConfigParser()
@@ -18,7 +18,6 @@ cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini"
 cfg.read(cfgPath)
 
 rootDir = os.path.dirname(os.path.abspath(__file__))
-
 patientPath = cfg["PATHS"]["patientpath"]
 panelsPath = cfg["PATHS"]["panelspath"]
 reportsPath = cfg["PATHS"]["reportspath"]
@@ -137,3 +136,10 @@ def setup_logging():
     }
 
     logging.config.dictConfig(logCfg)
+
+
+if cfg["GENERAL"]["processing_mode"] == "local":
+    # Start a worker with a custom name
+    workers = Worker.all(connection=redis_conn)
+    if len(workers) == 0:
+        logging.warning("WARNING: LOCAL PROCESSING MODE SELECTED AND NO WORKERS FOUND")
