@@ -9,7 +9,7 @@ library(stringr)
 library(shinyFiles)
 
 #python config -------------------------------------------------------------------
-basedir = '/home/charly/Datos/Development/modapy/MODApy/'
+basedir = '/run/media/charly/5C34188931C8C61A/UCC/BDMG/Investigacion/Desarrollos/modapy/'
 modapydir = paste(basedir,'MODApy/',sep="")
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
