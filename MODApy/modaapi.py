@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from MODApy import cfg, vcfmgr
-from MODApy.cmd_line import checkFile
+from MODApy.utils import checkFile
 import logging
 import os
 
