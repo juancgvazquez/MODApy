@@ -7,11 +7,6 @@ from rq import Queue, Worker
 from redis import Redis
 
 
-# queues config
-redis_conn = Redis()
-short_queue = Queue(name="short_queue", default_timeout=-1, connection=redis_conn)
-long_queue = Queue(name="long_queue", default_timeout=-1, connection=redis_conn)
-
 # config parsing from here on, parses paths and things from config.ini
 cfg = configparser.ConfigParser()
 cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
@@ -37,6 +32,14 @@ if cfg["GENERAL"].getboolean("testmode"):
     testFlag = True
 else:
     testFlag = False
+
+# queues config
+if cfg.has_option("REDIS", "host"):
+    redis_conn = Redis(cfg["REDIS"]["host"])
+else:
+    redis_conn = Redis()
+short_queue = Queue(name="short_queue", default_timeout=-1, connection=redis_conn)
+long_queue = Queue(name="long_queue", default_timeout=-1, connection=redis_conn)
 
 
 def setConfig(section, key, value):
@@ -70,6 +73,7 @@ def setup_logging():
     _touch(rootDir + "/logs/currentrun.log")
     _touch(rootDir + "/logs/info.log")
     _touch(rootDir + "/logs/errors.log")
+    _touch(rootDir + "/logs/piperun.log")
     if not os.path.exists(rootDir + "/logs/downloads.log"):
         with open(rootDir + "/logs/downloads.log", "w") as dlog:
             json.dump({}, dlog)
