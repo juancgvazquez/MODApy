@@ -3,6 +3,12 @@ import json
 import logging
 import logging.config
 import os
+<<<<<<< HEAD
+=======
+from rq import Queue, Worker
+from redis import Redis
+
+>>>>>>> develop
 
 # config parsing from here on, parses paths and things from config.ini
 cfg = configparser.ConfigParser()
@@ -31,6 +37,14 @@ if cfg['GENERAL'].getboolean('testmode'):
     testFlag = True
 else:
     testFlag = False
+
+# queues config
+if cfg.has_option("REDIS", "host"):
+    redis_conn = Redis(cfg["REDIS"]["host"])
+else:
+    redis_conn = Redis()
+short_queue = Queue(name="short_queue", default_timeout=-1, connection=redis_conn)
+long_queue = Queue(name="long_queue", default_timeout=-1, connection=redis_conn)
 
 
 def setConfig(section, key, value):
@@ -61,11 +75,20 @@ def setup_logging():
         with open(path, 'a'):
             os.utime(path, None)
 
+<<<<<<< HEAD
     _touch(rootDir + '/logs/currentrun.log')
     _touch(rootDir + '/logs/info.log')
     _touch(rootDir + '/logs/errors.log')
     if not os.path.exists(rootDir + '/logs/downloads.log'):
         with open(rootDir + '/logs/downloads.log', 'w') as dlog:
+=======
+    _touch(rootDir + "/logs/currentrun.log")
+    _touch(rootDir + "/logs/info.log")
+    _touch(rootDir + "/logs/errors.log")
+    _touch(rootDir + "/logs/piperun.log")
+    if not os.path.exists(rootDir + "/logs/downloads.log"):
+        with open(rootDir + "/logs/downloads.log", "w") as dlog:
+>>>>>>> develop
             json.dump({}, dlog)
     logCfg = {
         "version": 1,
