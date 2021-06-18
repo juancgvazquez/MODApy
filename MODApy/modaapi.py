@@ -191,9 +191,9 @@ async def run_pipeline(
             newpipe.runpipeline,
             args=[fq1, fq2],
             kwargs={
-                "keeptmp": args.keeptmp,
-                "startStep": args.startStep,
-                "endStep": args.endStep,
+                "keeptmp": keeptmp,
+                "startStep": startStep,
+                "endStep": endStep,
             },
         )
         return 0
@@ -204,9 +204,9 @@ async def run_pipeline(
             newpipe.runpipeline,
             args=[fq1],
             kwargs={
-                "keeptmp": args.keeptmp,
-                "startStep": args.startStep,
-                "endStep": args.endStep,
+                "keeptmp": keeptmp,
+                "startStep": startStep,
+                "endStep": endStep,
             },
         )
         return 0
