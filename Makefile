@@ -23,6 +23,10 @@ publish:
 	python3 setup.py sdist bdist_wheel
 	twine upload dist/*
 
+publish_no_git:
+	python3 setup.py sdist bdist_wheel
+	twine upload dist/*
+
 publish_test:
 	python3 setup.py sdist bdist_wheel
 	twine upload --repository testpypi dist/*
