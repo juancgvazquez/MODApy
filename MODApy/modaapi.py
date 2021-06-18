@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from MODApy import cfg, vcfmgr
+from MODApy import cfg, pipeline
 from MODApy.utils import checkFile
 import logging
 import os
