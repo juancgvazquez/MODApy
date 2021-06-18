@@ -12,7 +12,7 @@ RUN pip install --upgrade pip
 RUN pip install -r reqs.txt
 RUN pip install --upgrade MODApy
 RUN mkdir /usr/local/lib/python3.8/dist-packages/MODApy/logs && touch /usr/local/lib/python3.8/dist-packages/MODApy/logs/pipe_run.log
-COPY ./MODApy/config.ini /usr/local/lib/python3.8/dist-packages/MODApy/
+COPY config.ini /usr/local/lib/python3.8/dist-packages/MODApy/
 ADD start.sh .
 RUN chmod +x ./start.sh
 CMD ["./start.sh"]
