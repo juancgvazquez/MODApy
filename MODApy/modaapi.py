@@ -168,7 +168,7 @@ async def trios(
 
 
 @app.post("/modaapi/pipeline")
-async def pipeline(
+async def run_pipeline(
     Pipeline: str,
     FQ_1: str,
     FQ_2: str = "",
