@@ -10,8 +10,10 @@ def checkFile(filePath, extension):
         if extension == fileExtension:
             return True
     else:
+        error = f"""{filePath} couldn't be found. "
+        Please check if file exists and that it's extension is {extension}"""
         logger.error(
-            "%s couldn't be found. Please check if file exists and that it's extension is %s"
-            % (filePath, extension)
+            error
         )
-        exit(1)
+        raise FileNotFoundError(
+            error)

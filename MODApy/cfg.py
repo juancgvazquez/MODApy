@@ -6,10 +6,10 @@ import os
 from rq import Queue, Worker
 from redis import Redis
 
-
 # config parsing from here on, parses paths and things from config.ini
 cfg = configparser.ConfigParser()
-cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
+cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                       "config.ini")
 cfg.read(cfgPath)
 
 rootDir = os.path.dirname(os.path.abspath(__file__))
@@ -39,8 +39,10 @@ if cfg.has_option("REDIS", "host"):
     redis_conn = Redis(cfg["REDIS"]["host"])
 else:
     redis_conn = Redis()
-short_queue = Queue(name="short_queue", default_timeout=-1, connection=redis_conn)
-long_queue = Queue(name="long_queue", default_timeout=-1, connection=redis_conn)
+short_queue = Queue(name="short_queue", default_timeout=-1,
+                    connection=redis_conn)
+long_queue = Queue(name="long_queue", default_timeout=-1,
+                   connection=redis_conn)
 
 
 def setConfig(section, key, value):
@@ -53,7 +55,8 @@ def setConfig(section, key, value):
                 "Key error: Requested %s key is not present in config file" % key
             )
     else:
-        logging.error("Section error: Section %s not present in config file" % section)
+        logging.error(
+            "Section error: Section %s not present in config file" % section)
     with open(cfgPath, "w") as cfgfile:
         cfg.write(cfgfile)
 

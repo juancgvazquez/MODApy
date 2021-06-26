@@ -47,7 +47,8 @@ class Parser(object):
 
         parser.add_argument("command", help="Select command to run")
         parser.add_argument(
-            "-v", "--version", action="version", version="MODApy " + __version__
+            "-v", "--version", action="version",
+            version="MODApy " + __version__
         )
         # exclude all arguments but the first one
         args = parser.parse_args(argv[1:2])
@@ -62,9 +63,9 @@ class Parser(object):
     def launcher(self):
         logger.info("Launching Web Interface")
         cmd = (
-            'R -e shiny::runApp(\\"'
-            + cfg.rootDir
-            + '/MODApy-Shiny.R\\"\\,port=3838\\,host=\\"0.0.0.0\\")'
+                'R -e shiny::runApp(\\"'
+                + cfg.rootDir
+                + '/MODApy-Shiny.R\\"\\,port=3838\\,host=\\"0.0.0.0\\")'
         )
         print(cmd)
         webapp = subprocess.Popen(
@@ -160,7 +161,8 @@ class Parser(object):
 
     def pipeline(self):
         # Description for pipeline usage
-        parser = argparse.ArgumentParser(description="Run a Pipeline from FASTQ to VCF")
+        parser = argparse.ArgumentParser(
+            description="Run a Pipeline from FASTQ to VCF")
         parser.add_argument(
             "-Pipeline",
             required=True,
@@ -170,8 +172,8 @@ class Parser(object):
             "-FQ",
             required=True,
             help="Patient FastQ1 File Path - It needs to match exactly "
-            "the filename found inside Patients folder. Only this one is needed for Single End."
-            "Two FastQs will be needed for Paired End (usage: -FQ Fastq1 -FQ Fastq2",
+                 "the filename found inside Patients folder. Only this one is needed for Single End."
+                 "Two FastQs will be needed for Paired End (usage: -FQ Fastq1 -FQ Fastq2",
             action="append",
         )
         parser.add_argument(
@@ -232,17 +234,21 @@ class Parser(object):
             checkFile(fq1, "." + fq1.split(".")[-1])
             if args.keeptmp:
                 newpipe.runpipeline(
-                    fq1, keeptmp=True, startStep=args.startStep, endStep=args.endStep
+                    fq1, keeptmp=True, startStep=args.startStep,
+                    endStep=args.endStep
                 )
             else:
-                newpipe.runpipeline(fq1, startStep=args.startStep, endStep=args.endStep)
+                newpipe.runpipeline(fq1, startStep=args.startStep,
+                                    endStep=args.endStep)
             return 0
 
     def single(self):
         # Description for panel usage
-        parser = argparse.ArgumentParser(description="Run study on a single patient")
+        parser = argparse.ArgumentParser(
+            description="Run study on a single patient")
         parser.add_argument(
-            "-Panel", required=True, help="File name of Panel inside Panels folder"
+            "-Panel", required=True,
+            help="File name of Panel inside Panels folder"
         )
         parser.add_argument(
             "-Patient",
@@ -257,17 +263,18 @@ class Parser(object):
             ptCheck = checkFile(patient, ".vcf")
             pnCheck = checkFile(panel, ".xlsx")
             logger.info(
-                "Running %s on patient %s" % (str(args.Panel), str(args.Patient))
+                "Running %s on patient %s" % (
+                str(args.Panel), str(args.Patient))
             )
             result = vcfmgr.ParsedVCF.from_vcf(patient).panel(panel)
             outpath = (
-                cfg.patientPath
-                + result.name
-                + "/Panels/"
-                + result.name
-                + "_"
-                + args.Panel
-                + ".xlsx"
+                    cfg.patientPath
+                    + result.name
+                    + "/Panels/"
+                    + result.name
+                    + "_"
+                    + args.Panel
+                    + ".xlsx"
             )
             os.makedirs(os.path.dirname(outpath), exist_ok=True)
             result.vcf_to_excel(outpath)
@@ -279,7 +286,8 @@ class Parser(object):
 
     def duos(self):
         # Description for duos usage
-        parser = argparse.ArgumentParser(description="Run Duos Study on two patients")
+        parser = argparse.ArgumentParser(
+            description="Run Duos Study on two patients")
         parser.add_argument(
             "-Patient1",
             required=True,
@@ -305,7 +313,7 @@ class Parser(object):
             nargs="?",
             const=None,
             help="Filter to apply. This function will filter out every row that includes the given text"
-            " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
+                 " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
             metavar=("COLUMN TEXT"),
             action="append",
         )
@@ -325,11 +333,11 @@ class Parser(object):
             result = pvcfs[0].duos(pvcfs[1], VENNPLACE=args.VennPlace)
             resultname = result.name
             outpath = (
-                cfg.resultsPath
-                + "Duos/"
-                + result.name.replace(":", "_")
-                + "/"
-                + result.name.replace(":", "_")
+                    cfg.resultsPath
+                    + "Duos/"
+                    + result.name.replace(":", "_")
+                    + "/"
+                    + result.name.replace(":", "_")
             )
             result.name = resultname
             if args.VennPlace is not None:
@@ -381,11 +389,11 @@ class Parser(object):
             result = pvcfs[0].duos(pvcfs[1])
             resultname = result.name
             outpath = (
-                cfg.resultsPath
-                + "Diffs/"
-                + result.name.replace(":", "_")
-                + "/"
-                + result.name.replace(":", "_")
+                    cfg.resultsPath
+                    + "Diffs/"
+                    + result.name.replace(":", "_")
+                    + "/"
+                    + result.name.replace(":", "_")
             )
             result.name = resultname
             outpath = outpath + ".xlsx"
@@ -399,7 +407,8 @@ class Parser(object):
         return 0
 
     def trios(self):
-        parser = argparse.ArgumentParser(description="Run Trios Study on two patients")
+        parser = argparse.ArgumentParser(
+            description="Run Trios Study on two patients")
         parser.add_argument(
             "-Patient1",
             required=True,
@@ -416,14 +425,15 @@ class Parser(object):
             help="Patient 3 File Path - It needs to match exactly to the one found inside Patients folder",
         )
         parser.add_argument(
-            "--Panel", nargs="?", const=None, help="Panel to run on Trios study"
+            "--Panel", nargs="?", const=None,
+            help="Panel to run on Trios study"
         )
         parser.add_argument(
             "--Filter",
             nargs="?",
             const=None,
             help="Filter to apply. This function will filter out every row that includes the given text"
-            " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
+                 " in the given column. For filtering Empty data, TEXT keyword is 'Empty'",
             metavar=("COLUMN TEXT"),
             action="append",
         )
@@ -450,14 +460,15 @@ class Parser(object):
                 % (str(args.Patient1), str(args.Patient2), str(args.Patient3))
             )
             pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2, patient3)
-            result = pvcfs[0].duos(pvcfs[1]).duos(pvcfs[2], VENNPLACE=args.VennPlace)
+            result = pvcfs[0].duos(pvcfs[1]).duos(pvcfs[2],
+                                                  VENNPLACE=args.VennPlace)
             resultname = result.name
             outpath = (
-                cfg.resultsPath
-                + "Trios/"
-                + result.name.replace(":", "_")
-                + "/"
-                + result.name.replace(":", "_")
+                    cfg.resultsPath
+                    + "Trios/"
+                    + result.name.replace(":", "_")
+                    + "/"
+                    + result.name.replace(":", "_")
             )
             result.name = resultname
             if args.VennPlace is not None:
