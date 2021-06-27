@@ -49,6 +49,7 @@ class Duos(BaseModel):
 class Trios(BaseModel):
     patient1: str
     patient2: str
+    patient3: str
     panel: Optional[str] = None
     vennPlace: Optional[str] = None
     filter: Optional[str] = None
@@ -105,12 +106,12 @@ async def trios(data: Trios):
         Filter = data['filter']
         # Checks file existence and type for patients
         job_id = cfg.short_queue.enqueue(vcfanalysis.trios,
-                                args=[patient1, patient2, patient3],
-                                kwargs={
-                                    "VennPlace": VennPlace,
-                                    "Panel": Panel,
-                                    "Filter": Filter
-                                })
+                                         args=[patient1, patient2, patient3],
+                                         kwargs={
+                                             "VennPlace": VennPlace,
+                                             "Panel": Panel,
+                                             "Filter": Filter
+                                         })
         job_id = job_id.job_id
         return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
                             content=f"Job Queued. Job id is {job_id}")
