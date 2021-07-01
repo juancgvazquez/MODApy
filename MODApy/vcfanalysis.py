@@ -86,7 +86,7 @@ def duos(patient1, patient2, VennPlace=None, Panel=None, Filter=None):
         raise Exception
 
 
-def Trios(patient1, patient2, patient3, VennPlace=None, Filter=None,
+def trios(patient1, patient2, patient3, VennPlace=None, Filter=None,
           Panel=None):
     try:
         checkFile(patient1, ".vcf")
