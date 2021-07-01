@@ -75,9 +75,9 @@ async def single(data: Single):
 async def duos(data: Duos):
     data = data.dict()
     try:
-        patient1 = data['Patient1']
-        patient2 = data['Patient2']
-        VennPlace = data['vennplace']
+        patient1 = data['patient1']
+        patient2 = data['patient2']
+        VennPlace = data['vennPlace']
         Panel = data['panel']
         Filter = data['filter']
         job_id = cfg.short_queue.enqueue(vcfanalysis.duos,
@@ -98,10 +98,10 @@ async def duos(data: Duos):
 @app.post("/modaapi/trios")
 async def trios(data: Trios):
     try:
-        patient1 = data['Patient3']
-        patient2 = data['Patient3']
-        patient3 = data['Patient3']
-        VennPlace = data['vennplace']
+        patient1 = data['patient1']
+        patient2 = data['patient2']
+        patient3 = data['patient3']
+        VennPlace = data['vennPlace']
         Panel = data['panel']
         Filter = data['filter']
         # Checks file existence and type for patients
