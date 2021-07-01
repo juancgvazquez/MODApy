@@ -97,6 +97,7 @@ async def duos(data: Duos):
 
 @app.post("/modaapi/trios")
 async def trios(data: Trios):
+    data = data.dict()
     try:
         patient1 = data['patient1']
         patient2 = data['patient2']
