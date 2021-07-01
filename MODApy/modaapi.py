@@ -63,6 +63,7 @@ async def single(data: Single):
         patient = data['patient']
         job_id = cfg.short_queue.enqueue(vcfanalysis.single,
                                          args=[patient, panel])
+        job_id = job_id.id
         return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
                             content=f"Job Queued. Job id is {job_id}")
     except Exception as err:
@@ -87,6 +88,7 @@ async def duos(data: Duos):
                                              "Panel": Panel,
                                              "Filter": Filter
                                          })
+        job_id = job_id.id
         return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
                             content=f"Job Queued. Job id is {job_id}")
     except Exception as err:
@@ -113,7 +115,7 @@ async def trios(data: Trios):
                                              "Panel": Panel,
                                              "Filter": Filter
                                          })
-        job_id = job_id.job_id
+        job_id = job_id.id
         return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
                             content=f"Job Queued. Job id is {job_id}")
     except Exception as err:
@@ -146,7 +148,7 @@ async def run_pipeline(data: Pipeline):
                     "endStep": data['endStep'],
                 },
             )
-            job_id = job_id.job_id
+            job_id = job_id.id
             return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
                                 content=f"Job Queued. Job id is {job_id}")
         else:
@@ -160,7 +162,7 @@ async def run_pipeline(data: Pipeline):
                     "endStep": data['endStep'],
                 },
             )
-            job_id = job_id.job_id
+            job_id = job_id.id
             return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
                                 content=f"Job Queued. Job id is {job_id}")
     except Exception as err:
