@@ -127,6 +127,7 @@ async def trios(data: Trios):
 @app.post("/modaapi/pipeline")
 async def run_pipeline(data: Pipeline):
     try:
+        data = data.dict()
         pipe = data['Pipeline']
 
         checkFile(pipe, data['Pipeline'].split(".")[-1])
