@@ -39,7 +39,8 @@ if os.path.exists(cfgPath):
     cfg.read(cfgPath)
 else:
     cfg.read_string(default_cfg)
-    cfg.write(cfgPath)
+    with open(cfgPath, "w") as cfgfile:
+        cfg.write(cfgfile)
 
 rootDir = os.path.dirname(os.path.abspath(__file__))
 
