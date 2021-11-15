@@ -7,9 +7,13 @@ from rq import Queue, Worker
 from redis import Redis
 
 # config parsing from here on, parses paths and things from config.ini
-cfg = configparser.ConfigParser()
 cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
-cfg.read(cfgPath)
+cfg = configparser.ConfigParser()
+if os.exists(cfgPath):
+    cfg.read(cfgPath)
+else:
+    cfg.read_string(default_cfg)
+    cfg.write(cfgPath)
 
 rootDir = os.path.dirname(os.path.abspath(__file__))
 
@@ -140,3 +144,27 @@ def setup_logging():
     }
 
     logging.config.dictConfig(logCfg)
+
+    default_cfg = """
+    [GENERAL]
+    testmode = False
+    cores = 1 
+    processing_mode = local
+    [PATHS]
+    patientpath = ./Patients/
+    panelspath = ./Panels/
+    reportspath = ./Reports/
+    resultspath = ./Results/
+    pipelinespath = ./Pipelines/
+    referencespath = ./References/
+    testpath = ./test/
+    dbpath = ./VariantsDB/variantsDB.csv
+    tmppath = ./tmp/
+    binpath = ./bin/
+
+    [OUTPUT]
+    columnsorder = GENE_NAME, AMINOCHANGE, HGVS.P, HGVS.C, RSID, IMPACT, EFFECT, FEATURE_ID, VARDB_FREQ, ALLELE_FREQ, 1000GP3_AF, 1000GP3_AFR_AF,
+               1000GP3_AMR_AF, 1000GP3_EAS_AF, 1000GP3_EUR_AF, 1000GP3_SAS_AF,ESP6500_MAF_EA, ESP6500_MAF_AA,
+               ESP6500_MAF_ALL, CLINVAR_CLNSIG, CLINVAR_CLNDSDB,CLINVAR_CLNDSDBID, CLINVAR_CLNDBN, CLINVAR_CLNREVSTAT,
+               CLINVAR_CLNACC, POLYPHEN_PRED,POLYPHEN_SCORE, VENN, ZIGOSITY, CHROM, POS, REF, ALT, VARTYPE
+    """
