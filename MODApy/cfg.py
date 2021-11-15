@@ -9,7 +9,7 @@ from redis import Redis
 # config parsing from here on, parses paths and things from config.ini
 cfgPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.ini")
 cfg = configparser.ConfigParser()
-if os.exists(cfgPath):
+if os.path.exists(cfgPath):
     cfg.read(cfgPath)
 else:
     cfg.read_string(default_cfg)
