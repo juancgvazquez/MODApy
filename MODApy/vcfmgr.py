@@ -636,6 +636,7 @@ class ParsedVCF(pd.DataFrame):
         if set(colstats).issubset(self.columns):
             logger.info("Calculating General Statistics")
             vcfstats = self.groupby(colstats).size().to_frame(name="count")
+            vcfstats = vcfstats.rename_axis(colstats).reset_index()
             vcfstats.name = "stats"
             plt.pie(
                 [
