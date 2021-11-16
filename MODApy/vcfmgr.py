@@ -638,14 +638,8 @@ class ParsedVCF(pd.DataFrame):
             vcfstats = self.groupby(colstats).size().to_frame(name="count")
             vcfstats = vcfstats.rename_axis(colstats).reset_index()
             vcfstats.name = "stats"
-            plt.pie(
-                [
-                    item
-                    for sublist in vcfstats.groupby("CHROM").count().values
-                    for item in sublist
-                ],
-                labels=vcfstats.groupby("CHROM").size().index.values,
-            )
+            plt.pie(list(vcfstats.groupby("CHROM").size().values),
+                    labels=vcfstats.groupby('CHROM').size().index.values)
             my_circle = plt.Circle((0, 0), 0.7, color="white")
             chromVars = plt.gcf()
             chromVars.gca().add_artist(my_circle)
