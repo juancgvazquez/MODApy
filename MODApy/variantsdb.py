@@ -109,15 +109,16 @@ class VariantsDB(pd.DataFrame):
                 ['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.P']) for x in
                 pvcfs]
             tempdb1 = pd.concat(pvcfs, axis=1, join='outer')
-            tempdb2 = tempdb1.reset_index().groupby(
+            tempdb1 = tempdb1.reset_index().groupby(
                 ['CHROM', 'POS', 'REF', 'ALT']).agg(
                 {'GENE_NAME': ' | '.join, 'HGVS.P': ' | '.join}).reset_index()
-            pvcfs2 = [x.reset_index().drop(
+            pvcfs = [x.reset_index().drop(
                 columns=['GENE_NAME', 'HGVS.P']) for x in pvcfs]
-            pvcfs2.insert(0, tempdb2)
-            pvcfs2 = [x.set_index(['CHROM', 'POS', 'REF', 'ALT'])
-                      for x in pvcfs2]
-            db = pd.concat(pvcfs2, axis=1, join='outer')
+            pvcfs.insert(0, tempdb1)
+            pvcfs = [x.set_index(['CHROM', 'POS', 'REF', 'ALT'])
+                      for x in pvcfs]
+            db = pd.concat(pvcfs, axis=1, join='outer')
+            del pvcfs
             colslist = ['GENE_NAME', 'HGVS.P']
             for col in colslist:
                 db[col] = db[col].apply(
@@ -125,6 +126,7 @@ class VariantsDB(pd.DataFrame):
             db = db.reset_index().set_index(
                 ['CHROM', 'POS', 'REF', 'ALT', 'GENE_NAME', 'HGVS.P'])
             db.replace({'.': np.nan}, inplace=True)
+            db.drop(columns=['index','level_0','0'],errors='ignore',inplace=True)
             db = db.pipe(VariantsDB)
             db = db.calcfreqs()
             return db

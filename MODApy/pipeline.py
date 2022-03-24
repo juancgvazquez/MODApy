@@ -192,6 +192,9 @@ class Pipeline(object):
         first = True
         if endStep == 0:
             endStep = len(self.steps) + 1
+        if startStep >0:
+            first = False
+        logger2.info(f"STARTSTEP {startStep}")
         for step in self.steps[startStep:endStep]:
             if first == True:
                 logger2.debug('First Step')
