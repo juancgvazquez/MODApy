@@ -7,23 +7,22 @@ library(openxlsx)
 library(shinycssloaders)
 library(stringr)
 library(shinyFiles)
-
 #python config -------------------------------------------------------------------
-basedir = '/home/charly/Datos/Development/modapy/'
-modapydir = paste(basedir,'MODApy/MODApy/',sep="")
+modapydir ='~/MoDAPyVenv/lib/python3.7/site-packages/MODApy/'
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
 pipelog = paste0(modapydir,'logs/pipe_run.log')
 pipeflag = paste0(modapydir,'logs/pipe.flag')
 dlog = paste0(modapydir,'logs/downloads.log')
 cfg = read.ini(cfgpath)
-use_virtualenv(paste(basedir,"_venv",sep=""))
-use_python(paste(basedir,"_venv/MODApy/bin/python3",sep=""))
+use_virtualenv("~/MoDAPyVenv/")
+use_python("~/MoDAPyVenv/python3")
 py_config()
 MODApy<-import('MODApy')
 
 # combo box options -------------------------------------------------------------------
-patientsvcf <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.final.vcf",recursive = TRUE)))
+patientsvcf <- sub('/.*','',list.files('/home/biomolecular/DATA/NGS/Pacientes/',pattern="\\_MODApy_final.vcf|\\_MODApy.final.vcf",recursive = TRUE))
+#patientsvcf <- result<-gsub('\\..*|\\.final*','',basename(list.files('/home/biomolecular/DATA/NGS/Pacientes/',pattern="\\_MODApy_final.vcf|\\_MODApy.final.vcf",recursive = TRUE)))
 patientsbam <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.bam",recursive = TRUE)))
 patientsfastq <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.fastq.gz|\\.fastq|\\.fq|\\.fq.gz",recursive = TRUE)))
 patientsfastq <- str_subset(patientsfastq,pattern="_1")
@@ -34,7 +33,6 @@ updatepanels <<- function(){
   return(result)
 }
 panels <- gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
-
 # utils ---------------------------------------------------------------------------
 getcommand <- function(input){
   cmd = ''
@@ -56,11 +54,16 @@ getcommand <- function(input){
               cat("No fastq or gzipped fastq files found for that Patient",file=logfile,sep='\n')
             }
           },
+          VcfDiff={
+            vcf1 <- parseFilePaths(volumes,input$vcfFile1)
+            vcf2 <- parseFilePaths(volumes,input$vcfFile2)
+            cmd = paste('diffvcf',paste0(vcf1$datapath,' ',vcf2$datapath))
+          },
           Single={
-            cmd = paste("single -Panel", input$Panel, "-Patient", paste(input$PatientPanel, "/",input$PatientPanel,".final.vcf", sep=""))
+            cmd = paste("single -Panel", input$Panel, "-Patient", paste(input$PatientPanel, "/",sub("\\..*","",input$PatientPanel),".final.vcf", sep=""))
           },
           Duos={
-            cmd = paste("duos -Patient1", paste(input$Patient1D, "/",input$Patient1D,".final.vcf", sep=""), "-Patient2", paste(input$Patient2D, "/",input$Patient2D,".final.vcf", sep=""), '--Filter')
+            cmd = paste("duos -Patient1", paste(input$Patient1D, "/",sub("\\..*","",input$Patient1D),".final.vcf", sep=""), "-Patient2", paste(input$Patient2D, "/",sub("\\..*","",input$Patient2D),".final.vcf", sep=""), '--Filter')
             venn=''
             if(input$vennplaceD == input$Patient1D){venn = "A"}
             else if(input$vennplaceD == input$Patient2D){venn = "B"}
@@ -74,7 +77,7 @@ getcommand <- function(input){
           },
           Trios={
             venn=''
-            cmd = cmd = paste("trios -Patient1", paste(input$Patient1T, "/",input$Patient1T,".final.vcf", sep=""), "-Patient2", paste(input$Patient2T, "/",input$Patient2T,".final.vcf", sep=""), "-Patient3", paste(input$Patient3T, "/",input$Patient3T,".final.vcf", sep=""), '--Filter')
+            cmd = cmd = paste("trios -Patient1", paste(input$Patient1T, "/",sub("\\..*","",input$Patient1T),".final.vcf", sep=""), "-Patient2", paste(input$Patient2T, "/",sub("\\..*","",input$Patient2T),".final.vcf", sep=""), "-Patient3", paste(input$Patient3T, "/",sub("\\..*","",input$Patient3T),".final.vcf", sep=""), '--Filter')
             if(input$vennplaceT == input$Patient1T){venn = "A"}
             else if(input$vennplaceT == input$Patient2T){venn = "B"}
             else if(input$vennplaceT == input$Patient3T){venn = "C"}
@@ -94,10 +97,9 @@ getcommand <- function(input){
   cmd <- gsub("[)]","\\\\)",cmd)
   system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
 }
-
+volumes <- c(wd='/home/biomolecular/DATA/NGS/')
 # ui -------------------------------------------------------------------
 ui <- tagList(shinyjs::useShinyjs(),
-              volumes <- c(wd='/home/jvazquez/Datos/Development/MODApy/'),
               navbarPage("MODApy",
                          tabPanel("Analisis",
                                   sidebarLayout(
@@ -172,8 +174,18 @@ ui <- tagList(shinyjs::useShinyjs(),
                                                                     div(style="display: inline-block;vertical-align:top; width: 150px;",h4('Venn Place:')),
                                                                     div(style="display: inline-block;vertical-align:top; width: 300px;",uiOutput("vennTrios"))
                                                            )
-                                                  )
-                                      ),
+                                                  ),
+                                                  tabPanel("VcfDiff",
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    shinyFilesButton('vcfFile1', 'First VCF', 'Please select a dataset', FALSE)
+                                                           ),
+                                                           fluidRow(style='padding-left:20px;',
+                                                                    br(),
+                                                                    shinyFilesButton('vcfFile2', 'Second VCF', 'Please select a dataset', FALSE),
+                                                                    br()
+                                                           )
+                                      )),
                                       actionButton("buttonrun","Run"),
                                       actionButton("buttonlastcmd","Last Run Status"),
                                       shinyjs::disabled(downloadButton('downloadData','Download Result'))
@@ -184,8 +196,8 @@ ui <- tagList(shinyjs::useShinyjs(),
                                          font-weight: 500; line-height: 1.1; 
                                          color: #4d3a7d;"),
                                       htmlOutput("consoleout")
-                                      )
-                                    )),
+                                    )
+                                  )),
                          tabPanel('VariantsDB',
                                   actionButton("buildDBbtn","Build DataBase"),
                                   div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "ChromSel", label = NULL, choices = chromdbs)),
@@ -196,32 +208,30 @@ ui <- tagList(shinyjs::useShinyjs(),
                          ),
                          tabPanel("WES Pipelines",
                                   sidebarPanel(width=3,
-                                    fluidRow(
-                                      radioButtons('origin','Select Input File Type',choices = c('Fast Q'='fromfq','Processed BAM File'='frombam','Raw VCF'='fromvcf')
-                                    ),
-                                    conditionalPanel(
-                                      'input.origin == "fromfq"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",
-                                          selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
-                                      fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
-                                      actionButton("runPipelinefq",'Run Pipeline'),
-                                      actionButton("runPipelinelog",'Check Status')
-                                    ),
-                                    conditionalPanel(
-                                      'input.origin == "frombam"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "bamfile", label = NULL, choices = patientsbam)),
-                                      fileInput('bamuploaded','Choose File to Upload',accept=c('.bam')),
-                                      actionButton("runPipelinebam",'Run Pipeline'),
-                                      actionButton("runPipelinelog",'Check Status')
-                                    ),
-                                    conditionalPanel(
-                                      'input.origin == "fromvcf"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "vcffile", label = NULL, choices = patientsvcf)),
-                                      fileInput('vcfuploaded','Choose File to Upload',accept=c('.vcf')),
-                                      actionButton("runPipelinevcf",'Run Pipeline'),
-                                      actionButton("runPipelinelog",'Check Status')
-                                      )
-                                  )),
+                                               fluidRow(
+                                                 radioButtons('origin','Select Input File Type',choices = c('Fast Q'='fromfq','Processed BAM File'='frombam','Raw VCF'='fromvcf')
+                                                 ),
+                                                 conditionalPanel(
+                                                   'input.origin == "fromfq"',
+                                                   div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
+                                                   fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
+                                                   actionButton("runPipelinefq",'Run Pipeline'),
+                                                   actionButton("runPipelinelog",'Check Status')
+                                                 ),
+                                                 conditionalPanel(
+                                                   'input.origin == "frombam"',
+                                                   div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "bamfile", label = NULL, choices = patientsbam)),
+                                                   fileInput('bamuploaded','Choose File to Upload',accept=c('.bam')),
+                                                   actionButton("runPipelinebam",'Run Pipeline'),
+                                                   actionButton("runPipelinelog",'Check Status')
+                                                 ),
+                                                 conditionalPanel(
+                                                   'input.origin == "fromvcf"',
+                                                   shinyFilesButton('files', label='File select', title='Please select a file', multiple=FALSE)
+                                                   #actionButton("runPipelinevcf",'Run Pipeline'),
+                                                   #actionButton("runPipelinelog",'Check Status')
+                                                 )
+                                               )),
                                   mainPanel(
                                     conditionalPanel(
                                       'input.origin=="fromfq"',
@@ -242,49 +252,45 @@ ui <- tagList(shinyjs::useShinyjs(),
                                         checkboxInput('annGNOMAD','Annotate with GenomeAD',value=TRUE),
                                         checkboxInput('annDBNSFP','Annotate with DBNSFP',value=TRUE)
                                       ),
-                                    mainPanel(
+                                      mainPanel(
                                         h2("Full Pipeline Diagram"),
                                         img(src='wespipelinefull.png',width=700,align='center')
                                       )),
-                                  conditionalPanel(
-                                    'input.origin=="frombam"',
-                                    sidebarPanel(
-                                      h2("Steps"),
-                                      checkboxInput('callvars','Call Variants',value=TRUE),
-                                      checkboxInput('annDBSNP','Annotate with DBSNP',value=TRUE),
-                                      checkboxInput('ann1000GP3','Annotate with 1000GP3',value=TRUE),
-                                      checkboxInput('annCLINVAR','Annotate with CLINVAR',value=TRUE),
-                                      checkboxInput('annESP6500','Annotate with ESP6500',value=TRUE),
-                                      checkboxInput('annGNOMAD','Annotate with GenomeAD',value=TRUE),
-                                      checkboxInput('annDBNSFP','Annotate with DBNSFP',value=TRUE)
+                                    conditionalPanel(
+                                      'input.origin=="frombam"',
+                                      sidebarPanel(
+                                        h2("Steps"),
+                                        checkboxInput('callvars','Call Variants',value=TRUE),
+                                        checkboxInput('annDBSNP','Annotate with DBSNP',value=TRUE),
+                                        checkboxInput('ann1000GP3','Annotate with 1000GP3',value=TRUE),
+                                        checkboxInput('annCLINVAR','Annotate with CLINVAR',value=TRUE),
+                                        checkboxInput('annESP6500','Annotate with ESP6500',value=TRUE),
+                                        checkboxInput('annGNOMAD','Annotate with GenomeAD',value=TRUE),
+                                        checkboxInput('annDBNSFP','Annotate with DBNSFP',value=TRUE)
+                                      ),
+                                      mainPanel(
+                                        h2("Full Pipeline Diagram"),
+                                        img(src='wespipelinebam.png',width=700,align='center')
+                                      )
                                     ),
-                                    mainPanel(
-                                      h2("Full Pipeline Diagram"),
-                                      img(src='wespipelinebam.png',width=700,align='center')
-                                    )
-                                    ),
-                                  conditionalPanel(
-                                    'input.origin=="fromvcf"',
-                                    sidebarPanel(
-                                      h2("Steps"),
-                                      checkboxInput('annDBSNP','Annotate with DBSNP',value=TRUE),
-                                      checkboxInput('ann1000GP3','Annotate with 1000GP3',value=TRUE),
-                                      checkboxInput('annCLINVAR','Annotate with CLINVAR',value=TRUE),
-                                      checkboxInput('annESP6500','Annotate with ESP6500',value=TRUE),
-                                      checkboxInput('annGNOMAD','Annotate with GenomeAD',value=TRUE),
-                                      checkboxInput('annDBNSFP','Annotate with DBNSFP',value=TRUE)
-                                    ),
-                                    mainPanel(
-                                      h2("Full Pipeline Diagram"),
-                                      img(src='wespipelinevcf.png',width=700,align='center')
-                                    )))
+                                    conditionalPanel(
+                                      'input.origin=="fromvcf"',
+                                      sidebarPanel(
+                                        h2("Steps"),
+                                        actionButton('annDBSNP','Annotate with DBSNP',value=TRUE),
+                                        actionButton('ann1000GP3','Annotate with 1000GP3',value=TRUE),
+                                        actionButton('annCLINVAR','Annotate with CLINVAR',value=TRUE),
+                                        actionButton('annESP6500','Annotate with ESP6500',value=TRUE),
+                                        actionButton('annGNOMAD','Annotate with GenomeAD',value=TRUE),
+                                        actionButton('annDBNSFP','Annotate with DBNSFP',value=TRUE)
+                                      ),
+                                      mainPanel(
+                                        h2("Full Pipeline Diagram"),
+                                        img(src='wespipelinevcf.png',width=700,align='center')
+                                      )))
                                   #selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
                                   #selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
-                                   # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
-                         ),
-                         tabPanel('Utils',
-                                  actionButton("customDuos",label='VCF-DIFF'),
-                                  verbatimTextOutput('filepaths')
+                                  # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
                          ),
                          tabPanel('About',
                                   h2('MODApy'),
@@ -297,12 +303,11 @@ ui <- tagList(shinyjs::useShinyjs(),
                                   p('Centro de Investigación y Desarrollo en Inmunología y Enfermedades Infecciosas - CONICET'),
                                   actionButton("cfgButton",label=NULL,icon=icon('cog'))
                          )
-
-
+                         
+                         
               ),
               tags$head(tags$style(".modal-dialog{width:1000px}"))
-
-)
+              )
 # server -------------------------------------------------------------------
 server <- function(input,output, session){
   dbfile = paste(dirname(cfg$PATHS$dbpath),'/',chromdbs[1],'.csv',sep="")
@@ -315,21 +320,6 @@ server <- function(input,output, session){
   rv3 <- reactiveValues(textstream3 = c(""), timer = reactiveTimer(1000),started=FALSE)
   downpath <- reactiveValues()
   ### Modal to do diff between two user vcfs.
-  vcfDiffModal <- function(failed= FALSE) {
-    modalDialog(
-      title = "VCF Diff",
-      p('This will create an excel file with the comparison between two vcfs, similar
-        to the Duos function, in the Panel Tab.'),
-      shinyFilesButton('vcfFile1', 'First VCF', 'Please select a dataset', FALSE),
-      shinyFilesButton('vcfFile2', 'Second VCF', 'Please select a dataset', FALSE),
-      #fileInput('vcfFile1','Choose first vcf file',accept=c('.vcf')),
-      #fileInput('vcfFile2','Choose second vcf file',accept=c('.vcf')),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton('diffbtn',"Compare")
-      )
-    )
-  }
   shinyFileChoose(input, 'vcfFile1', roots=volumes, filetypes=c('','vcf'))
   shinyFileChoose(input, 'vcfFile2', roots=volumes, filetypes=c('','vcf'))
   
@@ -433,53 +423,45 @@ server <- function(input,output, session){
     else{
       rv$textstream = "Variants file not found. Try to build variantsDB first."
     }
-
-  })
-  observeEvent(input$customDuos, {
-    showModal(vcfDiffModal())
-  })
-  observeEvent(input$diffbtn, {
-    vcf1 <- parseFilePaths(volumes,input$vcfFile1)
-    vcf2 <- parseFilePaths(volumes,input$vcfFile2)
-    system2('MODApy',args = paste('diffvcf',paste0(vcf1$datapath,' ',vcf2$datapath)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
+    
   })
   observeEvent(input$annotateFile, {
     showModal(annotateModal())
-    })
+  })
   observeEvent(input$runPipelinelog, {
     showModal(pipelineRunningModal())
-    })
+  })
   
-    observeEvent(input$annotatebtn, {
-      if(is.null(input$file1)){
-        removeModal()
-        modalDialog('No input data to download.')
+  observeEvent(input$annotatebtn, {
+    if(is.null(input$file1)){
+      removeModal()
+      modalDialog('No input data to download.')
+    }
+    else if(!(is.null(input$file1))){
+      file.copy(input$file1$datapath, paste0("./", input$file1$name))
+      withProgress(message='Annotating',value=0, {
+        system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
+        incProgress(0.5,detail="Erasing Temporal Files")
+        file.remove(paste0('./',input$file1$name))
+        incProgress(1,detail = 'Done')
+      })
+      removeModal()
+      if(grepl('_',input$file1$name)){
+        patfolder <- strsplit(input$file1$name, "_")[[1]][1]
       }
-      else if(!(is.null(input$file1))){
-        file.copy(input$file1$datapath, paste0("./", input$file1$name))
-        withProgress(message='Annotating',value=0, {
-          system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
-          incProgress(0.5,detail="Erasing Temporal Files")
-          file.remove(paste0('./',input$file1$name))
-          incProgress(1,detail = 'Done')
-        })
-        removeModal()
-        if(grepl('_',input$file1$name)){
-          patfolder <- strsplit(input$file1$name, "_")[[1]][1]
-        }
-        else{
-          patfolder <- strsplit(input$file1$name, ".")[[1]][1]
-        }
-        showModal(modalDialog('File Annotated',
-                              p('File Available at: ',paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
-                              ),
-                              downloadButton('downloadannotatedVDB','Download Result')
-        )
-        
-        
-        )
+      else{
+        patfolder <- strsplit(input$file1$name, ".")[[1]][1]
       }
-    })
+      showModal(modalDialog('File Annotated',
+                            p('File Available at: ',paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+                            ),
+                            downloadButton('downloadannotatedVDB','Download Result')
+      )
+      
+      
+      )
+    }
+  })
   observeEvent(input$addbtn, {
     if((input$url=="")&(is.null(input$file1))){
       removeModal()
@@ -500,7 +482,7 @@ server <- function(input,output, session){
       removeModal()
       showModal(modalDialog('Downloading'))
     }
-
+    
   })
   observeEvent(input$buttonrun, {
     shinyjs::disable('buttonrun')
@@ -529,7 +511,7 @@ server <- function(input,output, session){
                    paste(patpath, "/",patpath,"_2", ".fastq", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-
+      
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""))){
       file.create(logfile)
@@ -539,7 +521,7 @@ server <- function(input,output, session){
                   paste(patpath, "/",patpath,"_2", ".fastq.gz", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-
+      
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""))){
       file.create(logfile)
@@ -549,7 +531,7 @@ server <- function(input,output, session){
                   paste(patpath, "/",patpath,"_2", ".fq.gz", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-
+      
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq", sep=""))){
       file.create(logfile)
@@ -561,8 +543,6 @@ server <- function(input,output, session){
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
     }
   })
-  
-  
   ##Runs Pipeline for Bam
   observeEvent(input$runPipelinebam, {
     #shinyjs::disable('buttonrun')
@@ -577,9 +557,7 @@ server <- function(input,output, session){
       file.create(logfile)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
     }})
-  
-  
-    ##Runs Pipeline for VCF
+  ##Runs Pipeline for VCF
   observeEvent(input$runPipelinevcf, {
     #shinyjs::disable('buttonrun')
     patpath=paste0(cfg$PATHS$patientpath,input$vcffile,'/',input$vcffile,'.final.vcf')
@@ -589,36 +567,36 @@ server <- function(input,output, session){
     else if(file.exists(patpath)){
       file.create(logfile)
       cmd =  paste("pipeline -Pipeline",
-                    "BestPractices-Annotation.json", "-FQ",
-                    paste0(input$vcffile,'/',input$vcffile,'.final.vcf'))
+                   "BestPractices-Annotation.json", "-FQ",
+                   paste0(input$vcffile,'/',input$vcffile,'.final.vcf'))
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-  }})
-   #Download Result Annotated
+    }})
+  #Download Result Annotated
   output$downloadannotatedVDB <- 
     downloadHandler(
-    filename <- function(){
-      if(grepl('_',input$file1$name)){
-        patfolder <- strsplit(input$file1$name, "_")[[1]][1]
-      }
-      else{
-        patfolder <- strsplit(input$file1$name, ".")[[1]][1]
-      }
-      paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+      filename <- function(){
+        if(grepl('_',input$file1$name)){
+          patfolder <- strsplit(input$file1$name, "_")[[1]][1]
+        }
+        else{
+          patfolder <- strsplit(input$file1$name, ".")[[1]][1]
+        }
+        paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
       },
-    content<-function(downfile){
-      if(grepl('_',input$file1$name)){
-        patfolder <- strsplit(input$file1$name, "_")[[1]][1]
-      }
-      else{
-        patfolder <- strsplit(input$file1$name, ".")[[1]][1]
-      }
-      filepath <- paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
-      print(filepath)
-      file.copy(filepath,downfile)
-      file.size(filepath)
-    },
-    contentType = "application/xlsx"
-  )
+      content<-function(downfile){
+        if(grepl('_',input$file1$name)){
+          patfolder <- strsplit(input$file1$name, "_")[[1]][1]
+        }
+        else{
+          patfolder <- strsplit(input$file1$name, ".")[[1]][1]
+        }
+        filepath <- paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+        print(filepath)
+        file.copy(filepath,downfile)
+        file.size(filepath)
+      },
+      contentType = "application/xlsx"
+    )
   #Download Result
   output$downloadData <- downloadHandler(
     filename<-function(){
@@ -684,7 +662,7 @@ server <- function(input,output, session){
       shinyjs::enable('buttonrun')
     }
   })
-
+  
   observe({
     rv2$timer()
     Sys.sleep(0.2)
@@ -719,7 +697,67 @@ server <- function(input,output, session){
   observeEvent(input$savecfg,{
     print(typeof(cfg$GENERAL))
   })
-
+  
+  
+  ##ANNOTATION FROM VCF##
+  shinyFileChoose(input,'files', session=session,roots=c(wd='/home/biomolecular'), filetypes=c('', 'vcf'))
+  observeEvent(input$annDBSNP, {
+    inFile <- parseFilePaths(roots=c(wd='/home/biomolecular'), input$files)
+    filepath = inFile$datapath
+    outputpath = gsub(".vcf", "_DBSNP.vcf", filepath)
+    print('Annotating. Wait until it finishes')
+    cmd = paste(" -jar /home/biomolecular/MoDAPyVenv/lib/python3.6/site-packages/MODApy/bin/snpEff/SnpSift.jar varType",filepath,">",outputpath)
+    system2("java", cmd ,wait=TRUE,stdout = TRUE,stderr = TRUE)
+    cmd = paste(" -jar /home/biomolecular/MoDAPyVenv/lib/python3.6/site-packages/MODApy/bin/snpEff/snpEff.jar hg19 -lof -s snpeff_stats -csvStats snpeff_stats.csv",filepath,">",outputpath)
+    print('Second Annotation')
+    system2("java", cmd ,wait=TRUE,stdout = TRUE,stderr = TRUE)
+    print('Finished Annotating')
+    })
+  observeEvent(input$annDBNSFP, {
+    inFile <- parseFilePaths(roots=c(wd='/home/biomolecular'), input$files)
+    filepath = inFile$datapath
+    outputpath = gsub(".vcf", "_DBNSFP.vcf", filepath)
+    print('Annotating. Wait until it finishes')
+    cmd = paste(" -jar /home/biomolecular/MoDAPyVenv/lib/python3.6/site-packages/MODApy/bin/snpEff/SnpSift.jar dbnsfp -db /home/biomolecular/DATA/NGS/AnnotationDB/hg19/dbnsfp/dbNSFP2.9.txt.gz",filepath,">",outputpath)
+    system2("java", cmd ,wait=TRUE,stdout = TRUE,stderr = TRUE)
+    print('Finished Annotating')
+  })
+  observeEvent(input$annGNOMAD, {
+    inFile <- parseFilePaths(roots=c(wd='/home/biomolecular'), input$files)
+    filepath = inFile$datapath
+    outputpath = gsub(".vcf", "_GNOMAD.vcf", filepath)
+    print('Annotating. Wait until it finishes')
+    cmd = paste(" -jar /home/biomolecular/MoDAPyVenv/lib/python3.6/site-packages/MODApy/bin/snpEff/SnpSift.jar annotate -name GnomAD_ /home/biomolecular/DATA/NGS/AnnotationDB/hg19/gnomad2.0.1/gnomad.exomes.r2.0.1.sites.vcf.gz",filepath,">",outputpath)
+    system2("java", cmd ,wait=TRUE,stdout = TRUE,stderr = TRUE)
+    print('Finished Annotating')
+  })
+  observeEvent(input$annESP6500, {
+    inFile <- parseFilePaths(roots=c(wd='/home/biomolecular'), input$files)
+    filepath = inFile$datapath
+    outputpath = gsub(".vcf", "_ESP6500.vcf", filepath)
+    print('Annotating. Wait until it finishes')
+    cmd = paste(" -jar /home/biomolecular/MoDAPyVenv/lib/python3.6/site-packages/MODApy/bin/snpEff/SnpSift.jar annotate -name ESP6500_ /home/biomolecular/DATA/NGS/AnnotationDB/hg19/ESP6500/ESP6500.vcf.bak",filepath,">",outputpath)
+    system2("java", cmd ,wait=TRUE,stdout = TRUE,stderr = TRUE)
+    print('Finished Annotating')
+  })
+  observeEvent(input$annCLINVAR, {
+    inFile <- parseFilePaths(roots=c(wd='/home/biomolecular'), input$files)
+    filepath = inFile$datapath
+    outputpath = gsub(".vcf", "_CLINVAR.vcf", filepath)
+    print('Annotating. Wait until it finishes')
+    cmd = paste(" -jar /home/biomolecular/MoDAPyVenv/lib/python3.6/site-packages/MODApy/bin/snpEff/SnpSift.jar annotate -name CLINVAR_ /home/biomolecular/DATA/NGS/AnnotationDB/hg19/clinvar/clinvar_20181217.vcf.gz",filepath,">",outputpath)
+    system2("java", cmd ,wait=TRUE,stdout = TRUE,stderr = TRUE)
+    print('Finished Annotating')
+  })
+  observeEvent(input$ann1000GP3, {
+    inFile <- parseFilePaths(roots=c(wd='/home/biomolecular'), input$files)
+    filepath = inFile$datapath
+    outputpath = gsub(".vcf", "_1000GP3.vcf", filepath)
+    print('Annotating. Wait until it finishes')
+    cmd = paste(" -jar /home/biomolecular/MoDAPyVenv/lib/python3.6/site-packages/MODApy/bin/snpEff/SnpSift.jar annotate -name MILGP3_ /home/biomolecular/DATA/NGS/AnnotationDB/hg19/1kg/1kg.vcf",filepath,">",outputpath)
+    system2("java", cmd ,wait=TRUE,stdout = TRUE,stderr = TRUE)
+    print('Finished Annotating')
+})
   session$onSessionEnded(function(){stopApp()})
 }
 

@@ -28,8 +28,7 @@ class PipeStep(object):
     Class defined for each step of the Pipeline
     '''
 
-    def __init__(self, name, command, subcommand, version, inputfile,
-                 outputfile, args):
+    def __init__(self, name, command, subcommand, version, inputfile, outputfile, args):
         self.name = name
         self.command = command
         self.subcommand = subcommand
@@ -46,8 +45,7 @@ class PipeStep(object):
 
     def stepinfo(self):
         print('Name:', self.name)
-        print('Command', self.command + self.version, self.subcommand,
-              self.args)
+        print('Command', self.command + self.version, self.subcommand, self.args)
         print('Input File:', self.inputfile)
         print('Output File:', self.outputfile)
 
@@ -157,8 +155,7 @@ class Pipeline(object):
 
         return builtpipe
 
-    def runpipeline(self, fastq1: str, fastq2=None, keeptmp=False, startStep=0,
-                    endStep=0):
+    def runpipeline(self, fastq1: str, fastq2=None, keeptmp=False, startStep=0, endStep=0):
         """
         Method to run the Pipeline
         Parameters
@@ -192,16 +189,12 @@ class Pipeline(object):
         first = True
         if endStep == 0:
             endStep = len(self.steps) + 1
-        if startStep >0:
-            first = False
-        logger2.info(f"STARTSTEP {startStep}")
         for step in self.steps[startStep:endStep]:
             if first == True:
                 logger2.debug('First Step')
                 first = False
                 if type(step.inputfile) == list:
-                    if any(x in y for y in [fastq1, fastq2] for x in
-                           ['.fastq', '.fastq.gz', '.fq', '.fq.gz']):
+                    if any(x in y for y in [fastq1, fastq2] for x in ['.fastq', '.fastq.gz', '.fq', '.fq.gz']):
                         if (fastq1 is not None) & (fastq2 is not None):
                             inputfile = fastq1 + ' ' + fastq2
                         else:
@@ -209,8 +202,7 @@ class Pipeline(object):
                                 'WARNING: This pipeline was designed for Pair End and you are running it as Single End')
                             inputfile = fastq1
                 elif type(step.inputfile) == str:
-                    if any(x in y for y in [fastq1] for x in
-                           ['.fastq', '.fastq.gz', '.fq', '.fq.gz']):
+                    if any(x in y for y in [fastq1] for x in ['.fastq', '.fastq.gz', '.fq', '.fq.gz']):
                         if (fastq1 is not None) & (fastq2 is not None):
                             print(
                                 'WARNING: This pipeline was designed for Single End and you are running it as Pair End')
@@ -221,11 +213,9 @@ class Pipeline(object):
             else:
                 if type(step.inputfile) == list:
                     inputfile1 = step.inputfile[0].replace(
-                        'patientname',
-                        tmpdir + patientname + '/' + patientname)
+                        'patientname', tmpdir + patientname + '/' + patientname)
                     inputfile2 = step.inputfile[1].replace(
-                        'patientname',
-                        tmpdir + patientname + '/' + patientname)
+                        'patientname', tmpdir + patientname + '/' + patientname)
                     inputfile = inputfile1 + ' ' + inputfile2
                 elif type(step.inputfile) == str:
                     inputfile = step.inputfile.replace(
@@ -239,9 +229,7 @@ class Pipeline(object):
 
             logger2.info(step.name)
             args = step.args.replace(
-                'patientname', tmpdir + patientname).replace('reference',
-                                                             ref).replace(
-                'samplename', samplename)
+                'patientname', tmpdir + patientname).replace('reference', ref).replace('samplename', samplename)
             cmdver = step.version.replace('.', '_')
             javacmds = ['GATK', 'picard', 'SnpSift', 'snpEff']
             if any(javacmd in step.command for javacmd in javacmds):
@@ -249,7 +237,7 @@ class Pipeline(object):
                       + '.jar ' + step.subcommand
             else:
                 cmd = cfg.binPath + step.command + '/' + \
-                      step.command + '_' + cmdver + ' ' + step.subcommand
+                    step.command + '_' + cmdver + ' ' + step.subcommand
             if 'HaplotypeCaller' in cmd:
                 cmdstr = cmd + ' ' + args + ' ' + inputfile + ' ' + outputfile
             else:
@@ -267,11 +255,9 @@ class Pipeline(object):
                     del cmd[-1]
                     with open(output, 'w+') as out:
                         cmdrun = subprocess.Popen(
-                            cmd, stderr=subprocess.PIPE, stdout=out,
-                            universal_newlines=True)
+                            cmd, stderr=subprocess.PIPE, stdout=out, universal_newlines=True)
                 else:
-                    cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE,
-                                              stdout=subprocess.PIPE,
+                    cmdrun = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
                                               universal_newlines=True)
                 out, err = cmdrun.communicate()
                 if out is not None:
@@ -282,11 +268,9 @@ class Pipeline(object):
                     logger2.debug('Stderr: ' + err.strip())
                 if cmdrun.returncode != 0:
                     logging.error(
-                        'Subprocess failed with error code: ' + str(
-                            cmdrun.returncode))
+                        'Subprocess failed with error code: ' + str(cmdrun.returncode))
                     logger2.error(
-                        'Subprocess failed with error code: ' + str(
-                            cmdrun.returncode))
+                        'Subprocess failed with error code: ' + str(cmdrun.returncode))
                     logging.error('Check log for more details')
                     logger2.error('Check log for more details')
                     exit(cmdrun.returncode)
@@ -306,45 +290,43 @@ class Pipeline(object):
                 logger2.info('Subprocess finished')
         if cfg.testFlag:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
-                file = cfg.testPath + patientname + '_MODApy/' + patientname + "_MODApy.final.vcf"
-                os.makedirs(cfg.testPath + patientname + '_MODApy',
-                            exist_ok=True)
+                file = cfg.testPath + patientname+'_MODApy/' + patientname + "_MODApy.final.vcf"
+                os.makedirs(cfg.testPath + patientname + '_MODApy',exist_ok=True)
                 shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file)
                 logger2.info('Parsing final VCF file')
                 logging.info('Parsing final VCF file')
                 vcfmgr.ParsedVCF.from_vcf(file).to_csv(
                     file.split('.vcf')[0] + '.csv', index=False)
-            if os.path.exists(
-                    tmpdir + patientname + "_realigned_reads_recal.bam"):
-                shutil.move(
-                    tmpdir + patientname + "_realigned_reads_recal.bam",
-                    cfg.testPath + patientname + '_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
-            if os.path.exists(
-                    tmpdir + patientname + "_realigned_reads_recal.bai"):
-                shutil.move(
-                    tmpdir + patientname + "_realigned_reads_recal.bai",
-                    cfg.testPath + patientname + '_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai")
+            if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
+                shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
+                            cfg.testPath + patientname+'_MODApy/' + patientname + "_MODApy_realigned_reads_recal.bam")
+            if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
+                shutil.move(tmpdir + patientname + "_realigned_reads_recal.bai",
+                            cfg.testPath + patientname+'_MODApy/' + patientname + "_MODApy_realigned_reads_recal.bai")
         else:
             if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
-                os.makedirs(cfg.patientPath + patientname + '_MODApy',
-                            exist_ok=True)
+                os.makedirs(cfg.patientPath + patientname + '_MODApy',exist_ok=True)
                 file = cfg.patientPath + patientname + \
-                       '_MODApy/' + patientname + "_MODApy.final.vcf"
+                    '_MODApy/' + patientname + "_MODApy.final.vcf"
                 shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file)
                 logger2.info('Parsing final VCF file')
                 logging.info('Parsing final VCF file')
                 vcfmgr.ParsedVCF.from_vcf(file).to_csv(
                     file.split('.vcf')[0] + '.csv', index=False)
-            if os.path.exists(
-                    tmpdir + patientname + "_realigned_reads_recal.bai"):
-                shutil.move(
-                    tmpdir + patientname + "_realigned_reads_recal.bai",
-                    cfg.patientPath + patientname + '_MODApy/' + patientname + "MODApy_realigned_reads_recal.bai")
-            if os.path.exists(
-                    tmpdir + patientname + "_realigned_reads_recal.bam"):
-                shutil.move(
-                    tmpdir + patientname + "_realigned_reads_recal.bam",
-                    cfg.patientPath + patientname + '_MODApy/' + patientname + "MODApy_realigned_reads_recal.bam")
+            if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
+                shutil.move(tmpdir + patientname + "_realigned_reads_recal.bai",
+                            cfg.patientPath + patientname+'_MODApy/' + patientname + "_MODApy_realigned_reads_recal.bai")
+            if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
+                shutil.move(tmpdir + patientname + "_realigned_reads_recal.bam",
+                            cfg.patientPath + patientname+'_MODApy/' + patientname + "_MODApy_realigned_reads_recal.bam")
+            if os.path.exists(tmpdir + patientname + "_filtered_variants.vcf"):
+                shutil.move(tmpdir + patientname + "_filtered_variants.vcf",
+                            cfg.patientPath + patientname+'_MODApy/' + patientname + "_MODApy_variants_noannotation.vcf")
+                file = cfg.patientPath + patientname+'_MODApy/' + patientname + "_MODApy_variants_noannotation.vcf"
+                logger2.info('Parsing raw VCF file')
+                logging.info('Parsing raw VCF file')
+                vcfmgr.ParsedVCF.from_vcf(file).to_csv(
+                    file.split('.vcf')[0] + '.csv', index=False)
         if keeptmp is False:
             shutil.rmtree(tmpdir)
 

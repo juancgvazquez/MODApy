@@ -20,8 +20,7 @@ downlog = cfg.rootDir + '/logs/downloads.log'
 def get_links(filename):
     link_list = list()
     # If filename is an url
-    if (filename.startswith('http://') or filename.startswith(
-            'https://') or filename.startswith('ftp://')):
+    if (filename.startswith('http://') or filename.startswith('https://') or filename.startswith('ftp://')):
         logger.debug('URL to download')
         download(filename)
     elif (filename.startswith('www')):
@@ -36,19 +35,12 @@ def get_links(filename):
                 for row in ws.rows:
                     for cell in row:
                         if cell.data_type == 'f':
-                            link_list.append(
-                                cell.value.strip('=HYPERLINK("').replace('"',
-                                                                         '').split(
-                                    ',')[0])
+                            link_list.append(cell.value.strip('=HYPERLINK("').replace('"', '').split(',')[0])
             pdxl = pd.read_excel(filename, sheet_name='Download_Address')
-            md5 = list(pdxl.iloc[pdxl.index[pdxl[
-                                                'download address'] == 'md5sum'].item() + 1:][
-                           'download address'])
+            md5 = list(pdxl.iloc[pdxl.index[pdxl['download address'] == 'md5sum'].item() + 1:]['download address'])
             link_list = [x for x in link_list if '.tar' in x]
             linksdict = dict(zip(link_list, md5))
-            logger.info(
-                'Parsing finished. Found %i links. These files will be now downloaded' % (
-                    len(link_list)))
+            logger.info('Parsing finished. Found %i links. These files will be now downloaded' % (len(link_list)))
             with open(downlog, 'r') as dlog:
                 down_dict = json.load(dlog)
                 down_dict.update({x: 'Pending' for x in linksdict})
@@ -71,9 +63,7 @@ def get_links(filename):
                 link_list.append(x.rsplit(sep='\x17')[0])
             link_list = [x for x in link_list if '.tar' in x]
             linksdict = dict(zip(link_list, md5list))
-            logger.info(
-                'Parsing finished. Found %i links. These files will be now downloaded' % (
-                    len(link_list)))
+            logger.info('Parsing finished. Found %i links. These files will be now downloaded' % (len(link_list)))
             with open(downlog, 'r') as dlog:
                 down_dict = json.load(dlog)
                 down_dict.update({x: 'Pending' for x in linksdict})
