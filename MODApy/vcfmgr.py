@@ -209,7 +209,7 @@ class ParsedVCF(pd.DataFrame):
             df1["AMINOCHANGE"] = df1["HGVS.P"].apply(aminoChange)
         if "HOM" in df1.columns:
             df1["HOM"] = df1["HOM"].replace({True: "HOM", np.nan: "HET", None: "HET"})
-            df1.drop(columns="HET", inplace=True, errors='ignore')
+            df1.drop(columns="HET", inplace=True, errors="ignore")
             df1.rename(columns={"HOM": "ZIGOSITY"}, inplace=True)
         if "ESP6500_MAF" in df1.columns:
             df1[["ESP6500_MAF_EA", "ESP6500_MAF_AA", "ESP6500_MAF_ALL"]] = df1[
@@ -638,8 +638,10 @@ class ParsedVCF(pd.DataFrame):
             vcfstats = self.groupby(colstats).size().to_frame(name="count")
             vcfstats = vcfstats.rename_axis(colstats).reset_index()
             vcfstats.name = "stats"
-            plt.pie(list(vcfstats.groupby("CHROM").size().values),
-                    labels=vcfstats.groupby('CHROM').size().index.values)
+            plt.pie(
+                list(vcfstats.groupby("CHROM").size().values),
+                labels=vcfstats.groupby("CHROM").size().index.values,
+            )
             my_circle = plt.Circle((0, 0), 0.7, color="white")
             chromVars = plt.gcf()
             chromVars.gca().add_artist(my_circle)

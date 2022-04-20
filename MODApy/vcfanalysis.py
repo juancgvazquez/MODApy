@@ -14,13 +14,13 @@ def single(patient, panel):
         logger.info("Running %s on patient %s" % (str(panel), str(patient)))
         result = vcfmgr.ParsedVCF.from_vcf(patient).panel(panel)
         outpath = (
-                cfg.patientPath
-                + result.name
-                + "/Panels/"
-                + result.name
-                + "_"
-                + panel
-                + ".xlsx"
+            cfg.patientPath
+            + result.name
+            + "/Panels/"
+            + result.name
+            + "_"
+            + panel
+            + ".xlsx"
         )
         os.makedirs(os.path.dirname(outpath), exist_ok=True)
         result.vcf_to_excel(outpath)
@@ -37,17 +37,16 @@ def duos(patient1, patient2, VennPlace=None, Panel=None, Filter=None):
     try:
         checkFile(patient1, ".vcf")
         checkFile(patient2, ".vcf")
-        logger.info(
-            "Running Duos Study on %s and %s" % (str(patient1), str(patient2)))
+        logger.info("Running Duos Study on %s and %s" % (str(patient1), str(patient2)))
         pvcfs = vcfmgr.ParsedVCF.mp_parser(patient1, patient2)
         result = pvcfs[0].duos(pvcfs[1], VENNPLACE=VennPlace)
         resultname = result.name
         outpath = (
-                cfg.resultsPath
-                + "Duos/"
-                + result.name.replace(":", "_")
-                + "/"
-                + result.name.replace(":", "_")
+            cfg.resultsPath
+            + "Duos/"
+            + result.name.replace(":", "_")
+            + "/"
+            + result.name.replace(":", "_")
         )
         result.name = resultname
         if VennPlace is not None:
@@ -86,8 +85,7 @@ def duos(patient1, patient2, VennPlace=None, Panel=None, Filter=None):
         raise Exception
 
 
-def trios(patient1, patient2, patient3, VennPlace=None, Filter=None,
-          Panel=None):
+def trios(patient1, patient2, patient3, VennPlace=None, Filter=None, Panel=None):
     try:
         checkFile(patient1, ".vcf")
         checkFile(patient2, ".vcf")
@@ -100,11 +98,11 @@ def trios(patient1, patient2, patient3, VennPlace=None, Filter=None,
         result = pvcfs[0].duos(pvcfs[1]).duos(pvcfs[2], VENNPLACE=VennPlace)
         resultname = result.name
         outpath = (
-                cfg.resultsPath
-                + "Trios/"
-                + result.name.replace(":", "_")
-                + "/"
-                + result.name.replace(":", "_")
+            cfg.resultsPath
+            + "Trios/"
+            + result.name.replace(":", "_")
+            + "/"
+            + result.name.replace(":", "_")
         )
         result.name = resultname
         if VennPlace is not None:

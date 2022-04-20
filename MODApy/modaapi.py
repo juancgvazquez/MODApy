@@ -17,7 +17,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -59,15 +59,16 @@ class Trios(BaseModel):
 async def single(data: Single):
     data = data.dict()
     try:
-        panel = data['panel']
-        patient = data['patient']
-        job_id = cfg.short_queue.enqueue(vcfanalysis.single,
-                                         args=[patient, panel])
+        panel = data["panel"]
+        patient = data["patient"]
+        job_id = cfg.short_queue.enqueue(vcfanalysis.single, args=[patient, panel])
         job_id = job_id.id
-        return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
-                            content=f"Job Queued. Job id is {job_id}")
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content=f"Job Queued. Job id is {job_id}",
+        )
     except Exception as err:
-        logger.error('Api error on Single')
+        logger.error("Api error on Single")
         logger.debug(f"Error was: {err}", exc_info=True)
         raise HTTPException(status_code=404, detail=str(err))
 
@@ -76,23 +77,23 @@ async def single(data: Single):
 async def duos(data: Duos):
     data = data.dict()
     try:
-        patient1 = data['patient1']
-        patient2 = data['patient2']
-        VennPlace = data['vennPlace']
-        Panel = data['panel']
-        Filter = data['filter']
-        job_id = cfg.short_queue.enqueue(vcfanalysis.duos,
-                                         args=[patient1, patient2],
-                                         kwargs={
-                                             "VennPlace": VennPlace,
-                                             "Panel": Panel,
-                                             "Filter": Filter
-                                         })
+        patient1 = data["patient1"]
+        patient2 = data["patient2"]
+        VennPlace = data["vennPlace"]
+        Panel = data["panel"]
+        Filter = data["filter"]
+        job_id = cfg.short_queue.enqueue(
+            vcfanalysis.duos,
+            args=[patient1, patient2],
+            kwargs={"VennPlace": VennPlace, "Panel": Panel, "Filter": Filter},
+        )
         job_id = job_id.id
-        return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
-                            content=f"Job Queued. Job id is {job_id}")
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content=f"Job Queued. Job id is {job_id}",
+        )
     except Exception as err:
-        logger.error('Api error on Duos')
+        logger.error("Api error on Duos")
         logger.debug(f"Error was: {err}", exc_info=True)
         raise HTTPException(status_code=404, detail=str(err))
 
@@ -101,25 +102,25 @@ async def duos(data: Duos):
 async def trios(data: Trios):
     data = data.dict()
     try:
-        patient1 = data['patient1']
-        patient2 = data['patient2']
-        patient3 = data['patient3']
-        VennPlace = data['vennPlace']
-        Panel = data['panel']
-        Filter = data['filter']
+        patient1 = data["patient1"]
+        patient2 = data["patient2"]
+        patient3 = data["patient3"]
+        VennPlace = data["vennPlace"]
+        Panel = data["panel"]
+        Filter = data["filter"]
         # Checks file existence and type for patients
-        job_id = cfg.short_queue.enqueue(vcfanalysis.trios,
-                                         args=[patient1, patient2, patient3],
-                                         kwargs={
-                                             "VennPlace": VennPlace,
-                                             "Panel": Panel,
-                                             "Filter": Filter
-                                         })
+        job_id = cfg.short_queue.enqueue(
+            vcfanalysis.trios,
+            args=[patient1, patient2, patient3],
+            kwargs={"VennPlace": VennPlace, "Panel": Panel, "Filter": Filter},
+        )
         job_id = job_id.id
-        return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
-                            content=f"Job Queued. Job id is {job_id}")
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content=f"Job Queued. Job id is {job_id}",
+        )
     except Exception as err:
-        logger.error('Api error on Trios')
+        logger.error("Api error on Trios")
         logger.debug(f"Error was: {err}", exc_info=True)
         raise HTTPException(status_code=404, detail=str(err))
 
@@ -128,13 +129,13 @@ async def trios(data: Trios):
 async def run_pipeline(data: Pipeline):
     try:
         data = data.dict()
-        pipe = data['Pipeline']
+        pipe = data["Pipeline"]
 
-        checkFile(pipe, data['Pipeline'].split(".")[-1])
+        checkFile(pipe, data["Pipeline"].split(".")[-1])
 
         newpipe = pipeline.Pipeline.from_json(pipe)
-        fq1 = data['FQ_1']
-        fq2 = data['FQ_2']
+        fq1 = data["FQ_1"]
+        fq2 = data["FQ_2"]
 
         if fq2 != "":
 
@@ -144,29 +145,33 @@ async def run_pipeline(data: Pipeline):
                 newpipe.runpipeline,
                 args=[fq1, fq2],
                 kwargs={
-                    "keeptmp": data['keeptmp'],
-                    "startStep": data['startStep'],
-                    "endStep": data['endStep'],
+                    "keeptmp": data["keeptmp"],
+                    "startStep": data["startStep"],
+                    "endStep": data["endStep"],
                 },
             )
             job_id = job_id.id
-            return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
-                                content=f"Job Queued. Job id is {job_id}")
+            return JSONResponse(
+                status_code=status.HTTP_202_ACCEPTED,
+                content=f"Job Queued. Job id is {job_id}",
+            )
         else:
             checkFile(fq1, "." + fq1.split(".")[-1])
             job_id = cfg.long_queue.enqueue(
                 newpipe.runpipeline,
                 args=[fq1],
                 kwargs={
-                    "keeptmp": data['keeptmp'],
-                    "startStep": data['startStep'],
-                    "endStep": data['endStep'],
+                    "keeptmp": data["keeptmp"],
+                    "startStep": data["startStep"],
+                    "endStep": data["endStep"],
                 },
             )
             job_id = job_id.id
-            return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
-                                content=f"Job Queued. Job id is {job_id}")
+            return JSONResponse(
+                status_code=status.HTTP_202_ACCEPTED,
+                content=f"Job Queued. Job id is {job_id}",
+            )
     except Exception as err:
-        logger.error('Api error on Pipeline')
+        logger.error("Api error on Pipeline")
         logger.debug(f"Error was: {err}", exc_info=True)
         raise HTTPException(status_code=404, detail=str(err))
