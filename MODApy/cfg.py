@@ -171,4 +171,3 @@ def setup_logging():
     }
 
     logging.config.dictConfig(logCfg)
-

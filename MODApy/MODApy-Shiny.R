@@ -9,7 +9,7 @@ library(stringr)
 library(shinyFiles)
 
 #python config -------------------------------------------------------------------
-basedir = '/home/charly/Datos/Development/modapy/'
+basedir = '/home/charly/ext_disk/Development/modapy/'
 modapydir = paste(basedir,'MODApy/MODApy/',sep="")
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
@@ -18,7 +18,7 @@ pipeflag = paste0(modapydir,'logs/pipe.flag')
 dlog = paste0(modapydir,'logs/downloads.log')
 cfg = read.ini(cfgpath)
 use_virtualenv(paste(basedir,"_venv",sep=""))
-use_python(paste(basedir,"_venv/MODApy/bin/python3",sep=""))
+use_python(paste(basedir,"_venv/bin/python3",sep=""))
 py_config()
 MODApy<-import('MODApy')
 
@@ -196,88 +196,22 @@ ui <- tagList(shinyjs::useShinyjs(),
                          ),
                          tabPanel("WES Pipelines",
                                   sidebarPanel(width=3,
-                                    fluidRow(
-                                      radioButtons('origin','Select Input File Type',choices = c('Fast Q'='fromfq','Processed BAM File'='frombam','Raw VCF'='fromvcf')
-                                    ),
-                                    conditionalPanel(
-                                      'input.origin == "fromfq"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",
-                                          selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
-                                      fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
-                                      actionButton("runPipelinefq",'Run Pipeline'),
-                                      actionButton("runPipelinelog",'Check Status')
-                                    ),
-                                    conditionalPanel(
-                                      'input.origin == "frombam"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "bamfile", label = NULL, choices = patientsbam)),
-                                      fileInput('bamuploaded','Choose File to Upload',accept=c('.bam')),
-                                      actionButton("runPipelinebam",'Run Pipeline'),
-                                      actionButton("runPipelinelog",'Check Status')
-                                    ),
-                                    conditionalPanel(
-                                      'input.origin == "fromvcf"',
-                                      div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "vcffile", label = NULL, choices = patientsvcf)),
-                                      fileInput('vcfuploaded','Choose File to Upload',accept=c('.vcf')),
-                                      actionButton("runPipelinevcf",'Run Pipeline'),
-                                      actionButton("runPipelinelog",'Check Status')
-                                      )
-                                  )),
+                                    h2('Select Patient'),
+                                    div(style="display: inline-block;vertical-align:top; width: 300px;",
+                                         selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
+                                    fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
+                                    actionButton("runPipelinefq",'Run Pipeline'),
+                                    actionButton("runPipelinelog",'Check Status')
+                                  ),
                                   mainPanel(
-                                    conditionalPanel(
-                                      'input.origin=="fromfq"',
                                       sidebarPanel(
                                         h2('Reference'),
-                                        selectInput('reference','Select Reference',choices = c('hg19full','hg19_noalt')),
-                                        h2("Steps"),
-                                        checkboxInput('trim','Trim with TrimGalore',value=TRUE),
-                                        #checkboxInput('align','Align with BWA',value=TRUE),
-                                        #checkboxInput('sort','Sort Generated Sam File',value=TRUE),
-                                        checkboxInput('dedup','Mark Duplicates with Picard',value=TRUE),
-                                        checkboxInput('recal','Recalibrate Bam File',value=TRUE),
-                                        checkboxInput('callvars','Call Variants',value=TRUE),
-                                        checkboxInput('annDBSNP','Annotate with DBSNP',value=TRUE),
-                                        checkboxInput('ann1000GP3','Annotate with 1000GP3',value=TRUE),
-                                        checkboxInput('annCLINVAR','Annotate with CLINVAR',value=TRUE),
-                                        checkboxInput('annESP6500','Annotate with ESP6500',value=TRUE),
-                                        checkboxInput('annGNOMAD','Annotate with GenomeAD',value=TRUE),
-                                        checkboxInput('annDBNSFP','Annotate with DBNSFP',value=TRUE)
+                                        selectInput('reference','Select Reference',choices = c('hg19 Complete Genome','hg19 Without Alternatives')),
                                       ),
                                     mainPanel(
                                         h2("Full Pipeline Diagram"),
                                         img(src='wespipelinefull.png',width=700,align='center')
-                                      )),
-                                  conditionalPanel(
-                                    'input.origin=="frombam"',
-                                    sidebarPanel(
-                                      h2("Steps"),
-                                      checkboxInput('callvars','Call Variants',value=TRUE),
-                                      checkboxInput('annDBSNP','Annotate with DBSNP',value=TRUE),
-                                      checkboxInput('ann1000GP3','Annotate with 1000GP3',value=TRUE),
-                                      checkboxInput('annCLINVAR','Annotate with CLINVAR',value=TRUE),
-                                      checkboxInput('annESP6500','Annotate with ESP6500',value=TRUE),
-                                      checkboxInput('annGNOMAD','Annotate with GenomeAD',value=TRUE),
-                                      checkboxInput('annDBNSFP','Annotate with DBNSFP',value=TRUE)
-                                    ),
-                                    mainPanel(
-                                      h2("Full Pipeline Diagram"),
-                                      img(src='wespipelinebam.png',width=700,align='center')
-                                    )
-                                    ),
-                                  conditionalPanel(
-                                    'input.origin=="fromvcf"',
-                                    sidebarPanel(
-                                      h2("Steps"),
-                                      checkboxInput('annDBSNP','Annotate with DBSNP',value=TRUE),
-                                      checkboxInput('ann1000GP3','Annotate with 1000GP3',value=TRUE),
-                                      checkboxInput('annCLINVAR','Annotate with CLINVAR',value=TRUE),
-                                      checkboxInput('annESP6500','Annotate with ESP6500',value=TRUE),
-                                      checkboxInput('annGNOMAD','Annotate with GenomeAD',value=TRUE),
-                                      checkboxInput('annDBNSFP','Annotate with DBNSFP',value=TRUE)
-                                    ),
-                                    mainPanel(
-                                      h2("Full Pipeline Diagram"),
-                                      img(src='wespipelinevcf.png',width=700,align='center')
-                                    )))
+                                      ))
                                   #selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
                                   #selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
                                    # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
@@ -312,7 +246,7 @@ server <- function(input,output, session){
   }
   rv <- reactiveValues(textstream = c(""), timer = reactiveTimer(1000),started=FALSE)
   rv2 <- reactiveValues(textstream2 = c(""), timer = reactiveTimer(1000),started=FALSE)
-  rv3 <- reactiveValues(textstream3 = c(""), timer = reactiveTimer(1000),started=FALSE)
+  rv3 <- reactiveValues(textstream3 = c(""), timer = reactiveTimer(10000),started=FALSE)
   downpath <- reactiveValues()
   ### Modal to do diff between two user vcfs.
   vcfDiffModal <- function(failed= FALSE) {
@@ -381,9 +315,10 @@ server <- function(input,output, session){
       actionButton('savecfg',"Save Changes")
     )
   }
-  pipelineRunningModal <- function(failed = FALSE) {
+  pipelineRunningModal <- function(failed = FALSE, fromrun=FALSE) {
+    ifelse(fromrun==TRUE,title <- "Pipeline Already Running!!! Pipeline Log:",title <- "Pipeline Log:")
     modalDialog(
-      title = "Pipe Log",
+      title = title,
       p('The log for pipelines is currently at:'),
       HTML(paste(readLines(pipelog),collapse='<br>'))
     )
@@ -510,16 +445,16 @@ server <- function(input,output, session){
   })
   ##Runs Pipeline for Fast Q
   observeEvent(input$runPipelinefq, {
-    #shinyjs::disable('buttonrun')
     patpath = gsub('_1','',input$fqfile)
-    if(input$reference == 'hg19full'){
+    if(input$reference == 'hg19 Complete Genome'){
       pipesel='BestPractices-Trim.json'
+      cat("Complete Selected!")
     }
-    else if(input$reference == 'hg19_noalt'){
+    else if(input$reference == 'hg19 Without Alternatives'){
       pipesel='BestPractices-Trim-noalt.json'
     }
-    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
-      showModal(pipelineRunningModal())
+    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>=2){
+      showModal(pipelineRunningModal(fromrun=TRUE))
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq", sep=""))){
       file.create(logfile)
@@ -567,7 +502,7 @@ server <- function(input,output, session){
   observeEvent(input$runPipelinebam, {
     #shinyjs::disable('buttonrun')
     patpath=paste0(cfg$PATHS$patientpath,input$bamfile,'/',input$bamfile,'.bam')
-    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
+    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>=2){
       showModal(pipelineRunningModal())
     }
     else if(file.exists(patpath)){
