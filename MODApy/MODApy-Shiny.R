@@ -199,7 +199,7 @@ ui <- tagList(shinyjs::useShinyjs(),
                                     h2('Select Patient'),
                                     div(style="display: inline-block;vertical-align:top; width: 300px;",
                                          selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
-                                    fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
+                                    #fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
                                     actionButton("runPipelinefq",'Run Pipeline'),
                                     actionButton("runPipelinelog",'Check Status')
                                   ),
