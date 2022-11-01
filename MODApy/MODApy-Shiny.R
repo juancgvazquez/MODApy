@@ -239,7 +239,7 @@ ui <- tagList(shinyjs::useShinyjs(),
                                   sidebarPanel(width=3,
                                                h2('Select Patient'),
                                                div(style="display: inline-block;vertical-align:top; width: 300px;",
-                                                   selectInput(inputId = "Mitofqfile", label = NULL, choices = patientsfastq)),
+                                                   selectInput(inputId = "Mitofqfile", label = NULL, choices = mitopatientsfastq)),
                                                #fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
                                                actionButton("runMitocondrialfq",'Run Pipeline'),
                                                actionButton("runMitocondriallog",'Check Status')
