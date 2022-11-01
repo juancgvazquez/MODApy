@@ -28,8 +28,8 @@ patientsfastq <- str_subset(patientsfastq,pattern="_1")
 patientsfastq <- str_remove(patientsfastq, "_1")
 ## loading mitocondrial patients list
 mitopatientsfastq <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$mitopatientpath,pattern="\\.fastq.gz|\\.fastq|\\.fq|\\.fq.gz",recursive = TRUE)))
-mitopatientsfastq <- str_subset(mitopatientsfastq,pattern="_1")
-mitopatientsfastq <- str_remove(mitopatientsfastq, "_1")
+mitopatientsfastq <- str_subset(mitopatientsfastq,pattern="_R1")
+mitopatientsfastq <- str_remove(mitopatientsfastq, "_R1")
 chromdbs <- gsub('\\..*','',basename(list.files(dirname(cfg$PATHS$dbpath),pattern="\\.csv",recursive = TRUE)))
 updatepanels <<- function(){
   result<-gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
@@ -203,8 +203,8 @@ ui <- tagList(shinyjs::useShinyjs(),
                                          font-weight: 500; line-height: 1.1; 
                                          color: #4d3a7d;"),
                                       htmlOutput("consoleout")
-                                      )
-                                    )),
+                                    )
+                                  )),
                          tabPanel('VariantsDB',
                                   actionButton("buildDBbtn","Build DataBase"),
                                   div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "ChromSel", label = NULL, choices = chromdbs)),
@@ -303,7 +303,7 @@ server <- function(input,output, session){
         modalButton("Cancel"),
         actionButton('diffbtn',"Compare")
       )
-      )
+    )
   }
   shinyFileChoose(input, 'vcfFile1', roots=volumes, filetypes=c('','vcf'))
   shinyFileChoose(input, 'vcfFile2', roots=volumes, filetypes=c('','vcf'))
@@ -542,52 +542,52 @@ server <- function(input,output, session){
   
   ##Runs Mitocondrial Pipeline for Fast Q
   observeEvent(input$runMitocondrialfq, {
-    patpath = gsub('_1','',input$Mitofqfile)
+    patpath = gsub('_R1','',input$Mitofqfile)
     pipesel=paste(cfg$PATHS$pipelinespath,'BestPractices-mitocondrial.json',sep="")
     if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
       showModal(pipelineRunningModal(fromrun=TRUE))
     }
-    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fastq", sep=""))){
+    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fastq", sep=""))){
       file.create(logfile)
       cmd =  paste("abs_pipeline -Pipeline",
                    pipesel, "-FQ",
-                   paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fastq", sep=""), "-FQ",
-                   paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_2", ".fastq", sep=""))
+                   paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fastq", sep=""), "-FQ",
+                   paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R2", ".fastq", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
       
     }
-    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""))){
+    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fastq.gz", sep=""))){
       file.create(logfile)
       cmd = paste("abs_pipeline -Pipeline",
                   pipesel, "-FQ",
-                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""), "-FQ",
-                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_2", ".fastq.gz", sep=""))
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fastq.gz", sep=""), "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R2", ".fastq.gz", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
       
     }
-    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""))){
+    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fq.gz", sep=""))){
       file.create(logfile)
       cmd = paste("abs_pipeline -Pipeline",
                   pipesel, "-FQ",
-                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""), "-FQ",
-                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_2", ".fq.gz", sep=""))
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fq.gz", sep=""), "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R2", ".fq.gz", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
       
     }
-    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fq", sep=""))){
+    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fq", sep=""))){
       file.create(logfile)
       cmd = paste("abs_pipeline -Pipeline",
                   pipesel, "-FQ",
-                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fq", sep=""), "-FQ",
-                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_2", ".fq", sep=""))
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fq", sep=""), "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R2", ".fq", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
     }
   })
-
+  
   ##Runs Pipeline for Bam
   observeEvent(input$runPipelinebam, {
     #shinyjs::disable('buttonrun')
