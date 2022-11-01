@@ -496,7 +496,7 @@ server <- function(input,output, session){
     else if(input$reference == 'hg19 Without Alternatives'){
       pipesel='BestPractices-Trim-noalt.json'
     }
-    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
+    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>=2){
       showModal(pipelineRunningModal(fromrun=TRUE))
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq", sep=""))){
@@ -544,7 +544,7 @@ server <- function(input,output, session){
   observeEvent(input$runMitocondrialfq, {
     patpath = gsub('_R1','',input$Mitofqfile)
     pipesel=paste(cfg$PATHS$pipelinespath,'BestPractices-mitocondrial.json',sep="")
-    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
+    if(length(system('ps aux | grep "MODApy abs_pipeline"',intern=TRUE))>=2){
       showModal(pipelineRunningModal(fromrun=TRUE))
     }
     else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_R1", ".fastq", sep=""))){
