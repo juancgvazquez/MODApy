@@ -32,7 +32,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/juancgvazquez/MODApy",
     packages=setuptools.find_packages(),
-    include_package_data=True,
+    package_data={"MODApy": ["www/*"]},
     install_requires=[
         "pandas>=1.3.0",
         "numpy",
@@ -49,6 +49,9 @@ setuptools.setup(
         "pyyaml",
         "requests",
         "tqdm",
+        "fastapi",
+        "rq",
+        "uvicorn",
     ],
     entry_points={
         # Command line scripts

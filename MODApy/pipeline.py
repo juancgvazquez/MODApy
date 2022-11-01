@@ -12,6 +12,7 @@ from MODApy import cfg, vcfmgr
 
 logger = logging.getLogger(__name__)
 logger2 = logging.getLogger("Pipeline Module")
+os.makedirs(cfg.rootDir + '/logs', exist_ok=True)
 hdlr = logging.FileHandler(cfg.rootDir + "/logs/pipe_run.log")
 formatter = logging.Formatter("%(asctime)s %(name)-25s %(levelname)-8s %(message)s")
 hdlr.setFormatter(formatter)
@@ -156,7 +157,13 @@ class Pipeline(object):
         return builtpipe
 
     def runpipeline(
-        self, fastq1: str, fastq2=None, keeptmp=False, startStep=0, endStep=0
+        self,
+        fastq1: str,
+        fastq2=None,
+        keeptmp=False,
+        startStep=0,
+        endStep=0,
+        patientPath=None,
     ):
         """
         Method to run the Pipeline
@@ -179,6 +186,8 @@ class Pipeline(object):
             patientname = fastq1.split("/")[-1].split(".")[0].split("_")[0]
             ref = cfg.referencesPath + self.reference + "/" + self.reference + ".fa"
             pipedir = "".join(x for x in self.name if x.isalnum())
+            if patientPath == None:
+                patientPath = cfg.patientPath
             if cfg.testFlag:
                 tmpdir = (
                     cfg.testPath + "Pipelines/" + patientname + "/" + pipedir + "/tmp/"
@@ -391,11 +400,9 @@ class Pipeline(object):
                     )
             else:
                 if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
-                    os.makedirs(
-                        cfg.patientPath + patientname + "_MODApy", exist_ok=True
-                    )
+                    os.makedirs(patientPath + patientname + "_MODApy", exist_ok=True)
                     file = (
-                        cfg.patientPath
+                        patientPath
                         + patientname
                         + "_MODApy/"
                         + patientname
@@ -410,7 +417,7 @@ class Pipeline(object):
                 if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
                     shutil.move(
                         tmpdir + patientname + "_realigned_reads_recal.bai",
-                        cfg.patientPath
+                        patientPath
                         + patientname
                         + "_MODApy/"
                         + patientname
@@ -419,7 +426,7 @@ class Pipeline(object):
                 if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                     shutil.move(
                         tmpdir + patientname + "_realigned_reads_recal.bam",
-                        cfg.patientPath
+                        patientPath
                         + patientname
                         + "_MODApy/"
                         + patientname

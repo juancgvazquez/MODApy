@@ -3,7 +3,7 @@ import json
 import logging
 import logging.config
 import os
-from rq import Queue, Worker
+from rq import Queue
 from redis import Redis
 
 
@@ -14,6 +14,7 @@ cores = 1
 processing_mode = local
 [PATHS]
 patientpath = ./Patients/
+mitopatientpath = ./mitocondrial/Patients/
 panelspath = ./Panels/
 reportspath = ./Reports/
 resultspath = ./Results/
@@ -45,6 +46,7 @@ else:
 rootDir = os.path.dirname(os.path.abspath(__file__))
 
 patientPath = cfg["PATHS"]["patientpath"]
+mitopatientPath = cfg["PATHS"]["mitopatientpath"]
 panelsPath = cfg["PATHS"]["panelspath"]
 reportsPath = cfg["PATHS"]["reportspath"]
 resultsPath = cfg["PATHS"]["resultspath"]
@@ -101,10 +103,10 @@ def setup_logging():
         with open(path, "a"):
             os.utime(path, None)
 
-    _touch(rootDir + "/logs/currentrun.log")
+    _touch(rootDir + "/logs/current_run.log")
     _touch(rootDir + "/logs/info.log")
     _touch(rootDir + "/logs/errors.log")
-    _touch(rootDir + "/logs/piperun.log")
+    _touch(rootDir + "/logs/pipe_run.log")
     if not os.path.exists(rootDir + "/logs/downloads.log"):
         with open(rootDir + "/logs/downloads.log", "w") as dlog:
             json.dump({}, dlog)
@@ -137,7 +139,7 @@ def setup_logging():
                 "class": "logging.FileHandler",
                 "level": "INFO",
                 "formatter": "current_run",
-                "filename": rootDir + "/logs/currentrun.log",
+                "filename": rootDir + "/logs/current_run.log",
                 "mode": "w",
             },
             "info_file_handler": {
