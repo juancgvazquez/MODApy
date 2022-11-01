@@ -7,18 +7,16 @@ library(openxlsx)
 library(shinycssloaders)
 library(stringr)
 library(shinyFiles)
-
 #python config -------------------------------------------------------------------
-basedir = '/home/charly/ext_disk/Development/modapy/'
-modapydir = paste(basedir,'MODApy/MODApy/',sep="")
+modapydir ='/Users/juanvazquez/Charly/Dev/modapy/.venv/lib/python3.10/site-packages/MODApy/'
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
 pipelog = paste0(modapydir,'logs/pipe_run.log')
 pipeflag = paste0(modapydir,'logs/pipe.flag')
 dlog = paste0(modapydir,'logs/downloads.log')
 cfg = read.ini(cfgpath)
-use_virtualenv(paste(basedir,"_venv",sep=""))
-use_python(paste(basedir,"_venv/bin/python3",sep=""))
+use_virtualenv("/Users/juanvazquez/Charly/Dev/modapy/.venv/")
+use_python("/Users/juanvazquez/Charly/Dev/modapy/.venv/bin/python3")
 py_config()
 MODApy<-import('MODApy')
 
@@ -28,6 +26,10 @@ patientsbam <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath
 patientsfastq <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$patientpath,pattern="\\.fastq.gz|\\.fastq|\\.fq|\\.fq.gz",recursive = TRUE)))
 patientsfastq <- str_subset(patientsfastq,pattern="_1")
 patientsfastq <- str_remove(patientsfastq, "_1")
+## loading mitocondrial patients list
+mitopatientsfastq <- result<-gsub('\\..*','',basename(list.files(cfg$PATHS$mitopatientpath,pattern="\\.fastq.gz|\\.fastq|\\.fq|\\.fq.gz",recursive = TRUE)))
+mitopatientsfastq <- str_subset(mitopatientsfastq,pattern="_1")
+mitopatientsfastq <- str_remove(mitopatientsfastq, "_1")
 chromdbs <- gsub('\\..*','',basename(list.files(dirname(cfg$PATHS$dbpath),pattern="\\.csv",recursive = TRUE)))
 updatepanels <<- function(){
   result<-gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
@@ -39,6 +41,23 @@ panels <- gsub('.xlsx','',list.files(cfg$PATHS$panelspath,pattern='\\.xlsx$'))
 getcommand <- function(input){
   cmd = ''
   switch (input$tabset,
+          Mitocondrial={
+            if(file.exists(paste(cfg$PATHS$mitopatientpath, input$PatientMito, "/",input$PatientMito,"_1", ".fastq", sep=""))){
+              cmd =  paste("pipeline -Pipeline",
+                           input$Pipeline, "-FQ",
+                           paste(cfg$PATHS$patientpath, input$PatientMito, "/",input$PatientMito,"_1", ".fastq.gz", sep=""), "-FQ",
+                           paste(cfg$PATHS$patientpath, input$PatientMito, "/",input$PatientMito,"_1", ".fastq.gz", sep=""))
+            }
+            else if(file.exists(paste(cfg$PATHS$patientpath, input$PatientMito, "/",input$PatientMito,"_1", ".fastq.gz", sep=""))){
+              cmd = paste("pipeline -Pipeline",
+                          input$Pipeline, "-FQ",
+                          paste(cfg$PATHS$patientpath, input$PatientMito, "/",input$PatientMito,"_1", ".fastq.gz", sep=""), "-FQ",
+                          paste(cfg$PATHS$patientpath, input$PatientMito, "/",input$PatientMito,"_2", ".fastq.gz", sep=""))
+            }
+            else {
+              cat("No fastq or gzipped fastq files found for that Patient",file=logfile,sep='\n')
+            }
+          },
           Pipeline={
             if(file.exists(paste(cfg$PATHS$patientpath, input$PatientPipe, "/",input$PatientPipe,"_1", ".fastq", sep=""))){
               cmd =  paste("pipeline -Pipeline",
@@ -96,8 +115,8 @@ getcommand <- function(input){
 }
 
 # ui -------------------------------------------------------------------
+volumes <- c(wd='/home/biomolecular/DATA/NGS/')
 ui <- tagList(shinyjs::useShinyjs(),
-              volumes <- c(wd='/home/jvazquez/Datos/Development/MODApy/'),
               navbarPage("MODApy",
                          tabPanel("Analisis",
                                   sidebarLayout(
@@ -196,25 +215,47 @@ ui <- tagList(shinyjs::useShinyjs(),
                          ),
                          tabPanel("WES Pipelines",
                                   sidebarPanel(width=3,
-                                    h2('Select Patient'),
-                                    div(style="display: inline-block;vertical-align:top; width: 300px;",
-                                         selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
-                                    #fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
-                                    actionButton("runPipelinefq",'Run Pipeline'),
-                                    actionButton("runPipelinelog",'Check Status')
+                                               h2('Select Patient'),
+                                               div(style="display: inline-block;vertical-align:top; width: 300px;",
+                                                   selectInput(inputId = "fqfile", label = NULL, choices = patientsfastq)),
+                                               #fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
+                                               actionButton("runPipelinefq",'Run Pipeline'),
+                                               actionButton("runPipelinelog",'Check Status')
                                   ),
                                   mainPanel(
-                                      sidebarPanel(
-                                        h2('Reference'),
-                                        selectInput('reference','Select Reference',choices = c('hg19 Complete Genome','hg19 Without Alternatives')),
-                                      ),
+                                    sidebarPanel(
+                                      h2('Reference'),
+                                      selectInput('reference','Select Reference',choices = c('hg19 Complete Genome','hg19 Without Alternatives')),
+                                    ),
                                     mainPanel(
-                                        h2("Full Pipeline Diagram"),
-                                        img(src='wespipelinefull.png',width=700,align='center')
-                                      ))
+                                      h2("Full Pipeline Diagram"),
+                                      img(src='wespipelinefull.png',width=700,align='center')
+                                    ))
                                   #selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
                                   #selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
-                                   # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
+                                  # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
+                         ),
+                         tabPanel("Mitocondrial",
+                                  sidebarPanel(width=3,
+                                               h2('Select Patient'),
+                                               div(style="display: inline-block;vertical-align:top; width: 300px;",
+                                                   selectInput(inputId = "Mitofqfile", label = NULL, choices = patientsfastq)),
+                                               #fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
+                                               actionButton("runMitocondrialfq",'Run Pipeline'),
+                                               actionButton("runMitocondriallog",'Check Status')
+                                  ),
+                                  mainPanel(
+                                    sidebarPanel(
+                                      h2('Reference'),
+                                      selectInput('reference','Select Reference',choices = c('Mitocondrial NC_012920')),
+                                    ),
+                                    mainPanel(
+                                      h2("Mitocondrial Diagram (WIP)"),
+                                      img(src='',width=700,align='center')
+                                    ))
+                                  #selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
+                                  #selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
+                                  # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
                          ),
                          tabPanel('Utils',
                                   actionButton("customDuos",label='VCF-DIFF'),
@@ -231,11 +272,11 @@ ui <- tagList(shinyjs::useShinyjs(),
                                   p('Centro de Investigación y Desarrollo en Inmunología y Enfermedades Infecciosas - CONICET'),
                                   actionButton("cfgButton",label=NULL,icon=icon('cog'))
                          )
-
-
+                         
+                         
               ),
               tags$head(tags$style(".modal-dialog{width:1000px}"))
-
+              
 )
 # server -------------------------------------------------------------------
 server <- function(input,output, session){
@@ -262,7 +303,7 @@ server <- function(input,output, session){
         modalButton("Cancel"),
         actionButton('diffbtn',"Compare")
       )
-    )
+      )
   }
   shinyFileChoose(input, 'vcfFile1', roots=volumes, filetypes=c('','vcf'))
   shinyFileChoose(input, 'vcfFile2', roots=volumes, filetypes=c('','vcf'))
@@ -368,7 +409,7 @@ server <- function(input,output, session){
     else{
       rv$textstream = "Variants file not found. Try to build variantsDB first."
     }
-
+    
   })
   observeEvent(input$customDuos, {
     showModal(vcfDiffModal())
@@ -380,41 +421,43 @@ server <- function(input,output, session){
   })
   observeEvent(input$annotateFile, {
     showModal(annotateModal())
-    })
+  })
   observeEvent(input$runPipelinelog, {
     showModal(pipelineRunningModal())
-    })
-  
-    observeEvent(input$annotatebtn, {
-      if(is.null(input$file1)){
-        removeModal()
-        modalDialog('No input data to download.')
+  })
+  observeEvent(input$runMitocondriallog, {
+    showModal(pipelineRunningModal())
+  })
+  observeEvent(input$annotatebtn, {
+    if(is.null(input$file1)){
+      removeModal()
+      modalDialog('No input data to download.')
+    }
+    else if(!(is.null(input$file1))){
+      file.copy(input$file1$datapath, paste0("./", input$file1$name))
+      withProgress(message='Annotating',value=0, {
+        system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
+        incProgress(0.5,detail="Erasing Temporal Files")
+        file.remove(paste0('./',input$file1$name))
+        incProgress(1,detail = 'Done')
+      })
+      removeModal()
+      if(grepl('_',input$file1$name)){
+        patfolder <- strsplit(input$file1$name, "_")[[1]][1]
       }
-      else if(!(is.null(input$file1))){
-        file.copy(input$file1$datapath, paste0("./", input$file1$name))
-        withProgress(message='Annotating',value=0, {
-          system2('MODApy',args = paste('variantsDB -annotate',paste0('./',input$file1$name)),wait = TRUE,stdout = FALSE,stderr = FALSE)%>% withSpinner(color="#0dc5c1")
-          incProgress(0.5,detail="Erasing Temporal Files")
-          file.remove(paste0('./',input$file1$name))
-          incProgress(1,detail = 'Done')
-        })
-        removeModal()
-        if(grepl('_',input$file1$name)){
-          patfolder <- strsplit(input$file1$name, "_")[[1]][1]
-        }
-        else{
-          patfolder <- strsplit(input$file1$name, ".")[[1]][1]
-        }
-        showModal(modalDialog('File Annotated',
-                              p('File Available at: ',paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
-                              ),
-                              downloadButton('downloadannotatedVDB','Download Result')
-        )
-        
-        
-        )
+      else{
+        patfolder <- strsplit(input$file1$name, ".")[[1]][1]
       }
-    })
+      showModal(modalDialog('File Annotated',
+                            p('File Available at: ',paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+                            ),
+                            downloadButton('downloadannotatedVDB','Download Result')
+      )
+      
+      
+      )
+    }
+  })
   observeEvent(input$addbtn, {
     if((input$url=="")&(is.null(input$file1))){
       removeModal()
@@ -435,7 +478,7 @@ server <- function(input,output, session){
       removeModal()
       showModal(modalDialog('Downloading'))
     }
-
+    
   })
   observeEvent(input$buttonrun, {
     shinyjs::disable('buttonrun')
@@ -453,7 +496,7 @@ server <- function(input,output, session){
     else if(input$reference == 'hg19 Without Alternatives'){
       pipesel='BestPractices-Trim-noalt.json'
     }
-    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>=2){
+    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
       showModal(pipelineRunningModal(fromrun=TRUE))
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq", sep=""))){
@@ -464,7 +507,7 @@ server <- function(input,output, session){
                    paste(patpath, "/",patpath,"_2", ".fastq", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-
+      
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""))){
       file.create(logfile)
@@ -474,7 +517,7 @@ server <- function(input,output, session){
                   paste(patpath, "/",patpath,"_2", ".fastq.gz", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-
+      
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""))){
       file.create(logfile)
@@ -484,7 +527,7 @@ server <- function(input,output, session){
                   paste(patpath, "/",patpath,"_2", ".fq.gz", sep=""))
       print(cmd)
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-
+      
     }
     else if(file.exists(paste(cfg$PATHS$patientpath, patpath, "/",patpath,"_1", ".fq", sep=""))){
       file.create(logfile)
@@ -497,7 +540,54 @@ server <- function(input,output, session){
     }
   })
   
-  
+  ##Runs Mitocondrial Pipeline for Fast Q
+  observeEvent(input$runMitocondrialfq, {
+    patpath = gsub('_1','',input$Mitofqfile)
+    pipesel=paste(cfg$PATHS$pipelinespath,'BestPractices-mitocondrial.json',sep="")
+    if(length(system('ps aux | grep "MODApy pipeline"',intern=TRUE))>2){
+      showModal(pipelineRunningModal(fromrun=TRUE))
+    }
+    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fastq", sep=""))){
+      file.create(logfile)
+      cmd =  paste("abs_pipeline -Pipeline",
+                   pipesel, "-FQ",
+                   paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fastq", sep=""), "-FQ",
+                   paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_2", ".fastq", sep=""))
+      print(cmd)
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+      
+    }
+    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""))){
+      file.create(logfile)
+      cmd = paste("abs_pipeline -Pipeline",
+                  pipesel, "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fastq.gz", sep=""), "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_2", ".fastq.gz", sep=""))
+      print(cmd)
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+      
+    }
+    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""))){
+      file.create(logfile)
+      cmd = paste("abs_pipeline -Pipeline",
+                  pipesel, "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fq.gz", sep=""), "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_2", ".fq.gz", sep=""))
+      print(cmd)
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+      
+    }
+    else if(file.exists(paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fq", sep=""))){
+      file.create(logfile)
+      cmd = paste("abs_pipeline -Pipeline",
+                  pipesel, "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_1", ".fq", sep=""), "-FQ",
+                  paste(cfg$PATHS$mitopatientpath, patpath, "/",patpath,"_2", ".fq", sep=""))
+      print(cmd)
+      system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
+    }
+  })
+
   ##Runs Pipeline for Bam
   observeEvent(input$runPipelinebam, {
     #shinyjs::disable('buttonrun')
@@ -514,7 +604,7 @@ server <- function(input,output, session){
     }})
   
   
-    ##Runs Pipeline for VCF
+  ##Runs Pipeline for VCF
   observeEvent(input$runPipelinevcf, {
     #shinyjs::disable('buttonrun')
     patpath=paste0(cfg$PATHS$patientpath,input$vcffile,'/',input$vcffile,'.final.vcf')
@@ -524,36 +614,36 @@ server <- function(input,output, session){
     else if(file.exists(patpath)){
       file.create(logfile)
       cmd =  paste("pipeline -Pipeline",
-                    "BestPractices-Annotation.json", "-FQ",
-                    paste0(input$vcffile,'/',input$vcffile,'.final.vcf'))
+                   "BestPractices-Annotation.json", "-FQ",
+                   paste0(input$vcffile,'/',input$vcffile,'.final.vcf'))
       system2("MODApy", cmd ,wait=FALSE,stdout = FALSE,stderr = FALSE)
-  }})
-   #Download Result Annotated
+    }})
+  #Download Result Annotated
   output$downloadannotatedVDB <- 
     downloadHandler(
-    filename <- function(){
-      if(grepl('_',input$file1$name)){
-        patfolder <- strsplit(input$file1$name, "_")[[1]][1]
-      }
-      else{
-        patfolder <- strsplit(input$file1$name, ".")[[1]][1]
-      }
-      paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+      filename <- function(){
+        if(grepl('_',input$file1$name)){
+          patfolder <- strsplit(input$file1$name, "_")[[1]][1]
+        }
+        else{
+          patfolder <- strsplit(input$file1$name, ".")[[1]][1]
+        }
+        paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
       },
-    content<-function(downfile){
-      if(grepl('_',input$file1$name)){
-        patfolder <- strsplit(input$file1$name, "_")[[1]][1]
-      }
-      else{
-        patfolder <- strsplit(input$file1$name, ".")[[1]][1]
-      }
-      filepath <- paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
-      print(filepath)
-      file.copy(filepath,downfile)
-      file.size(filepath)
-    },
-    contentType = "application/xlsx"
-  )
+      content<-function(downfile){
+        if(grepl('_',input$file1$name)){
+          patfolder <- strsplit(input$file1$name, "_")[[1]][1]
+        }
+        else{
+          patfolder <- strsplit(input$file1$name, ".")[[1]][1]
+        }
+        filepath <- paste0(cfg$PATHS$patientpath,patfolder,'/',gsub('\\b.xlsx|\\b.annotated','',input$file1$name),'.annotated.xlsx')
+        print(filepath)
+        file.copy(filepath,downfile)
+        file.size(filepath)
+      },
+      contentType = "application/xlsx"
+    )
   #Download Result
   output$downloadData <- downloadHandler(
     filename<-function(){
@@ -619,7 +709,7 @@ server <- function(input,output, session){
       shinyjs::enable('buttonrun')
     }
   })
-
+  
   observe({
     rv2$timer()
     Sys.sleep(0.2)
@@ -654,7 +744,7 @@ server <- function(input,output, session){
   observeEvent(input$savecfg,{
     print(typeof(cfg$GENERAL))
   })
-
+  
   session$onSessionEnded(function(){stopApp()})
 }
 

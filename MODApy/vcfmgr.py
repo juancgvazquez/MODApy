@@ -226,14 +226,14 @@ class ParsedVCF(pd.DataFrame):
             df1["POLYPHEN_PRED"] = df1["POLYPHEN_PRED"].str.strip(".").str.strip(".,")
             df1["POLYPHEN_SCORE"] = df1["POLYPHEN_SCORE"].str.split(",").str[0]
             df1.drop(columns=["ESP6500_PH"], inplace=True)
-            df1.rename(
-                columns={
-                    "ANNOTATION": "EFFECT",
-                    "ANNOTATION_IMPACT": "IMPACT",
-                    "ID": "RSID",
-                },
-                inplace=True,
-            )
+        df1.rename(
+            columns={
+                "ANNOTATION": "EFFECT",
+                "ANNOTATION_IMPACT": "IMPACT",
+                "ID": "RSID",
+            },
+        inplace=True,
+        )
         numcols = list()
         for x in pVCF.header_iter():
             if x.type == "INFO":
@@ -262,7 +262,7 @@ class ParsedVCF(pd.DataFrame):
                 df1["CLINVAR_CLNSIG"] = df1["CLINVAR_CLNSIG"].str.replace(k, v)
 
         df1.replace(["nan", "", np.nan], ".", inplace=True)
-        df1.replace([[None], "."], inplace=True, regex=True)
+        df1.replace(to_replace=[None], value= ".", inplace=True, regex=True)
         df1 = df1.astype("str")
         df1["POS"] = df1["POS"].astype(int)
         df1 = df1.pipe(ParsedVCF)
@@ -649,23 +649,9 @@ class ParsedVCF(pd.DataFrame):
             return vcfstats
 
     def vcf_to_excel(self, outpath):
-        # logger.info('Getting Frequencies from VariantsDB')
-        # if os.path.exists(cfg['PATHS']['dbpath']):
-        #     if cfg['PATHS']['dbpath'].rsplit('.')[-1].lower() == 'xlsx':
-        #         variantsDB = pd.read_excel(cfg['PATHS']['dbpath'])
-        #     elif cfg['PATHS']['dbpath'].rsplit('.')[-1].lower() == 'csv':
-        #         variantsDB = pd.read_csv(cfg['PATHS']['dbpath'])
-        #     else:
-        #         logger.error('VariantsDBPath must be a xlsx or csv file')
-        #         exit(1)
-        # #self = self.merge(variantsDB[['CHROM', 'POS', 'REF', 'ALT', 'FREQ', 'ALLELE_FREQ']],
-        #                   on=['CHROM', 'POS', 'REF', 'ALT'], how='left')
-        # #self.rename(columns={'FREQ': 'VARDB_FREQ'}, inplace=True)
-        # #self['VARDB_FREQ'] = pd.to_numeric(self['VARDB_FREQ'], errors='coerce')
-        # #self['VARDB_FREQ'].round(6)
-        # logger.info('Formating Excel File')
         os.makedirs(outpath.rsplit("/", maxsplit=1)[0], exist_ok=True)
         output = pd.ExcelWriter(outpath)
+        self["VARSOME"]=""
         cols_selected = cfg["OUTPUT"]["columnsorder"].replace(",", " ").split()
         if "VENN" in self.columns:
             if "ZIGOSITY" in cols_selected:
