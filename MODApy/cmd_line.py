@@ -9,7 +9,7 @@ from sys import argv
 import pandas as pd
 import uvicorn
 
-from MODApy import cfg, pipeline, vcfmgr, downloader, variantsdb, coverage
+from MODApy import cfg, pipeline, vcfmgr, downloader, variantsdb, coverage, vcfanalysis
 from MODApy.modaapi import app
 from MODApy.utils import checkFile
 from MODApy.version import __version__
@@ -32,9 +32,11 @@ class Parser(object):
         variantsDB      Work with Variants Database
         addPatient      Download Patient Data to Patients folder. Receives both url or xls/xlsx
         pipeline        Run pipeline on FastQ file/s
+        abs_pipeline    Run pipeline on FastQ file/s using absolute paths
         parsevcf        Parse a VCF and write it's Raw Output to CSV.
         diffvcf         Generate a Duos analysis on any given vcf
         single          Run study on a single patient
+        abs_single      Run study on a single patient using absolute paths
         duos            Run Duos analysis on two selected patients
         trios           Run Trios analysis on three selected patients
         coverageStats   Generate coverages stats for bam file or list of files
@@ -60,21 +62,24 @@ class Parser(object):
         getattr(self, args.command)()
 
     def launcher(self):
-        logger.info("Launching Web Interface")
-        cmd = (
-            'R -e shiny::runApp(\\"'
-            + cfg.rootDir
-            + '/MODApy-Shiny.R\\"\\,port=3838\\,host=\\"0.0.0.0\\")'
-        )
-        print(cmd)
-        webapp = subprocess.Popen(
-            shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE
-        )
-        webapp.wait()
-        output, error = webapp.communicate()
-        logger.debug(output)
-        logger.debug(error)
-        logger.info("Web Interface Closed")
+        try:
+            logger.info("Launching Web Interface")
+            cmd = (
+                'R -e shiny::runApp(\\"'
+                + cfg.rootDir
+                + '/MODApy-Shiny.R\\"\\,port=3838\\,host=\\"0.0.0.0\\")'
+            )
+            webapp = subprocess.Popen(
+                shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE
+            )
+            webapp.wait()
+            output, error = webapp.communicate()
+            logger.debug(output)
+            logger.debug(error)
+            logger.info("Web Interface Closed")
+        except Exception as err:
+            logger.error("Webapp process failed")
+            logger.debug(f"There was an error: {err}", exc_info=True)
 
     def coverageStats(self):
         parser = argparse.ArgumentParser(
@@ -93,11 +98,15 @@ class Parser(object):
             help="Bam files or list of files to calculate coverage stats (can use wildcard) Example: /home/bams/*.bam",
             nargs="*",
         )
-        args = parser.parse_args(argv[2:])
-        Bam_files = list(args.Bam_files)
-        bed_file = args.Gene_Exon_Bed_File
-        panel_file = args.Panel
-        coverage.main(Bam_files, bed_file, panel_file)
+        try:
+            args = parser.parse_args(argv[2:])
+            Bam_files = list(args.Bam_files)
+            bed_file = args.Gene_Exon_Bed_File
+            panel_file = args.Panel
+            coverage.main(Bam_files, bed_file, panel_file)
+        except Exception as err:
+            logger.error("Coverage process failed")
+            logger.debug(f"There was an error: {err}", exc_info=True)
 
     def addPatient(self):
         parser = argparse.ArgumentParser(
@@ -107,21 +116,29 @@ class Parser(object):
             "FileorURL",
             help="URL to download or filepath to xls or xlsx files containing urls",
         )
-        args = parser.parse_args(argv[2:])
-        fileorurl = args.FileorURL
-        downloader.get_links(fileorurl)
+        try:
+            args = parser.parse_args(argv[2:])
+            fileorurl = args.FileorURL
+            downloader.get_links(fileorurl)
+        except Exception as err:
+            logger.error("Download process failed")
+            logger.debug(f"There was an error: {err}", exc_info=True)
 
     def parsevcf(self):
         parser = argparse.ArgumentParser(
             description="Parses a VCF file using MODApy parser and exports output as a csv file with all fields tabulated."
         )
         parser.add_argument("File", help="Path to VCF file to Parse")
-        args = parser.parse_args(argv[2:])
-        file = args.File
-        vcfmgr.ParsedVCF.from_vcf(file).to_csv(
-            file.split(".vcf")[0] + ".csv", index=False
-        )
-        logger.info("Output file is in %s" % file.split(".vcf")[0])
+        try:
+            args = parser.parse_args(argv[2:])
+            file = args.File
+            vcfmgr.ParsedVCF.from_vcf(file).to_csv(
+                file.split(".vcf")[0] + ".csv", index=False
+            )
+            logger.info("Output file is in %s" % file.split(".vcf")[0])
+        except Exception as err:
+            logger.error("Parsing process failed")
+            logger.debug(f"There was an error: {err}", exc_info=True)
 
     def variantsDB(self):
         parser = argparse.ArgumentParser(description="Work with Variants DB")
@@ -138,25 +155,131 @@ class Parser(object):
             "-annotate",
             help="Adds data from variantsdb to analysis done in modapy. Must supply path to excel output from modapy",
         )
-        args = parser.parse_args(argv[2:])
-        if args.buildDB:
-            db = variantsdb.VariantsDB.buildDB()
-            db.to_VarDBCSV()
-        if args.addPatientToDB:
-            patient = cfg.patientPath + args.addPatientToDB
-            db = variantsdb.VariantsDB.from_csvdb(variantsdb.variantsDBPath)
-            db = db.addPatientToDB(patient)
-            db.to_VarDBCSV()
-        if args.annotate:
-            fileName = args.annotate.rsplit("/", maxsplit=1)[1]
-            patient = pd.read_excel(args.annotate)
-            db = variantsdb.VariantsDB.from_csvdb(
-                variantsdb.variantsDBPath.rsplit("/", maxsplit=1)[0]
-            )
-            patient = db.annotate_excel(patient, fileName)
+        try:
+            args = parser.parse_args(argv[2:])
+            if args.buildDB:
+                db = variantsdb.VariantsDB.buildDB()
+                db.to_VarDBCSV()
+            if args.addPatientToDB:
+                patient = cfg.patientPath + args.addPatientToDB
+                db = variantsdb.VariantsDB.from_csvdb(variantsdb.variantsDBPath)
+                db = db.addPatientToDB(patient)
+                db.to_VarDBCSV()
+            if args.annotate:
+                fileName = args.annotate.rsplit("/", maxsplit=1)[1]
+                patient = pd.read_excel(args.annotate)
+                db = variantsdb.VariantsDB.from_csvdb(
+                    variantsdb.variantsDBPath.rsplit("/", maxsplit=1)[0]
+                )
+                patient = db.annotate_excel(patient, fileName)
+        except Exception as err:
+            logger.error("Add patient process failed")
+            logger.debug(f"There was an error: {err}", exc_info=True)
 
     def launchapi(self):
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+        try:
+            uvicorn.run(app, host="0.0.0.0", port=8000)
+        except Exception as err:
+            logger.error("Api process failed")
+            logger.debug(f"There was an error: {err}", exc_info=True)
+
+    def abs_pipeline(self):
+        # Description for pipeline usage
+        parser = argparse.ArgumentParser(description="Run a Pipeline from FASTQ to VCF")
+        parser.add_argument(
+            "-Pipeline",
+            required=True,
+            help="File name of the Pipeline inside Pipelines folder",
+        )
+        parser.add_argument(
+            "-FQ",
+            required=True,
+            help="Patient FastQ1 File Path - It needs to match exactly "
+            "the filename found inside Patients folder. Only this one is needed for Single End."
+            "Two FastQs will be needed for Paired End (usage: -FQ Fastq1 -FQ Fastq2",
+            action="append",
+        )
+        parser.add_argument(
+            "-keeptmp",
+            action="store_true",
+            default=False,
+            help="Keep Temp files, otherwise just creates annotated vcf file.",
+        )
+        parser.add_argument(
+            "-startStep",
+            default=0,
+            type=int,
+            help="Defines step to start running pipeline.",
+        )
+        parser.add_argument(
+            "-endStep",
+            default=0,
+            type=int,
+            help="Defines step to start running pipeline.",
+        )
+
+        # ignore first argument
+        try:
+            args = parser.parse_args(argv[2:])
+            pipe = args.Pipeline
+
+            checkFile(pipe, args.Pipeline.split(".")[-1])
+
+            newpipe = pipeline.Pipeline.from_json(pipe)
+            patientPath = args.FQ[0].rsplit("/", maxsplit=1)[0] + "/"
+
+            if len(args.FQ) > 2:
+                logger.error(
+                    "Only Two FASTQ files allowed. The Input for FastQ Files was: ",
+                    str(args.FQ),
+                )
+                return exit(1)
+            elif len(args.FQ) == 2:
+                fq1 = args.FQ[0]
+                fq2 = args.FQ[1]
+                checkFile(fq1, "." + fq1.split(".")[-1])
+                checkFile(fq2, "." + fq2.split(".")[-1])
+                if args.keeptmp:
+                    newpipe.runpipeline(
+                        fq1,
+                        fq2,
+                        keeptmp=True,
+                        startStep=args.startStep,
+                        endStep=args.endStep,
+                        patientPath=patientPath,
+                    )
+                else:
+                    newpipe.runpipeline(
+                        fq1,
+                        fq2,
+                        startStep=args.startStep,
+                        endStep=args.endStep,
+                        patientPath=patientPath,
+                    )
+                return 0
+            else:
+                fq1 = args.FQ[0]
+                fq2 = ""
+                checkFile(fq1, "." + fq1.split(".")[-1])
+                if args.keeptmp:
+                    newpipe.runpipeline(
+                        fq1,
+                        keeptmp=True,
+                        startStep=args.startStep,
+                        endStep=args.endStep,
+                        patientPath=patientPath,
+                    )
+                else:
+                    newpipe.runpipeline(
+                        fq1,
+                        startStep=args.startStep,
+                        endStep=args.endStep,
+                        patientPath=patientPath,
+                    )
+                return 0
+        except Exception as err:
+            logger.error("Abs pipeline process failed")
+            logger.debug(f"There was an error: {err}", exc_info=True)
 
     def pipeline(self):
         # Description for pipeline usage
@@ -238,6 +361,27 @@ class Parser(object):
                 newpipe.runpipeline(fq1, startStep=args.startStep, endStep=args.endStep)
             return 0
 
+    def abs_single(self):
+        parser = argparse.ArgumentParser(description="Run study on a single patient")
+        parser.add_argument(
+            "-Panel",
+            required=True,
+            help="File path to Panel filename of Panel inside Panels folder",
+        )
+        parser.add_argument(
+            "-Patient",
+            required=True,
+            help="Patient File Path - It needs to match exactly to the one found inside Patients folder",
+        )
+        try:
+            args = parser.parse_args(argv[2:])
+            patient = args.Patient
+            panel = args.Panel
+            vcfanalysis.single(patient, panel)
+        except Exception as error:
+            logger.info("There was an error in the Panel Process")
+            logger.debug(f"Error was: {error}")
+
     def single(self):
         # Description for panel usage
         parser = argparse.ArgumentParser(description="Run study on a single patient")
@@ -271,10 +415,19 @@ class Parser(object):
             )
             os.makedirs(os.path.dirname(outpath), exist_ok=True)
             result.vcf_to_excel(outpath)
+            logger.info("Annotating VARDB Freq")
+            fileName = outpath.rsplit("/", maxsplit=1)[1]
+            patient = pd.read_excel(outpath)
+            db = variantsdb.VariantsDB.from_csvdb(
+                variantsdb.variantsDBPath.rsplit("/", maxsplit=1)[0]
+            )
+            patient = db.annotate_excel(patient, fileName)
             logger.info("Single Analisis Complete")
             logger.info("File available at:%s" % outpath)
-        except:
+        except Exception as err:
             logger.info("Single Analisis Failed")
+            logger.debug(f"Error was: {err}")
+
         return 0
 
     def duos(self):

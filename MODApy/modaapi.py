@@ -3,10 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from typing import Optional
 from pydantic import BaseModel
-from MODApy import cfg, pipeline, vcfmgr, vcfanalysis
+from MODApy import cfg, pipeline, vcfanalysis
 from MODApy.utils import checkFile
 import logging
-import os
 
 logger = logging.getLogger()
 app = FastAPI()

@@ -80,11 +80,6 @@ class VariantsDB(pd.DataFrame):
             for idx in range(len(vcfspath)):
                 splitfn = vcfspath[idx].rsplit("/", maxsplit=1)[-1]
                 if "_MODApy" in splitfn:
-                    final_list = [
-                        x
-                        for x in final_list
-                        if splitfn.strip("_MODApy.final.vcf") + ".final.vcf" not in x
-                    ]
                     if not (any(splitfn in string for string in final_list)):
                         final_list.append(vcfspath[idx])
                 else:
@@ -95,6 +90,10 @@ class VariantsDB(pd.DataFrame):
                         )
                     ):
                         final_list.append(vcfspath[idx])
+            for x in final_list:
+                fn = x.rsplit("/",maxsplit=1)[-1]
+                if any(fn.strip(".final.vcf")+"_MODApy.final.vcf" in string for string in final_list):
+                    final_list.remove(x)
             vcfspath = final_list
             try:
                 vcfsnames = [cyvcf2.Reader(x).samples[0] for x in vcfspath]
@@ -327,7 +326,6 @@ class VariantsDB(pd.DataFrame):
             + fileName.rsplit(".", maxsplit=1)[0].replace(".annotated", "")
             + ".annotated.xlsx"
         )
-        logger.info(outpath)
         firstcols = [
             "GENE_NAME",
             "AMINOCHANGE",
@@ -484,3 +482,4 @@ class VariantsDB(pd.DataFrame):
         datasheet.autofilter(0, 0, len(self), len(df.columns))
         output.save()
         logger.info("File saved to %s" % outpath)
+        return outpath
