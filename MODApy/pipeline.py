@@ -183,7 +183,7 @@ class Pipeline(object):
             logger.info("Nro de Pasos: %s" % str(len(self.steps)))
             logger2.info(self.steps)
             logger2.info("Nro de Pasos: %s" % str(len(self.steps)))
-            patientname = fastq1.split("/")[-1].split(".")[0].split("_")[0]
+            patientname = fastq1.split("/")[-1].split(".")[0].split("_1")[0]
             ref = cfg.referencesPath + self.reference + "/" + self.reference + ".fa"
             pipedir = "".join(x for x in self.name if x.isalnum())
             if patientPath == None:

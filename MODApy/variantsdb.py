@@ -106,8 +106,10 @@ class VariantsDB(pd.DataFrame):
                 ]
 
             if db is not None:
-                addpatnames = [x for x in vcfsnames if x not in db.columns]
-                if len(addpatnames) >= 1:
+                addpatnames = [x for x in vcfsnames if (x not in db.columns
+                                    and x+'_MODApy' not in db.columns
+                                    and x.replace('_MODApy','') not in db.columns)]
+                if len(addpatnames) >= 1:   
                     logger.info("Adding Patients: {}".format([x for x in addpatnames]))
                 else:
                     logger.error("No Patients to Add")

@@ -59,94 +59,115 @@ class ParsedVCF(pd.DataFrame):
             except:
                 return x
 
-        logger.info("Parsing VCF File. %s" % vcf)
-        pVCF = cyvcf2.Reader(vcf)
-        try:
-            name = pVCF.samples[0]
-        except:
-            name = vcf.split("/")[-1]
-        variantsDict = OrderedDict()
-        for variant in pVCF:
-            variantsDict[
-                variant.CHROM
-                + "+"
-                + str(variant.POS)
-                + "+"
-                + variant.REF
-                + "+"
-                + ",".join(variant.ALT)
-            ] = {"ID": variant.ID, "QUAL": variant.QUAL, "FILTER": variant.FILTER}
-            variantsDict[
-                variant.CHROM
-                + "+"
-                + str(variant.POS)
-                + "+"
-                + variant.REF
-                + "+"
-                + ",".join(variant.ALT)
-            ].update({k: v for (k, v) in variant.INFO})
+        def parse_vcf_file(vcf):
+                """
+                Parse VCF file using cyvcf2 and return an ordered dictionary.
+                """
+                logger.info("Parsing VCF File. %s" % vcf)
+                pVCF = cyvcf2.Reader(vcf)
+                try:
+                    name = pVCF.samples[0]
+                except:
+                    name = vcf.split("/")[-1]
+                variants_dict = OrderedDict()
+                for variant in pVCF:
+                    variants_dict[
+                        variant.CHROM
+                        + "+"
+                        + str(variant.POS)
+                        + "+"
+                        + variant.REF
+                        + "+"
+                        + ",".join(variant.ALT)
+                    ] = {"ID": variant.ID, "QUAL": variant.QUAL, "FILTER": variant.FILTER}
+                    variants_dict[
+                        variant.CHROM
+                        + "+"
+                        + str(variant.POS)
+                        + "+"
+                        + variant.REF
+                        + "+"
+                        + ",".join(variant.ALT)
+                    ].update({k: v for (k, v) in variant.INFO})
+                return variants_dict, name, pVCF
 
-        df1 = pd.DataFrame.from_dict(variantsDict, orient="index")
-        del variantsDict
-        df1.index = df1.index.str.split("+", expand=True)
-        df1.index.names = ["CHROM", "POS", "REF", "ALT"]
-        df1.reset_index(inplace=True)
-        splitdf = df1.loc[df1["ALT"].str.contains(",") == True].copy()
-        if len(splitdf) > 0:
-            ALT = (
-                splitdf["ALT"]
-                .astype(str)
-                .str.split(",", n=1, expand=True)
-                .stack()
-                .rename("ALT")
+        def create_dataframe(variants_dict):
+            """
+            Create a pandas DataFrame from the variants dictionary.
+            """
+            df1 = pd.DataFrame.from_dict(variants_dict, orient="index")
+            del variants_dict
+            df1.index = df1.index.str.split("+", expand=True)
+            df1.index.names = ["CHROM", "POS", "REF", "ALT"]
+            df1.reset_index(inplace=True)
+            return df1
+        
+        def split_alternate_alleles(df):
+            """
+            Split rows with multiple alternate alleles into separate rows.
+            """
+            splitdf = df.loc[df["ALT"].str.contains(",") == True].copy()
+            if len(splitdf) > 0:
+                ALT = (
+                    splitdf["ALT"]
+                    .astype(str)
+                    .str.split(",", n=1, expand=True)
+                    .stack()
+                    .rename("ALT")
+                )
+                ALT.index = ALT.index.droplevel(-1)
+                ALT = ALT.to_frame()
+                splitdf = splitdf.join(ALT, lsuffix="_x", rsuffix="_y")
+                del ALT
+                splitdf["ALT"] = splitdf["ALT_y"].combine_first(splitdf["ALT_x"])
+                splitdf.drop(columns=["ALT_y", "ALT_x"], inplace=True)
+                splitdf.reset_index(inplace=True)
+                splitdf.drop(columns="index", inplace=True)
+            odd = splitdf.iloc[::2].copy()
+            even = splitdf.iloc[1::2].copy()
+            splitlist = [
+                "ID",
+                "AC",
+                "AF",
+                "SAMPLES_AF",
+                "MLEAC",
+                "MLEAF",
+                "VARTYPE",
+                "dbSNPBuildID",
+            ]
+            splitlist = [x for x in splitlist if x in df.columns]
+            splitlist += [x for x in df.columns if x.startswith(("1000", "CLINVAR"))]
+            for col in splitlist:
+                odd[col] = odd[col].astype(str).str.split(",", n=1).str[0]
+                even[col] = even[col].apply(
+                    lambda x: x
+                    if len(str(x).split(",")) <= 1
+                    else str(x).split(",", maxsplit=1)[1]
+                )
+            splitdf = (
+                pd.concat([odd, even])
+                .sort_index()
+                .replace(to_replace=["\(", "\)"], value="", regex=True)
             )
-            ALT.index = ALT.index.droplevel(-1)
-            ALT = ALT.to_frame()
-            splitdf = splitdf.join(ALT, lsuffix="_x", rsuffix="_y")
-            del ALT
-            splitdf["ALT"] = splitdf["ALT_y"].combine_first(splitdf["ALT_x"])
-            splitdf.drop(columns=["ALT_y", "ALT_x"], inplace=True)
-            splitdf.reset_index(inplace=True)
-            splitdf.drop(columns="index", inplace=True)
-        odd = splitdf.iloc[::2].copy()
-        even = splitdf.iloc[1::2].copy()
-        splitlist = [
-            "ID",
-            "AC",
-            "AF",
-            "SAMPLES_AF",
-            "MLEAC",
-            "MLEAF",
-            "VARTYPE",
-            "dbSNPBuildID",
-        ]
-        splitlist = [x for x in splitlist if x in df1.columns]
-        splitlist += [x for x in df1.columns if x.startswith(("1000", "CLINVAR"))]
-        for col in splitlist:
-            odd[col] = odd[col].astype(str).str.split(",", n=1).str[0]
-            even[col] = even[col].apply(
-                lambda x: x
-                if len(str(x).split(",")) <= 1
-                else str(x).split(",", maxsplit=1)[1]
-            )
-        splitdf = (
-            pd.concat([odd, even])
-            .sort_index()
-            .replace(to_replace=["\(", "\)"], value="", regex=True)
-        )
-        del odd, even
-        splitdf = splitdf[["CHROM", "POS", "REF", "ALT"] + splitlist]
-        df1 = df1.merge(splitdf, on=["CHROM", "POS", "REF"], how="left")
-        splitlist.append("ALT")
-        xlist = [x + "_x" for x in splitlist]
-        ylist = [y + "_y" for y in splitlist]
-        del splitdf  # ya no uso más splitdf así que lo borro
-        for col in splitlist:
-            df1[col] = df1[col + "_y"].combine_first(df1[col + "_x"])
-        del splitlist  # ya no uso más splitlist
-        df1.drop(columns=xlist + ylist, inplace=True)
-        del xlist, ylist  # ya no uso más esto.
-        df1["POS"] = df1["POS"].astype(int)
+            del odd, even
+            splitdf = splitdf[["CHROM", "POS", "REF", "ALT"] + splitlist]
+            df = df.merge(splitdf, on=["CHROM", "POS", "REF"], how="left")
+            splitlist.append("ALT")
+            xlist = [x + "_x" for x in splitlist]
+            ylist = [y + "_y" for y in splitlist]
+            del splitdf  
+            for col in splitlist:
+                df[col] = df[col + "_y"].combine_first(df[col + "_x"])
+            del splitlist  
+            df.drop(columns=xlist + ylist, inplace=True)
+            del xlist, ylist  
+            df["POS"] = df["POS"].astype(int)
+            return df
+        
+        variants_dict, name, pVCF = parse_vcf_file(vcf)
+        df1 = create_dataframe(variants_dict)
+        del variants_dict
+        df1 = split_alternate_alleles(df1)
         if "ANN" in df1.columns:
             anndf = df1["ANN"]
             annhead = pVCF.get_header_type("ANN")["Description"].strip(
@@ -221,7 +242,7 @@ class ParsedVCF(pd.DataFrame):
             df1.drop(columns=["ESP6500_MAF"], inplace=True)
         if "ESP6500_PH" in df1.columns:
             df1[["POLYPHEN_PRED", "POLYPHEN_SCORE"]] = df1["ESP6500_PH"].str.split(
-                ":", 1, expand=True
+                ":", n=1, expand=True
             )
             df1["POLYPHEN_PRED"] = df1["POLYPHEN_PRED"].str.strip(".").str.strip(".,")
             df1["POLYPHEN_SCORE"] = df1["POLYPHEN_SCORE"].str.split(",").str[0]
