@@ -34,7 +34,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     package_data={"MODApy": ["www/*"]},
     install_requires=[
-        "pandas>=1.3.0",
+        "pandas>=1.3.0,<2.0.0",
         "numpy",
         "configparser",
         "argparse",
