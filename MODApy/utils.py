@@ -1,7 +1,11 @@
-import os
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+
+
+class InvalidFileError(Exception):
+    pass
 
 
 def checkFile(filePath, extension):
@@ -9,8 +13,7 @@ def checkFile(filePath, extension):
         fileName, fileExtension = os.path.splitext(filePath)
         if extension == fileExtension:
             return True
-    else:
-        error = f"""{filePath} couldn't be found. "
-        Please check if file exists and that it's extension is {extension}"""
-        logger.error(error)
-        raise FileNotFoundError(error)
+    error = f"""{filePath} couldn't be found. "
+    Please check if the file exists and that its extension is {extension}"""
+    logger.error(error)
+    raise InvalidFileError(error)

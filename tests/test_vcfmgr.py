@@ -1,7 +1,9 @@
 from pathlib import Path
+
 from MODApy.vcfmgr import ParsedVCF
 
 TEST_DATA_PATH = Path("tests/test_data")
+
 
 def test_from_vcf(parsed_vcf):
     # Create a temporary VCF file for testing

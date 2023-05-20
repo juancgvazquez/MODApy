@@ -1,8 +1,9 @@
 import logging
-
-from MODApy import vcfmgr, cfg
-from MODApy.utils import checkFile
 import os
+
+from MODApy import cfg, vcfmgr
+from MODApy.utils import checkFile
+
 
 logger = logging.getLogger()
 

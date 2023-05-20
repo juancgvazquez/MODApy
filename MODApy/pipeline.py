@@ -5,14 +5,16 @@ import shlex
 import shutil
 import subprocess
 
+from MODApy import cfg, vcfmgr
+
 import xmltodict
+
 import yaml
 
-from MODApy import cfg, vcfmgr
 
 logger = logging.getLogger(__name__)
 logger2 = logging.getLogger("Pipeline Module")
-os.makedirs(cfg.rootDir + '/logs', exist_ok=True)
+os.makedirs(cfg.rootDir + "/logs", exist_ok=True)
 hdlr = logging.FileHandler(cfg.rootDir + "/logs/pipe_run.log")
 formatter = logging.Formatter("%(asctime)s %(name)-25s %(levelname)-8s %(message)s")
 hdlr.setFormatter(formatter)
@@ -29,6 +31,26 @@ class PipeStep(object):
     """
 
     def __init__(self, name, command, subcommand, version, inputfile, outputfile, args):
+        """
+        Initializes a PipeStep object.
+
+        Parameters
+        ----------
+        name : str
+            Name of the step.
+        command : str
+            Command to be executed for the step.
+        subcommand : str
+            Subcommand to be executed for the step.
+        version : str
+            Version of the command.
+        inputfile : str or list
+            Path to the input file(s).
+        outputfile : str
+            Path to the output file.
+        args : str
+            Additional arguments for the command.
+        """
         self.name = name
         self.command = command
         self.subcommand = subcommand
@@ -38,12 +60,31 @@ class PipeStep(object):
         self.args = args
 
     def __str__(self):
+        """
+        Returns the name of the step as a string.
+
+        Returns
+        -------
+        str
+            Name of the step.
+        """
         return self.name
 
     def __repr__(self):
+        """
+        Returns the name of the step as a string.
+
+        Returns
+        -------
+        str
+            Name of the step.
+        """
         return self.name
 
     def stepinfo(self):
+        """
+        Prints information about the step.
+        """
         print("Name:", self.name)
         print("Command", self.command + self.version, self.subcommand, self.args)
         print("Input File:", self.inputfile)
@@ -56,6 +97,20 @@ class Pipeline(object):
     """
 
     def __init__(self, name, reference, url="", description=""):
+        """
+        Initializes a Pipeline object.
+
+        Parameters
+        ----------
+        name : str
+            Name of the pipeline.
+        reference : str
+            Reference for the pipeline.
+        url : str, optional
+            URL for the pipeline, by default "".
+        description : str, optional
+            Description of the pipeline, by default "".
+        """
         self.name = name
         self.url = url
         self.description = description
@@ -64,18 +119,36 @@ class Pipeline(object):
         self.steps = []
 
     def add_steps(self, step):
+        """
+        Adds a step to the pipeline.
+
+        Parameters
+        ----------
+        step : PipeStep
+            Step to be added to the pipeline.
+        """
         self.steps.append(step)
 
     def add_req_files(self, path):
+        """
+        Adds a required file to the pipeline.
+
+        Parameters
+        ----------
+        path : str
+            Path to the required file.
+        """
         self.required_files.append(path)
 
     @staticmethod
     def _buildpipe(pipedict):
         """
         Private Class Method to build pipeline from loaded json,xml or yaml
+
         Parameters
-        --------------------
-        pipefile File loaded by from_json, from_xml or from_yaml
+        ----------
+        pipedict : dict
+            Dictionary representing the pipeline.
         """
         name = pipedict["INFO"]["name"]
         url = pipedict["INFO"]["url"]
@@ -108,6 +181,7 @@ class Pipeline(object):
     def from_json(cls, jsonpath):
         """
         Class Method to read json and build the Pipeline
+
         Parameters
         ----------
         jsonpath
@@ -126,6 +200,7 @@ class Pipeline(object):
     def from_yaml(cls, yamlpath):
         """
         Class Method to read yaml and build the Pipeline
+
         Parameters
         ----------
         jsonpath
@@ -143,6 +218,7 @@ class Pipeline(object):
     def from_xml(cls, xmlpath):
         """
         Class Method to parse xml and build the Pipeline
+
         Parameters
         ----------
         xmlpath
@@ -167,6 +243,7 @@ class Pipeline(object):
     ):
         """
         Method to run the Pipeline
+
         Parameters
         ----------
         fastq1
@@ -175,9 +252,6 @@ class Pipeline(object):
             Path to the second fastq file, in case of paired reads.
         """
 
-        """
-        Method to run selected Pipeline on fastq files
-        """
         try:
             logger.info(self.steps)
             logger.info("Nro de Pasos: %s" % str(len(self.steps)))
@@ -186,7 +260,7 @@ class Pipeline(object):
             patientname = fastq1.split("/")[-1].split(".")[0].split("_1")[0]
             ref = cfg.referencesPath + self.reference + "/" + self.reference + ".fa"
             pipedir = "".join(x for x in self.name if x.isalnum())
-            if patientPath == None:
+            if patientPath is None:
                 patientPath = cfg.patientPath
             if cfg.testFlag:
                 tmpdir = (
@@ -218,7 +292,7 @@ class Pipeline(object):
                 first = False
             logger2.info(f"STARTSTEP {startStep}")
             for step in self.steps[startStep:endStep]:
-                if first == True:
+                if first is True:
                     logger2.debug("First Step")
                     first = False
                     if type(step.inputfile) == list:
@@ -231,7 +305,8 @@ class Pipeline(object):
                                 inputfile = fastq1 + " " + fastq2
                             else:
                                 print(
-                                    "WARNING: This pipeline was designed for Pair End and you are running it as Single End"
+                                    "WARNING: This pipeline was designed for Pair End \
+                                    and you are running it as Single End"
                                 )
                                 inputfile = fastq1
                     elif type(step.inputfile) == str:
@@ -242,19 +317,23 @@ class Pipeline(object):
                         ):
                             if (fastq1 is not None) & (fastq2 is not None):
                                 print(
-                                    "WARNING: This pipeline was designed for Single End and you are running it as Pair End"
+                                    "WARNING: This pipeline was designed for Single \
+                                        End and you are running it as Pair End"
                                 )
                                 inputfile = fastq1 + " " + fastq2
                         else:
                             inputfile = fastq1
-                # If it's not first step, input depends on output of previous step + patientname
+                # If it's not first step, input depends on output of previous
+                # step + patientname
                 else:
                     if type(step.inputfile) == list:
                         inputfile1 = step.inputfile[0].replace(
-                            "patientname", tmpdir + patientname + "/" + patientname
+                            "patientname",
+                            tmpdir + patientname + "/" + patientname,
                         )
                         inputfile2 = step.inputfile[1].replace(
-                            "patientname", tmpdir + patientname + "/" + patientname
+                            "patientname",
+                            tmpdir + patientname + "/" + patientname,
                         )
                         inputfile = inputfile1 + " " + inputfile2
                     elif type(step.inputfile) == str:
@@ -355,10 +434,12 @@ class Pipeline(object):
                     logger2.debug("Subprocess failed")
                     logger2.debug("Exception ocurred: " + str(exception))
                     logging.info(
-                        "There was an error when running the pipeline. Please check logs for more info"
+                        "There was an error when running the pipeline. Please \
+                            check logs for more info"
                     )
                     logger2.info(
-                        "There was an error when running the pipeline. Please check logs for more info"
+                        "There was an error when running the pipeline. Please \
+                            check logs for more info"
                     )
                     exit(1)
                 else:

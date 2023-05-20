@@ -2,14 +2,14 @@ import glob
 import logging
 import os
 
-import cyvcf2
-import numpy as np
-import pandas as pd
-
-from functools import reduce
-
-from MODApy.cfg import variantsDBPath, patientPath, cfg, resultsPath
+from MODApy.cfg import cfg, patientPath, variantsDBPath
 from MODApy.vcfmgr import ParsedVCF
+
+import cyvcf2
+
+import numpy as np
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +28,10 @@ class VariantsDB(pd.DataFrame):
             try:
                 db = pd.read_excel(excelpath)
 
-            except:
+            except Exception as e:
                 logger.error("There was an error parsing excel File")
                 logger.debug("", exc_info=True)
+                logger.debug((e))
                 exit(1)
         else:
             logger.error("Path to excel file incorrect.")
@@ -53,9 +54,10 @@ class VariantsDB(pd.DataFrame):
                 db = pd.concat(dfs, sort=True)
                 del files
                 del dfs
-            except:
+            except Exception as e:
                 logger.error("There was an error parsing CSV File")
                 logger.debug("", exc_info=True)
+                logger.debug(str(e))
                 exit(1)
         else:
             logger.error("Path to CSV file incorrect.")
@@ -91,25 +93,35 @@ class VariantsDB(pd.DataFrame):
                     ):
                         final_list.append(vcfspath[idx])
             for x in final_list:
-                fn = x.rsplit("/",maxsplit=1)[-1]
-                if any(fn.strip(".final.vcf")+"_MODApy.final.vcf" in string for string in final_list):
+                fn = x.rsplit("/", maxsplit=1)[-1]
+                if any(
+                    fn.strip(".final.vcf") + "_MODApy.final.vcf" in string
+                    for string in final_list
+                ):
                     final_list.remove(x)
             vcfspath = final_list
             try:
                 vcfsnames = [cyvcf2.Reader(x).samples[0] for x in vcfspath]
-            except:
+            except Exception as e:
                 logger.info(
                     "No Sample name in one of the vcfs files. Using File Names Instead"
                 )
+                logger.debug(str(e))
                 vcfsnames = [
                     x.rsplit("/", maxsplit=1)[-1].strip(".final.vcf") for x in vcfspath
                 ]
 
             if db is not None:
-                addpatnames = [x for x in vcfsnames if (x not in db.columns
-                                    and x+'_MODApy' not in db.columns
-                                    and x.replace('_MODApy','') not in db.columns)]
-                if len(addpatnames) >= 1:   
+                addpatnames = [
+                    x
+                    for x in vcfsnames
+                    if (
+                        x not in db.columns
+                        and x + "_MODApy" not in db.columns
+                        and x.replace("_MODApy", "") not in db.columns
+                    )
+                ]
+                if len(addpatnames) >= 1:
                     logger.info("Adding Patients: {}".format([x for x in addpatnames]))
                 else:
                     logger.error("No Patients to Add")
@@ -154,7 +166,15 @@ class VariantsDB(pd.DataFrame):
                 db.drop(columns=["level_0", "index"], inplace=True, errors="ignore")
             pvcfs = [
                 x.set_index(
-                    ["CHROM", "POS", "REF", "ALT", "GENE_NAME", "HGVS.C", "HGVS.P"]
+                    [
+                        "CHROM",
+                        "POS",
+                        "REF",
+                        "ALT",
+                        "GENE_NAME",
+                        "HGVS.C",
+                        "HGVS.P",
+                    ]
                 )
                 for x in pvcfs
             ]
@@ -186,7 +206,11 @@ class VariantsDB(pd.DataFrame):
             db = db.reset_index().set_index(
                 ["CHROM", "POS", "REF", "ALT", "GENE_NAME", "HGVS.C", "HGVS.P"]
             )
-            db.drop(columns=["index", "0", "level_0"], inplace=True, errors="ignore")
+            db.drop(
+                columns=["index", "0", "level_0"],
+                inplace=True,
+                errors="ignore",
+            )
             db.replace({".": np.nan}, inplace=True)
             db = db.pipe(VariantsDB)
             db = db.calcfreqs()
@@ -203,17 +227,15 @@ class VariantsDB(pd.DataFrame):
             else:
                 logger.error("VariantsDBPath must be a xlsx or csv file")
                 exit(1)
-        except:
+        except Exception as e:
+            logger.debug(str(e))
             exit()
-            logger.info("No DB Found, Building new Variants DB")
-            patientslist = patientLister()
-            db = None
         sublists = [
             patientslist[i : i + int(cfg["GENERAL"]["cores"])]
             for i in range(0, len(patientslist), int(cfg["GENERAL"]["cores"]))
         ]
-        for l in sublists:
-            db = dbbuilder(l, db)
+        for lista in sublists:
+            db = dbbuilder(lista, db)
             db.to_VarDBCSV()
         return db
 
@@ -230,7 +252,16 @@ class VariantsDB(pd.DataFrame):
             logger.debug("", exc_info=True)
             exit(1)
         pvcf = pvcf[
-            ["CHROM", "POS", "REF", "ALT", "ZIGOSITY", "GENE_NAME", "HGVS.C", "HGVS.P"]
+            [
+                "CHROM",
+                "POS",
+                "REF",
+                "ALT",
+                "ZIGOSITY",
+                "GENE_NAME",
+                "HGVS.C",
+                "HGVS.P",
+            ]
         ]
         if "ZIGOSITY" not in pvcf.columns:
             pvcf["ZIGOSITY"] = "UNKWN"
@@ -359,7 +390,9 @@ class VariantsDB(pd.DataFrame):
             formatpos,
         )
         datasheet.set_column(
-            df.columns.to_list().index("RSID"), df.columns.to_list().index("RSID"), 15
+            df.columns.to_list().index("RSID"),
+            df.columns.to_list().index("RSID"),
+            15,
         )
         # Light red fill with dark red text.
         highformat = workbook.add_format(
@@ -427,7 +460,11 @@ class VariantsDB(pd.DataFrame):
         )
         logger.info("Writing Excel File")
         df[firstcols + lastcols].to_excel(
-            output, sheet_name="DATA", merge_cells=False, index=False, header=True
+            output,
+            sheet_name="DATA",
+            merge_cells=False,
+            index=False,
+            header=True,
         )
 
         if df.reset_index().index.max() < 32150:
@@ -462,25 +499,29 @@ class VariantsDB(pd.DataFrame):
             stats.to_excel(output, sheet_name="STATISTICS")
         except Exception as e:
             logger.error(
-                "Could not print statistics. Error was {}".format(e), exc_info=True
+                "Could not print statistics. Error was {}".format(e),
+                exc_info=True,
             )
         try:
             statsheet.insert_image("H2", "./general.png")
         except Exception as e:
             logger.error(
-                "Could not print stats graphs. Error was {}".format(e), exc_info=True
+                "Could not print stats graphs. Error was {}".format(e),
+                exc_info=True,
             )
         if os.path.isfile("./venn.png"):
             statsheet.insert_image("H25", "./venn.png")
         output.save()
         try:
             os.remove("./general.png")
-        except:
+        except Exception as e:
             logger.debug("Could not remove general.png")
+            logger.debug(str(e))
         try:
             os.remove("./venn.png")
-        except:
+        except Exception as e:
             logger.debug("Could not remove venn.png")
+            logger.debug(str(e))
         datasheet.autofilter(0, 0, len(self), len(df.columns))
         output.save()
         logger.info("File saved to %s" % outpath)
