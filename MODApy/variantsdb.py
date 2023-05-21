@@ -26,15 +26,20 @@ class VariantsDB(pd.DataFrame):
     def from_exceldb(cls, excelpath):
         if os.path.exists(excelpath):
             try:
-                db = pd.read_excel(excelpath)
-
+                files = [f for f in glob.glob(excelpath + "/*.xls*")]
+                if len(files) == 0:
+                    return None
+                dfs = [pd.read_excel(x) for x in files]
+                db = pd.concat(dfs, sort=True)
+                del files
+                del dfs
             except Exception as e:
-                logger.error("There was an error parsing excel File")
+                logger.error("There was an error parsing Excel File")
                 logger.debug("", exc_info=True)
-                logger.debug((e))
+                logger.debug(str(e))
                 exit(1)
         else:
-            logger.error("Path to excel file incorrect.")
+            logger.error("Path to Excel file incorrect.")
             exit(1)
         db.set_index(
             ["CHROM", "POS", "REF", "ALT", "GENE_NAME", "HGVS.C", "HGVS.P"],
