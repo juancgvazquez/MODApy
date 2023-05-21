@@ -274,6 +274,8 @@ class ParsedVCF(pd.DataFrame):
             df : pandas.DataFrame
                 Input DataFrame with 'ANN' column containing functional annotations
                 separated by commas.
+            pVCF : cyvcf2.Reader
+                A cyvcf2.Reader object representing the VCF file.
 
             Returns:
             --------
@@ -383,6 +385,8 @@ class ParsedVCF(pd.DataFrame):
             ----------
             df : ParsedVCF (pandas.DataFrame extension)
                 A DataFrame containing variant annotation data.
+            pVCF : cyvcf2.Reader
+                A cyvcf2.Reader object representing the VCF file.
 
             Returns
             -------
