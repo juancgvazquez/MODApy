@@ -264,7 +264,7 @@ class ParsedVCF(pd.DataFrame):
             df["POS"] = df["POS"].astype(int)
             return df
 
-        def handle_annotations(df):
+        def handle_annotations(df, pVCF):
             """
             Parses the 'ANN' column in a pandas DataFrame and extracts functional
             annotations as separate columns.
@@ -374,7 +374,7 @@ class ParsedVCF(pd.DataFrame):
                 df.drop(columns=["sorter", "sorter2"], inplace=True)
             return df
 
-        def format_ann_columns(df):
+        def format_ann_columns(df, pVCF):
             """
             Formats the columns of a pandas DataFrame containing variant annotation
             data.
@@ -511,9 +511,9 @@ class ParsedVCF(pd.DataFrame):
         df1 = create_dataframe(variants_dict)
         del variants_dict
         df1 = split_alternate_alleles(df1)
-        df1 = handle_annotations(df1)
+        df1 = handle_annotations(df1, pVCF)
         df1 = prioritize_variants(df1)
-        df1 = format_ann_columns(df1)
+        df1 = format_ann_columns(df1, pVCF)
         df1 = clean_df(df1)
         df1 = df1.pipe(ParsedVCF)
         df1.name = name
