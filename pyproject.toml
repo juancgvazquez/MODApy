@@ -1,0 +1,4 @@
+[tool.black]
+max-line-length = 88
+line-length = 88
+skip-string-normalization = true

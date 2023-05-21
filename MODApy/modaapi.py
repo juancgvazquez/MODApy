@@ -1,11 +1,14 @@
+import logging
+from typing import Optional
+
+from MODApy import cfg, pipeline, vcfanalysis
+from MODApy.utils import checkFile
+
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from typing import Optional
+
 from pydantic import BaseModel
-from MODApy import cfg, pipeline, vcfanalysis
-from MODApy.utils import checkFile
-import logging
 
 logger = logging.getLogger()
 app = FastAPI()
@@ -24,6 +27,18 @@ app.add_middleware(
 
 
 class Pipeline(BaseModel):
+    """
+    Represents a pipeline.
+
+    Attributes:
+        Pipeline (str): The pipeline name.
+        FQ_1 (str): The first FastQ file.
+        FQ_2 (str, optional): The second FastQ file. Defaults to "".
+        startStep (int, optional): The starting step. Defaults to 0.
+        endStep (int, optional): The ending step. Defaults to 0.
+        keeptmp (bool, optional): Whether to keep temporary files. Defaults to False.
+    """
+
     Pipeline: str
     FQ_1: str
     FQ_2: Optional[str] = ""
@@ -33,11 +48,30 @@ class Pipeline(BaseModel):
 
 
 class Single(BaseModel):
+    """
+    Represents single input data.
+
+    Attributes:
+        patient (str): The patient identifier.
+        panel (str): The panel identifier.
+    """
+
     patient: str
     panel: str
 
 
 class Duos(BaseModel):
+    """
+    Represents duos input data.
+
+    Attributes:
+        patient1 (str): The first patient identifier.
+        patient2 (str): The second patient identifier.
+        panel (str, optional): The panel identifier. Defaults to None.
+        vennPlace (str, optional): The vennPlace identifier. Defaults to None.
+        filter (str, optional): The filter identifier. Defaults to None.
+    """
+
     patient1: str
     patient2: str
     panel: Optional[str] = None
@@ -46,6 +80,18 @@ class Duos(BaseModel):
 
 
 class Trios(BaseModel):
+    """
+    Represents trios input data.
+
+    Attributes:
+        patient1 (str): The first patient identifier.
+        patient2 (str): The second patient identifier.
+        patient3 (str): The third patient identifier.
+        panel (str, optional): The panel identifier. Defaults to None.
+        vennPlace (str, optional): The vennPlace identifier. Defaults to None.
+        filter (str, optional): The filter identifier. Defaults to None.
+    """
+
     patient1: str
     patient2: str
     patient3: str
@@ -56,6 +102,15 @@ class Trios(BaseModel):
 
 @app.post("/modaapi/single")
 async def single(data: Single):
+    """
+    Handles single input data.
+
+    Parameters:
+        data (Single): The single input data.
+
+    Returns:
+        JSONResponse: The response containing the job ID.
+    """
     data = data.dict()
     try:
         panel = data["panel"]
@@ -74,6 +129,15 @@ async def single(data: Single):
 
 @app.post("/modaapi/duos")
 async def duos(data: Duos):
+    """
+    Handles duos input data.
+
+    Parameters:
+        data (Duos): The duos input data.
+
+    Returns:
+        JSONResponse: The response containing the job ID.
+    """
     data = data.dict()
     try:
         patient1 = data["patient1"]
@@ -99,6 +163,15 @@ async def duos(data: Duos):
 
 @app.post("/modaapi/trios")
 async def trios(data: Trios):
+    """
+    Handles trios input data.
+
+    Parameters:
+        data (Trios): The trios input data.
+
+    Returns:
+        JSONResponse: The response containing the job ID.
+    """
     data = data.dict()
     try:
         patient1 = data["patient1"]
@@ -126,6 +199,15 @@ async def trios(data: Trios):
 
 @app.post("/modaapi/pipeline")
 async def run_pipeline(data: Pipeline):
+    """
+    Runs the pipeline.
+
+    Parameters:
+        data (Pipeline): The pipeline data.
+
+    Returns:
+        JSONResponse: The response containing the job ID.
+    """
     try:
         data = data.dict()
         pipe = data["Pipeline"]
@@ -137,7 +219,6 @@ async def run_pipeline(data: Pipeline):
         fq2 = data["FQ_2"]
 
         if fq2 != "":
-
             checkFile(fq1, "." + fq1.split(".")[-1])
             checkFile(fq2, "." + fq2.split(".")[-1])
             job_id = cfg.long_queue.enqueue(

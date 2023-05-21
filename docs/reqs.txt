@@ -1,0 +1,4 @@
+Sphinx
+sphinx-rtd-theme
+Jinja2
+numpydoc

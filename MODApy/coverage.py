@@ -3,9 +3,9 @@ import multiprocessing as mp
 import subprocess
 import traceback
 
-import pandas as pd
-
 from MODApy.cfg import cfg
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,8 @@ def panel_intersect(file, panel_file):
     args = " intersect -a {} -b {}".format(file, panel_file)
     with open(
         "{}_{}.bed".format(
-            file.rsplit(".", maxsplit=1)[0], panel_file.rsplit(".", maxsplit=1)[0]
+            file.rsplit(".", maxsplit=1)[0],
+            panel_file.rsplit(".", maxsplit=1)[0],
         ),
         "w",
     ) as output:
@@ -34,7 +35,8 @@ def panel_intersect(file, panel_file):
 
 def annotate_genes(file, gene_file):
     cmd = "bedtools"
-    args = " intersect -a {} -b {} -wb | awk -v OFS='\t' '{{print $1,$2,$3,$4,$8}}'".format(
+    args = " intersect -a {} -b {} -wb | awk -v OFS='\t' \
+        '{{print $1,$2,$3,$4,$8}}'".format(
         file, gene_file
     )
     with open(

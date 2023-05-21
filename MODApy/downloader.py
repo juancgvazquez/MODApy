@@ -5,13 +5,18 @@ import os
 import re
 import tarfile
 
+from MODApy import cfg
+
 import openpyxl
+
 import pandas as pd
+
 import requests
-import xlrd
+
 from tqdm import tqdm
 
-from MODApy import cfg
+import xlrd
+
 
 logger = logging.getLogger(__name__)
 downlog = cfg.rootDir + "/logs/downloads.log"
@@ -111,9 +116,10 @@ def download(url, md5=None):
     logger.info("Downloading %s to %s" % (url, outpath))
     try:
         response = requests.head(url)
-    except:
+    except Exception as e:
         logger.info("Connection Failed")
         logger.debug("Downloader Connection Failed", exc_info=True)
+        logger.debug(e)
         exit(1)
     else:
         if response.status_code == 200:
@@ -145,7 +151,7 @@ def download(url, md5=None):
     )
     try:
         req = requests.get(url, headers=header, stream=True)
-        with (open(tmppath, "ab")) as f:
+        with open(tmppath, "ab") as f:
             for chunk in req.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
@@ -174,8 +180,9 @@ def download(url, md5=None):
                         tf = tarfile.open(outpath)
                         tf.extractall(outputdir)
                         logger.info("Extraction finished")
-                    except:
+                    except Exception as e:
                         logger.error("Extraction failed")
+                        logger.debug("Extraction failed, Error was str(%e)" % e)
                         logger.debug("", exc_info=True)
                         exit(1)
                 else:
@@ -185,15 +192,17 @@ def download(url, md5=None):
                     exit(1)
             try:
                 os.removedirs(tmpdir)
-            except:
+            except Exception as e:
                 logger.debug(tmpdir + " is not empty.")
+                logger.debug("Error was str(%e)" % e)
         with open(downlog, "w") as dlog:
             json.dump(down_dict, dlog, indent=4)
-    except:
+    except Exception as e:
         with open(downlog, "r") as dlog:
             down_dict = json.load(dlog)
             down_dict.update({url: "Download Error"})
             logger.error("Error with download")
+            logger.debug("Error was str(%e)" % e)
             logger.debug("", exc_info=True)
         with open(downlog, "w") as dlog:
             json.dump(down_dict, dlog, indent=4)
