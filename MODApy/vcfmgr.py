@@ -1,9 +1,11 @@
+import itertools
 import logging
 import multiprocessing as mp
 import os
 from collections import OrderedDict
 
 from MODApy.cfg import cfg
+from MODApy.utils import aminoChange, divide
 
 import cyvcf2
 
@@ -60,7 +62,7 @@ class ParsedVCF(pd.DataFrame):
         return ParsedVCF
 
     @classmethod
-    def from_vcf(cls, vcf):
+    def from_vcf(cls, vcf, prioritized=True):
         """
         Method that creates a ParsedVCF1 (a DataFrame) from a vcf file
         Parameters
@@ -69,46 +71,7 @@ class ParsedVCF(pd.DataFrame):
             Path to the vcf to parse.
         """
 
-        def aminoChange(value: str):
-            """
-            Given a string `value`, extract the amino acid change from the
-            `HGVS.P` format.
-
-            Parameters
-            ----------
-                value (str): A string representing the `HGVS.P` format.
-
-            Returns
-            -------
-                str: A string representing the amino acid change or
-                "." if not applicable.
-            """
-            try:
-                value = value.replace("p.", "")
-                if value[:3] != value[-3:]:
-                    return "CHANGE"
-                else:
-                    return "."
-            except Exception:
-                return "."
-
-        def divide(x, y):
-            """
-            Method to divide x on y, needed for dividing freqs.
-            Parameters
-            ----------
-            x
-                The dividend
-            y
-                The divisor
-            Returns result or x.
-            """
-            try:
-                return float(x) / y
-            except Exception:
-                return x
-
-        def parse_vcf_file(vcf):
+        def read_vcf(vcf):
             """
             Parse a VCF file and return a dictionary of variant information.
 
@@ -119,13 +82,8 @@ class ParsedVCF(pd.DataFrame):
 
             Returns
             -------
-            variants_dict : OrderedDict
-                An ordered dictionary of variants with the keys in the format
-                CHROM+POS+REF+ALT.
-                The values of the dictionary are dictionaries containing information
-                about each variant,
-                including its ID, QUAL, FILTER, and any additional INFO fields present
-                in the VCF file.
+            pandas.DataFrame
+            A DataFrame containing variants data.
             name : str
                 The name of the first sample in the VCF file, or the name of the
                 VCF file if no samples are present.
@@ -167,29 +125,12 @@ class ParsedVCF(pd.DataFrame):
                     + "+"
                     + ",".join(variant.ALT)
                 ].update({k: v for (k, v) in variant.INFO})
-            return variants_dict, name, pVCF
-
-        def create_dataframe(variants_dict):
-            """
-            Create a pandas DataFrame from the variants dictionary.
-
-            Parameters
-            ----------
-            variants_dict : dict
-                A dictionary of variants data.
-
-            Returns
-            -------
-            pandas.DataFrame
-                A DataFrame containing variants data.
-
-            """
             df1 = pd.DataFrame.from_dict(variants_dict, orient="index")
             del variants_dict
             df1.index = df1.index.str.split("+", expand=True)
             df1.index.names = ["CHROM", "POS", "REF", "ALT"]
             df1.reset_index(inplace=True)
-            return df1
+            return df1, name, pVCF
 
         def split_alternate_alleles(df):
             """
@@ -341,27 +282,29 @@ class ParsedVCF(pd.DataFrame):
                     "splice_acceptor_variant": 6,
                     "splice_donor_variant": 7,
                     "disruptive_inframe_deletion": 8,
-                    "inframe_insertion": 9,
-                    "disruptive_inframe_insertion": 10,
-                    "inframe_deletion": 11,
-                    "missense_variant": 12,
-                    "splice_region_variant": 13,
-                    "stop_retained_variant": 14,
-                    "initiator_codon_variant": 15,
-                    "synonymous_variant": 16,
-                    "start_retained": 17,
-                    "coding_sequence_variant": 18,
-                    "5_prime_UTR_variant": 19,
-                    "3_prime_UTR_variant": 20,
-                    "5_prime_UTR_premature_start_codon_gain_variant": 21,
-                    "intron_variant": 22,
-                    "non_coding_exon_variant": 23,
-                    "upstream_gene_variant": 24,
-                    "downstream_gene_variant": 25,
-                    "TF_binding_site_variant": 26,
-                    "regulatory_region_variant": 27,
-                    "intergenic_region": 28,
-                    "transcript": 29,
+                    "conservative_inframe_deletion": 9,
+                    "inframe_insertion": 10,
+                    "disruptive_inframe_insertion": 11,
+                    "conservative_inframe_insertion": 12,
+                    "inframe_deletion": 13,
+                    "missense_variant": 14,
+                    "splice_region_variant": 15,
+                    "stop_retained_variant": 16,
+                    "initiator_codon_variant": 17,
+                    "synonymous_variant": 18,
+                    "start_retained": 19,
+                    "coding_sequence_variant": 20,
+                    "5_prime_UTR_variant": 21,
+                    "3_prime_UTR_variant": 22,
+                    "5_prime_UTR_premature_start_codon_gain_variant": 23,
+                    "intron_variant": 24,
+                    "non_coding_exon_variant": 25,
+                    "upstream_gene_variant": 26,
+                    "downstream_gene_variant": 27,
+                    "TF_binding_site_variant": 28,
+                    "regulatory_region_variant": 29,
+                    "intergenic_region": 30,
+                    "transcript": 31,
                 }
             if 'Annotation' in df.columns:
                 df["sorter"] = (
@@ -511,20 +454,28 @@ class ParsedVCF(pd.DataFrame):
             df["POS"] = df["POS"].astype(int)
             return df
 
-        variants_dict, name, pVCF = parse_vcf_file(vcf)
-        df1 = create_dataframe(variants_dict)
-        del variants_dict
+        print(f"Reading {vcf}...")
+        df1, name, pVCF = read_vcf(vcf)
+        print(f"Splitting alternate alleles for {name}...")
         df1 = split_alternate_alleles(df1)
+        print(f"Handling annotations for {name}...")
         df1 = handle_annotations(df1, pVCF)
-        df1 = prioritize_variants(df1)
+        if prioritized is True:
+            print(f"Prioritizing variants for {name}...")
+            df1 = prioritize_variants(df1)
+        elif isinstance(prioritized, dict):
+            print(f"Prioritizing variants for {name}...")
+            df1 = prioritize_variants(df1, prioritized)
         df1 = format_ann_columns(df1, pVCF)
+        print(f"Formatting ANN columns for {name}...")
         df1 = clean_df(df1)
+        print(f"Cleaning DataFrame for {name}...")
         df1 = df1.pipe(ParsedVCF)
         df1.name = name
         return df1
 
     @classmethod
-    def mp_parser(cls, *vcfs, cores=int(cfg["GENERAL"]["cores"])):
+    def mp_parser(cls, *vcfs, cores=int(cfg["GENERAL"]["cores"]), prioritized=True):
         """
         Parses multiple VCF files concurrently using multiprocessing.
 
@@ -546,7 +497,7 @@ class ParsedVCF(pd.DataFrame):
             exit(1)
         elif len(vcfs) == 1:
             pvcfs = list()
-            pvcfs.append(ParsedVCF.from_vcf(vcfs[0]))
+            pvcfs.append(ParsedVCF.from_vcf(vcfs[0], prioritized=prioritized))
         else:
             try:
                 [x + "" for x in vcfs]
@@ -563,7 +514,8 @@ class ParsedVCF(pd.DataFrame):
                         pool = mp.Pool(processes=cores - 1)
                 else:
                     pool = mp.Pool(processes=cores)
-                pvcfs = pool.map(cls.from_vcf, (x for x in vcfs))
+                parameters = zip(vcfs, itertools.repeat(prioritized))
+                pvcfs = pool.starmap(cls.from_vcf, parameters)
                 pool.close()
                 pool.join()
         return pvcfs
@@ -1227,3 +1179,23 @@ class ParsedVCF(pd.DataFrame):
             os.remove("./venn.png")
         except Exception:
             logger.debug("Could not remove venn.png")
+
+    def vcf_to_parquet(self, outpath, partition_cols=None, append=False):
+        """
+        Save the dataframe as a parquet file
+        """
+        logger.info("Saving dataframe as parquet file")
+        try:
+            os.makedirs(outpath.rsplit("/", maxsplit=1)[0], exist_ok=True)
+            self['SAMPLE'] = str(self.name)
+            self.to_parquet(
+                outpath,
+                engine="pyarrow",
+                compression="snappy",
+                index=False,
+                partition_cols=partition_cols,
+            )
+        except Exception as e:
+            logger.error("Could not save parquet file. Check log for errors")
+            logger.error(f"Error was {e}", exc_info=True)
+            print(f"Error was {e}")

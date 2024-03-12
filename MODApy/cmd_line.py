@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import glob
 import logging
 import os
 import shlex
@@ -11,6 +12,7 @@ from MODApy import (
     coverage,
     downloader,
     pipeline,
+    parquetvardb,
     variantsdb,
     vcfanalysis,
     vcfmgr,
@@ -44,7 +46,7 @@ class Parser(object):
                         both url or xls/xlsx
         pipeline        Run pipeline on FastQ file/s
         abs_pipeline    Run pipeline on FastQ file/s using absolute paths
-        parsevcf        Parse a VCF and write it's Raw Output to CSV.
+        parsevcf        Parse a VCF and write it's Raw Output to CSV or Parquet.
         diffvcf         Generate a Duos analysis on any given vcf
         single          Run study on a single patient
         abs_single      Run study on a single patient using absolute paths
@@ -149,16 +151,55 @@ class Parser(object):
     def parsevcf(self):
         parser = argparse.ArgumentParser(
             description="Parses a VCF file using MODApy parser and exports output as \
-                  a csv file with all fields tabulated."
+                  a csv or parquet file with all fields tabulated."
         )
-        parser.add_argument("File", help="Path to VCF file to Parse")
+        parser.add_argument("Path", help="Path to VCF file or folder to Parse")
+        parser.add_argument("Filetype", help="filetype to export to (csv or parquet)")
+        parser.add_argument(
+            "-nonprioritized",
+            action="store_false",
+            default=True,
+            help="""Prioritize variants (output will have one line per variant).
+                  Otherwise, output will have one line per per variant-annotation.""",
+        )
+        parser.add_argument(
+            "-recursive",
+            action="store_true",
+            default=False,
+            help="Parse all vcf files in recursive folders.",
+        )
+        parser.add_argument(
+            "-partition_cols",
+            default=None,
+            help="Partition columns for parquet file. Must be a list of columns",
+        )
         try:
             args = parser.parse_args(argv[2:])
-            file = args.File
-            vcfmgr.ParsedVCF.from_vcf(file).to_csv(
-                file.split(".vcf")[0] + ".csv", index=False
+            path = args.Path
+            filetype = args.Filetype
+            prioritized = args.nonprioritized
+            recursive = args.recursive
+            partition_cols = args.partition_cols
+            logger.info(
+                f"""Parsing VCF file/s in {path}, to: {filetype},
+                        prioritized: {prioritized}"""
             )
-            logger.info("Output file is in %s" % file.split(".vcf")[0])
+            if recursive:
+                file_list = glob.glob(path + "/**/*.vcf", recursive=True)
+            else:
+                file_list = [path]
+            for file in file_list:
+                df = vcfmgr.ParsedVCF.from_vcf(file, prioritized=prioritized)
+                if filetype == "csv":
+                    df.to_csv(file.split(".vcf")[0] + ".csv", index=False)
+                elif filetype == "parquet":
+                    df.vcf_to_parquet(
+                        file.split(".vcf")[0] + ".parquet", partition_cols
+                    )
+                else:
+                    logger.error("Filetype not recognized")
+                logger.info("Output file is in %s" % file.split(".vcf")[0])
+                del df
         except Exception as err:
             logger.error("Parsing process failed")
             logger.debug(f"There was an error: {err}", exc_info=True)
@@ -180,11 +221,48 @@ class Parser(object):
             help="Adds data from variantsdb to analysis done in modapy. Must \
                 supply path to excel output from modapy",
         )
+        parser.add_argument("Filetype", help="DB filetype (csv or parquet)")
+        parser.add_argument(
+            "-nonprioritized",
+            action="store_false",
+            default=True,
+            help="""Prioritize variants (output will have one line per variant).
+                  Otherwise, output will have one line per per variant-annotation.""",
+        )
         try:
             args = parser.parse_args(argv[2:])
+            filetype = args.Filetype
+            prioritized = args.nonprioritized
+            if prioritized is True:
+                suffix = "-prioritized"
+            else:
+                suffix = "-nonprioritized"
+            dbpath = (
+                cfg.variantsDBPath.rsplit('/', maxsplit=1)[0]
+                + "/vardb"
+                + suffix
+                + ".parquet"
+            )
             if args.buildDB:
-                db = variantsdb.VariantsDB.buildDB()
-                db.to_VarDBCSV()
+                if filetype == 'csv':
+                    db = variantsdb.VariantsDB.buildDB()
+                    db.to_VarDBCSV()
+                elif filetype == 'parquet':
+                    if os.path.exists(dbpath):
+                        logger.info(f"Loading parquet db from {dbpath}")
+                        db = parquetvardb.ParquetVarDB.from_parquetdb(dbpath)
+                    else:
+                        logger.info(
+                            f"Parquet db not found in {dbpath}. Building from scratch"
+                        )
+                        db = None
+                    parquetvardb.ParquetVarDB.buildDB(
+                        db=db,
+                        patientPath=cfg.patientPath,
+                        dbpath=dbpath,
+                        filetype='vcf',
+                        prioritized=prioritized,
+                    )
             if args.addPatientToDB:
                 patient = cfg.patientPath + args.addPatientToDB
                 db = variantsdb.VariantsDB.from_csvdb(variantsdb.variantsDBPath)
