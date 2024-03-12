@@ -49,13 +49,13 @@ class VariantsDB(pd.DataFrame):
         return db
 
     @classmethod
-    def from_csvdb(cls, csvpath):
+    def from_csvdb(cls, csvpath, columns=None):
         if os.path.exists(csvpath):
             try:
                 files = [f for f in glob.glob(csvpath + "/*.csv")]
                 if len(files) == 0:
                     return None
-                dfs = [pd.read_csv(x) for x in files]
+                dfs = [pd.read_csv(x, usecols=columns) for x in files]
                 db = pd.concat(dfs, sort=True)
                 del files
                 del dfs

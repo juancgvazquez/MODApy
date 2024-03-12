@@ -193,8 +193,20 @@ class Parser(object):
             if args.annotate:
                 fileName = args.annotate.rsplit("/", maxsplit=1)[1]
                 patient = pd.read_excel(args.annotate)
+                columns = [
+                    "CHROM",
+                    "POS",
+                    "REF",
+                    "ALT",
+                    "GENE_NAME",
+                    "HGVS.C",
+                    "HGVS.P",
+                    "FREQ",
+                    "ALLELE_FREQ",
+                ]
                 db = variantsdb.VariantsDB.from_csvdb(
-                    variantsdb.variantsDBPath.rsplit("/", maxsplit=1)[0]
+                    variantsdb.variantsDBPath.rsplit("/", maxsplit=1)[0],
+                    columns=columns,
                 )
                 patient = db.annotate_excel(patient, fileName)
         except Exception as err:
@@ -452,8 +464,20 @@ class Parser(object):
             logger.info("Annotating VARDB Freq")
             fileName = outpath.rsplit("/", maxsplit=1)[1]
             patient = pd.read_excel(outpath)
+            columns = [
+                "CHROM",
+                "POS",
+                "REF",
+                "ALT",
+                "GENE_NAME",
+                "HGVS.C",
+                "HGVS.P",
+                "FREQ",
+                "ALLELE_FREQ",
+            ]
             db = variantsdb.VariantsDB.from_csvdb(
-                variantsdb.variantsDBPath.rsplit("/", maxsplit=1)[0]
+                variantsdb.variantsDBPath.rsplit("/", maxsplit=1)[0],
+                columns=columns,
             )
             patient = db.annotate_excel(patient, fileName)
             logger.info("Single Analisis Complete")
