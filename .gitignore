@@ -115,6 +115,7 @@ data/
 snpeff_stats
 MODApy/logs/
 .R*
+*.db
 
 # programs
 MODApy/bin/
