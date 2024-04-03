@@ -1,4 +1,3 @@
-import glob
 import logging
 import os
 
@@ -6,8 +5,6 @@ from MODApy.cfg import cfg, patientPath, variantsDBPath
 from MODApy.vcfmgr import ParsedVCF
 
 import cyvcf2
-
-import numpy as np
 
 import pandas as pd
 
@@ -84,7 +81,8 @@ class ParquetVarDB(pd.DataFrame):
                         vcfsnames = [cyvcf2.Reader(x).samples[0] for x in vcfspath]
                     except Exception as e:
                         logger.info(
-                            "No Sample name in one of the vcfs files. Using File Names Instead"
+                            """No Sample name in one of the vcfs files.
+                            Using File Names Instead"""
                         )
                         logger.debug(str(e))
                         vcfsnames = [
@@ -101,7 +99,8 @@ class ParquetVarDB(pd.DataFrame):
                         ]
                     except Exception as e:
                         logger.info(
-                            "No Sample name in one of the vcfs files. Using File Names Instead"
+                            """No Sample name in one of the vcfs files.
+                            Using File Names Instead"""
                         )
                         logger.debug(str(e))
                         vcfsnames = [
