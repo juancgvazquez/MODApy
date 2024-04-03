@@ -14,6 +14,7 @@ default_cfg = """
 testmode = False
 cores = 1
 processing_mode = local
+
 [PATHS]
 patientpath = ./Patients/
 mitopatientpath = ./mitocondrial/Patients/
