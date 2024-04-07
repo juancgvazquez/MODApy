@@ -1,7 +1,7 @@
 import logging
 import os
 
-from MODApy.cfg import cfg, patientPath, variantsDBPath
+from MODApy.cfg import configuration
 from MODApy.vcfmgr import ParsedVCF
 
 import cyvcf2
@@ -38,8 +38,8 @@ class ParquetVarDB(pd.DataFrame):
     @classmethod
     def buildDB(
         cls,
-        patientPath=patientPath,
-        dbpath=variantsDBPath,
+        patientPath=configuration.patientPath,
+        dbpath=configuration.variantsDBPath,
         db=None,
         filetype="vcf",
         prioritized=False,
@@ -163,8 +163,10 @@ class ParquetVarDB(pd.DataFrame):
             logger.debug(str(e))
             exit()
         sublists = [
-            patientslist[i : i + int(cfg["GENERAL"]["cores"])]
-            for i in range(0, len(patientslist), int(cfg["GENERAL"]["cores"]))
+            patientslist[i : i + int(configuration.cfg["GENERAL"]["cores"])]
+            for i in range(
+                0, len(patientslist), int(configuration.cfg["GENERAL"]["cores"])
+            )
         ]
         for lista in sublists:
             db = dbbuilder(lista, db, prioritized=prioritized)

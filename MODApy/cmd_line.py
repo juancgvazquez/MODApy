@@ -8,7 +8,6 @@ import subprocess
 from sys import argv
 
 from MODApy import (
-    cfg,
     coverage,
     downloader,
     parquetvardb,
@@ -17,6 +16,7 @@ from MODApy import (
     vcfanalysis,
     vcfmgr,
 )
+from MODApy.cfg import configuration
 from MODApy.modaapi import app
 from MODApy.utils import checkFile
 from MODApy.version import __version__
@@ -82,7 +82,7 @@ class Parser(object):
             logger.info("Launching Web Interface")
             cmd = (
                 'R -e shiny::runApp(\\"'
-                + cfg.rootDir
+                + configuration.rootDir
                 + '/MODApy-Shiny.R\\"\\,port=3838\\,host=\\"0.0.0.0\\")'
             )
             webapp = subprocess.Popen(
@@ -238,7 +238,7 @@ class Parser(object):
             else:
                 suffix = "-nonprioritized"
             dbpath = (
-                cfg.variantsDBPath.rsplit('/', maxsplit=1)[0]
+                configuration.variantsDBPath.rsplit('/', maxsplit=1)[0]
                 + "/vardb"
                 + suffix
                 + ".parquet"
@@ -258,13 +258,13 @@ class Parser(object):
                         db = None
                     parquetvardb.ParquetVarDB.buildDB(
                         db=db,
-                        patientPath=cfg.patientPath,
+                        patientPath=configuration.patientPath,
                         dbpath=dbpath,
                         filetype='vcf',
                         prioritized=prioritized,
                     )
             if args.addPatientToDB:
-                patient = cfg.patientPath + args.addPatientToDB
+                patient = configuration.patientPath + args.addPatientToDB
                 db = variantsdb.VariantsDB.from_csvdb(variantsdb.variantsDBPath)
                 db = db.addPatientToDB(patient)
                 db.to_VarDBCSV()
@@ -435,7 +435,7 @@ class Parser(object):
 
         # ignore first argument
         args = parser.parse_args(argv[2:])
-        pipe = cfg.pipelinesPath + args.Pipeline
+        pipe = configuration.pipelinesPath + args.Pipeline
 
         checkFile(pipe, args.Pipeline.split(".")[-1])
 
@@ -449,8 +449,8 @@ class Parser(object):
             return exit(1)
 
         elif len(args.FQ) == 2:
-            fq1 = cfg.patientPath + args.FQ[0]
-            fq2 = cfg.patientPath + args.FQ[1]
+            fq1 = configuration.patientPath + args.FQ[0]
+            fq2 = configuration.patientPath + args.FQ[1]
             checkFile(fq1, "." + fq1.split(".")[-1])
             checkFile(fq2, "." + fq2.split(".")[-1])
             if args.keeptmp:
@@ -467,7 +467,7 @@ class Parser(object):
                 )
             return 0
         else:
-            fq1 = cfg.patientPath + args.FQ[0]
+            fq1 = configuration.patientPath + args.FQ[0]
             fq2 = ""
             checkFile(fq1, "." + fq1.split(".")[-1])
             if args.keeptmp:
@@ -520,8 +520,8 @@ class Parser(object):
         # ignore first argument
         try:
             args = parser.parse_args(argv[2:])
-            panel = cfg.panelsPath + args.Panel + ".xlsx"
-            patient = cfg.patientPath + args.Patient
+            panel = configuration.panelsPath + args.Panel + ".xlsx"
+            patient = configuration.patientPath + args.Patient
             checkFile(patient, ".vcf")
             checkFile(panel, ".xlsx")
             logger.info(
@@ -529,7 +529,7 @@ class Parser(object):
             )
             result = vcfmgr.ParsedVCF.from_vcf(patient).panel(panel)
             outpath = (
-                cfg.patientPath
+                configuration.patientPath
                 + result.name
                 + "/Panels/"
                 + result.name
@@ -604,8 +604,8 @@ class Parser(object):
         # ignore first argument
         try:
             args = parser.parse_args(argv[2:])
-            patient1 = cfg.patientPath + args.Patient1
-            patient2 = cfg.patientPath + args.Patient2
+            patient1 = configuration.patientPath + args.Patient1
+            patient2 = configuration.patientPath + args.Patient2
             # Checks file existence and type for patients
             checkFile(patient1, ".vcf")
             checkFile(patient2, ".vcf")
@@ -617,7 +617,7 @@ class Parser(object):
             result = pvcfs[0].duos(pvcfs[1], VENNPLACE=args.VennPlace)
             resultname = result.name
             outpath = (
-                cfg.resultsPath
+                configuration.resultsPath
                 + "Duos/"
                 + result.name.replace(":", "_")
                 + "/"
@@ -628,7 +628,7 @@ class Parser(object):
                 outpath = outpath + "_Venn" + args.VennPlace.replace(":", "_")
             if args.Panel is not None:
                 logger.info("Running panel {}".format(args.Panel))
-                panel = cfg.panelsPath + args.Panel + ".xlsx"
+                panel = configuration.panelsPath + args.Panel + ".xlsx"
                 checkFile(panel, ".xlsx")
                 result = result.panel(panel)
                 result.name = resultname
@@ -675,7 +675,7 @@ class Parser(object):
             result = pvcfs[0].duos(pvcfs[1])
             resultname = result.name
             outpath = (
-                cfg.resultsPath
+                configuration.resultsPath
                 + "Diffs/"
                 + result.name.replace(":", "_")
                 + "/"
@@ -739,9 +739,9 @@ class Parser(object):
         try:
             # ignore first argument
             args = parser.parse_args(argv[2:])
-            patient1 = cfg.patientPath + args.Patient1
-            patient2 = cfg.patientPath + args.Patient2
-            patient3 = cfg.patientPath + args.Patient3
+            patient1 = configuration.patientPath + args.Patient1
+            patient2 = configuration.patientPath + args.Patient2
+            patient3 = configuration.patientPath + args.Patient3
             # Checks file existence and type for patients
             checkFile(patient1, ".vcf")
             checkFile(patient2, ".vcf")
@@ -754,7 +754,7 @@ class Parser(object):
             result = pvcfs[0].duos(pvcfs[1]).duos(pvcfs[2], VENNPLACE=args.VennPlace)
             resultname = result.name
             outpath = (
-                cfg.resultsPath
+                configuration.resultsPath
                 + "Trios/"
                 + result.name.replace(":", "_")
                 + "/"
@@ -766,7 +766,7 @@ class Parser(object):
             # check if there is a Panel Requested
             if args.Panel:
                 logger.info("Running panel {}".format(args.Panel))
-                panel = cfg.panelsPath + args.Panel + ".xlsx"
+                panel = configuration.panelsPath + args.Panel + ".xlsx"
                 checkFile(panel, ".xlsx")
                 result = result.panel(panel)
                 result.name = resultname
@@ -799,7 +799,8 @@ class Parser(object):
 
 
 def main():
-    cfg.setup_logging()
+
+    configuration.setup_logging()
     Parser()
 
 

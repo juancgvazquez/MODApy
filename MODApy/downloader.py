@@ -1,3 +1,5 @@
+# TODO: refactor this to modularize the code
+
 import hashlib
 import json
 import logging
@@ -5,7 +7,7 @@ import os
 import re
 import tarfile
 
-from MODApy import cfg
+from MODApy import configuration
 
 import openpyxl
 
@@ -19,7 +21,7 @@ import xlrd
 
 
 logger = logging.getLogger(__name__)
-downlog = cfg.rootDir + "/logs/downloads.log"
+downlog = configuration.rootDir + "/logs/downloads.log"
 
 
 def get_links(filename):
@@ -34,7 +36,7 @@ def get_links(filename):
         download(filename)
     elif filename.startswith("www"):
         logger.error("URLs must start with http:// or https:// or ftp://")
-        exit(1)
+        raise ValueError("URLs must start with http:// or https:// or ftp://")
     # If filename is an excel file
     elif os.path.exists(filename):
         if filename.rsplit(".")[-1] == "xlsx":
@@ -96,21 +98,21 @@ def get_links(filename):
                 download(link, linksdict[link])
         else:
             logger.error("File extension must be xlsx or xls.")
-            exit(1)
+            raise ValueError("File extension must be xlsx or xls.")
     else:
         logger.error("File or URL provided is not valid")
-        exit(1)
+        raise ValueError("File or URL provided is not valid")
 
 
 def download(url, md5=None):
     """
     @param: url to download file
     """
-    outputdir = cfg.patientPath + url.rsplit("/")[-1].split(".")[0] + "/"
+    outputdir = configuration.patientPath + url.rsplit("/")[-1].split(".")[0] + "/"
     outputfile = url.rsplit("/")[-1]
     outpath = outputdir + outputfile
-    tmpdir = cfg.tmpDir
-    tmppath = cfg.tmpDir + outputfile
+    tmpdir = configuration.tmpDir
+    tmppath = configuration.tmpDir + outputfile
     os.makedirs(outputdir, exist_ok=True)
     os.makedirs(tmpdir, exist_ok=True)
     logger.info("Downloading %s to %s" % (url, outpath))
@@ -120,7 +122,7 @@ def download(url, md5=None):
         logger.info("Connection Failed")
         logger.debug("Downloader Connection Failed", exc_info=True)
         logger.debug(e)
-        exit(1)
+        raise ConnectionError("Connection Failed")
     else:
         if response.status_code == 200:
             if "Content-Length" in response.headers.keys():
@@ -131,7 +133,7 @@ def download(url, md5=None):
         else:
             logger.info("Connection Failed")
             logger.debug("Downloader Connection Failed", exc_info=True)
-            exit(1)
+            raise ConnectionError("Connection Failed")
     if os.path.exists(tmppath):
         first_byte = os.path.getsize(tmppath)
     else:
@@ -184,12 +186,12 @@ def download(url, md5=None):
                         logger.error("Extraction failed")
                         logger.debug("Extraction failed, Error was str(%e)" % e)
                         logger.debug("", exc_info=True)
-                        exit(1)
+                        raise RuntimeError("Extraction failed, Error was str(%e)" % e)
                 else:
                     print(file_md5, md5)
                     logger.info("MD5 Verification Failed")
                     logger.error("Error with the download")
-                    exit(1)
+                    raise AssertionError("MD5 Verification Failed")
             try:
                 os.removedirs(tmpdir)
             except Exception as e:

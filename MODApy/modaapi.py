@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from MODApy import cfg, pipeline, vcfanalysis
+from MODApy import configuration, pipeline, vcfanalysis
 from MODApy.utils import checkFile
 
 from fastapi import FastAPI, HTTPException, status
@@ -115,7 +115,9 @@ async def single(data: Single):
     try:
         panel = data["panel"]
         patient = data["patient"]
-        job_id = cfg.short_queue.enqueue(vcfanalysis.single, args=[patient, panel])
+        job_id = configuration.short_queue.enqueue(
+            vcfanalysis.single, args=[patient, panel]
+        )
         job_id = job_id.id
         return JSONResponse(
             status_code=status.HTTP_202_ACCEPTED,
@@ -145,7 +147,7 @@ async def duos(data: Duos):
         VennPlace = data["vennPlace"]
         Panel = data["panel"]
         Filter = data["filter"]
-        job_id = cfg.short_queue.enqueue(
+        job_id = configuration.short_queue.enqueue(
             vcfanalysis.duos,
             args=[patient1, patient2],
             kwargs={"VennPlace": VennPlace, "Panel": Panel, "Filter": Filter},
@@ -181,7 +183,7 @@ async def trios(data: Trios):
         Panel = data["panel"]
         Filter = data["filter"]
         # Checks file existence and type for patients
-        job_id = cfg.short_queue.enqueue(
+        job_id = configuration.short_queue.enqueue(
             vcfanalysis.trios,
             args=[patient1, patient2, patient3],
             kwargs={"VennPlace": VennPlace, "Panel": Panel, "Filter": Filter},
@@ -221,7 +223,7 @@ async def run_pipeline(data: Pipeline):
         if fq2 != "":
             checkFile(fq1, "." + fq1.split(".")[-1])
             checkFile(fq2, "." + fq2.split(".")[-1])
-            job_id = cfg.long_queue.enqueue(
+            job_id = configuration.long_queue.enqueue(
                 newpipe.runpipeline,
                 args=[fq1, fq2],
                 kwargs={
@@ -237,7 +239,7 @@ async def run_pipeline(data: Pipeline):
             )
         else:
             checkFile(fq1, "." + fq1.split(".")[-1])
-            job_id = cfg.long_queue.enqueue(
+            job_id = configuration.long_queue.enqueue(
                 newpipe.runpipeline,
                 args=[fq1],
                 kwargs={

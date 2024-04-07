@@ -2,7 +2,7 @@ import glob
 import logging
 import os
 
-from MODApy.cfg import cfg, patientPath, variantsDBPath
+from MODApy.cfg import configuration
 from MODApy.vcfmgr import ParsedVCF
 
 import cyvcf2
@@ -78,7 +78,7 @@ class VariantsDB(pd.DataFrame):
     def buildDB(cls):
         def patientLister(db=None):
             vcfspath = []
-            for dirpath, dirnames, filenames in os.walk(patientPath):
+            for dirpath, dirnames, filenames in os.walk(configuration.patientPath):
                 for filename in [
                     f for f in filenames if f.lower().endswith("final.vcf")
                 ]:
@@ -223,21 +223,27 @@ class VariantsDB(pd.DataFrame):
 
         try:
             logger.info("Checking DB File")
-            if variantsDBPath.rsplit(".")[-1].lower() == "xlsx":
-                db = VariantsDB.from_exceldb(variantsDBPath.rsplit("/", maxsplit=1)[0])
+            if configuration.variantsDBPath.rsplit(".")[-1].lower() == "xlsx":
+                db = VariantsDB.from_exceldb(
+                    configuration.variantsDBPath.rsplit("/", maxsplit=1)[0]
+                )
                 patientslist = patientLister(db)
-            elif variantsDBPath.rsplit(".")[-1].lower() == "csv":
-                db = VariantsDB.from_csvdb(variantsDBPath.rsplit("/", maxsplit=1)[0])
+            elif configuration.variantsDBPath.rsplit(".")[-1].lower() == "csv":
+                db = VariantsDB.from_csvdb(
+                    configuration.variantsDBPath.rsplit("/", maxsplit=1)[0]
+                )
                 patientslist = patientLister(db)
             else:
-                logger.error("VariantsDBPath must be a xlsx or csv file")
+                logger.error("configuration.variantsDBPath must be a xlsx or csv file")
                 exit(1)
         except Exception as e:
             logger.debug(str(e))
             exit()
         sublists = [
-            patientslist[i : i + int(cfg["GENERAL"]["cores"])]
-            for i in range(0, len(patientslist), int(cfg["GENERAL"]["cores"]))
+            patientslist[i : i + int(configuration.cfg["GENERAL"]["cores"])]
+            for i in range(
+                0, len(patientslist), int(configuration.cfg["GENERAL"]["cores"])
+            )
         ]
         for lista in sublists:
             db = dbbuilder(lista, db)
@@ -285,9 +291,11 @@ class VariantsDB(pd.DataFrame):
         self.reset_index(inplace=True)
         self["POS"] = self["POS"].astype(int)
         self.sort_values(["CHROM", "POS"], inplace=True)
-        os.makedirs(variantsDBPath.rsplit("/", maxsplit=1)[0], exist_ok=True)
-        vdbpath = variantsDBPath.rsplit(".", maxsplit=1)[0]
-        output = pd.ExcelWriter(variantsDBPath)
+        os.makedirs(
+            configuration.variantsDBPath.rsplit("/", maxsplit=1)[0], exist_ok=True
+        )
+        vdbpath = configuration.variantsDBPath.rsplit(".", maxsplit=1)[0]
+        output = pd.ExcelWriter(configuration.variantsDBPath)
         workbook = output.book
         datasheet = workbook.add_worksheet("VariantSDB")
         output.sheets["VariantsDB"] = datasheet
@@ -309,8 +317,10 @@ class VariantsDB(pd.DataFrame):
         self.reset_index(inplace=True)
         self["POS"] = self["POS"].astype(int)
         self.sort_values(["CHROM", "POS"], inplace=True)
-        vdbpath = variantsDBPath.rsplit(".", maxsplit=1)[0]
-        os.makedirs(variantsDBPath.rsplit("/", maxsplit=1)[0], exist_ok=True)
+        vdbpath = configuration.variantsDBPath.rsplit(".", maxsplit=1)[0]
+        os.makedirs(
+            configuration.variantsDBPath.rsplit("/", maxsplit=1)[0], exist_ok=True
+        )
         for chrom in self["CHROM"].unique():
             self[self["CHROM"] == chrom].to_csv(
                 vdbpath + str(chrom) + ".csv", index=False, float_format="%.5f"
@@ -358,7 +368,7 @@ class VariantsDB(pd.DataFrame):
         else:
             foldername = fileName.split(".")[0]
         outpath = (
-            patientPath
+            configuration.patientPath
             + foldername
             + "/"
             + fileName.rsplit(".", maxsplit=1)[0].replace(".annotated", "")
@@ -479,7 +489,7 @@ class VariantsDB(pd.DataFrame):
                 colgen = df.columns.to_list().index("GENE_NAME")
                 row = 2
                 for x in zip(df["RSID"], df["GENE_NAME"]):
-                    if type(x[0]) == str:
+                    if isinstance(x[0], str):
                         urlrs = "https://varsome.com/variant/hg19/%s"
                         rsvalue = (x[0].replace(";", ",").split(","))[0]
                         datasheet.write_url(
@@ -487,7 +497,7 @@ class VariantsDB(pd.DataFrame):
                             urlrs % rsvalue,
                             string=rsvalue,
                         )
-                    if type(x[1]) == str:
+                    if isinstance(x[1], str):
                         urlgen = "https://www.ncbi.nlm.nih.gov/omim/?term=%s"
                         datasheet.write_url(
                             "%s%i" % (chr(colgen + 65), (row)),

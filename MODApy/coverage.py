@@ -3,7 +3,7 @@ import multiprocessing as mp
 import subprocess
 import traceback
 
-from MODApy.cfg import cfg
+from MODApy.cfg import configuration
 
 import pandas as pd
 
@@ -60,7 +60,7 @@ def create_coverage_reports(file):
 
 
 def main(files, bedfile, panelfile=None):
-    pool = mp.Pool(processes=int(cfg["GENERAL"]["cores"]))
+    pool = mp.Pool(processes=int(configuration.cfg["GENERAL"]["cores"]))
     try:
         logger.info("Generating coverage on {}".format(files))
         r = pool.map_async(generate_coverage, files)

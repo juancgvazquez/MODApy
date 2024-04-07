@@ -2,9 +2,10 @@ import itertools
 import logging
 import multiprocessing as mp
 import os
+import re
 from collections import OrderedDict
 
-from MODApy.cfg import cfg
+from MODApy.cfg import configuration
 from MODApy.utils import aminoChange, divide
 
 import cyvcf2
@@ -181,9 +182,11 @@ class ParsedVCF(pd.DataFrame):
             for col in splitlist:
                 odd[col] = odd[col].astype(str).str.split(",", n=1).str[0]
                 even[col] = even[col].apply(
-                    lambda x: x
-                    if len(str(x).split(",")) <= 1
-                    else str(x).split(",", maxsplit=1)[1]
+                    lambda x: (
+                        x
+                        if len(str(x).split(",")) <= 1
+                        else str(x).split(",", maxsplit=1)[1]
+                    )
                 )
             splitdf = (
                 pd.concat([odd, even])
@@ -475,7 +478,9 @@ class ParsedVCF(pd.DataFrame):
         return df1
 
     @classmethod
-    def mp_parser(cls, *vcfs, cores=int(cfg["GENERAL"]["cores"]), prioritized=True):
+    def mp_parser(
+        cls, *vcfs, cores=int(configuration.cfg["GENERAL"]["cores"]), prioritized=True
+    ):
         """
         Parses multiple VCF files concurrently using multiprocessing.
 
@@ -776,12 +781,13 @@ class ParsedVCF(pd.DataFrame):
             suffixes=("_" + self.name, "_" + pvcf2.name),
             indicator=indicator,
         )
-
+        mergedVCF[indicator] = mergedVCF[indicator].astype(str)
         # columnas que deberían ser iguales y columnas que podrían ser distintas
+        name_to_match = f'_{self.name}\\b'
         difcols = [
             x.replace("_" + self.name, "")
             for x in mergedVCF.columns
-            if "_" + self.name in x
+            if re.search(name_to_match, x)
         ]
         eqcols = [
             x
@@ -829,7 +835,6 @@ class ParsedVCF(pd.DataFrame):
             names = ":".join([self.name, pvcf2.name])
             _duos_stats(mergedVCF, names)
             if VENNPLACE is not None:
-                print(VENNPLACE)
                 if VENNPLACE == "A":
                     mergedVCF = mergedVCF[mergedVCF["VENN"] == self.name]
                 elif VENNPLACE == "B":
@@ -871,7 +876,6 @@ class ParsedVCF(pd.DataFrame):
             )
             names = self.name + ":" + pvcf2.name
             _trios_stats(mergedVCF, names)
-
             if VENNPLACE is not None:
                 names = names.split(":")
                 if VENNPLACE == "A":
@@ -928,7 +932,9 @@ class ParsedVCF(pd.DataFrame):
                 "After running Duos/Trios, resulting Dataframe does not \
                     hold any variants"
             )
-            exit(1)
+            raise RuntimeError(
+                f"No variants found in the specified VennPlace {VENNPLACE}"
+            )
         mergedVCF.fillna(".", inplace=True)
         mergedVCF = mergedVCF.pipe(ParsedVCF)
         mergedVCF.name = ":".join([self.name, pvcf2.name])
@@ -1031,7 +1037,9 @@ class ParsedVCF(pd.DataFrame):
         os.makedirs(outpath.rsplit("/", maxsplit=1)[0], exist_ok=True)
         output = pd.ExcelWriter(outpath)
         self["VARSOME"] = ""
-        cols_selected = cfg["OUTPUT"]["columnsorder"].replace(",", " ").split()
+        cols_selected = (
+            configuration.cfg["OUTPUT"]["columnsorder"].replace(",", " ").split()
+        )
         if "VENN" in self.columns:
             if "ZIGOSITY" in cols_selected:
                 cols_selected += [x for x in self.columns if "ZIGOSITY" in x]
@@ -1133,7 +1141,7 @@ class ParsedVCF(pd.DataFrame):
                 colgen = cols_selected.index("GENE_NAME")
                 row = 2
                 for x in zip(self["RSID"], self["GENE_NAME"]):
-                    if type(x[0]) == str:
+                    if isinstance(x[0], str):
                         urlrs = "https://varsome.com/variant/hg19/%s"
                         rsvalue = (x[0].replace(";", ",").split(","))[0]
                         datasheet.write_url(
@@ -1141,7 +1149,7 @@ class ParsedVCF(pd.DataFrame):
                             urlrs % rsvalue,
                             string=rsvalue,
                         )
-                    if type(x[1]) == str:
+                    if isinstance(x[1], str):
                         urlgen = "https://www.ncbi.nlm.nih.gov/omim/?term=%s"
                         datasheet.write_url(
                             "%s%i" % (chr(colgen + 65), (row)),

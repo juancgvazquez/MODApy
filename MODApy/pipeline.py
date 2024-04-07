@@ -5,7 +5,7 @@ import shlex
 import shutil
 import subprocess
 
-from MODApy import cfg, vcfmgr
+from MODApy import configuration, vcfmgr
 
 import xmltodict
 
@@ -14,8 +14,8 @@ import yaml
 
 logger = logging.getLogger(__name__)
 logger2 = logging.getLogger("Pipeline Module")
-os.makedirs(cfg.rootDir + "/logs", exist_ok=True)
-hdlr = logging.FileHandler(cfg.rootDir + "/logs/pipe_run.log")
+os.makedirs(configuration.rootDir + "/logs", exist_ok=True)
+hdlr = logging.FileHandler(configuration.rootDir + "/logs/pipe_run.log")
 formatter = logging.Formatter("%(asctime)s %(name)-25s %(levelname)-8s %(message)s")
 hdlr.setFormatter(formatter)
 logger2.addHandler(hdlr)
@@ -85,10 +85,10 @@ class PipeStep(object):
         """
         Prints information about the step.
         """
-        print("Name:", self.name)
-        print("Command", self.command + self.version, self.subcommand, self.args)
-        print("Input File:", self.inputfile)
-        print("Output File:", self.outputfile)
+        logger.info("Name:", self.name)
+        logger.info("Command", self.command + self.version, self.subcommand, self.args)
+        logger.info("Input File:", self.inputfile)
+        logger.info("Output File:", self.outputfile)
 
 
 class Pipeline(object):
@@ -258,17 +258,28 @@ class Pipeline(object):
             logger2.info(self.steps)
             logger2.info("Nro de Pasos: %s" % str(len(self.steps)))
             patientname = fastq1.split("/")[-1].split(".")[0].split("_1")[0]
-            ref = cfg.referencesPath + self.reference + "/" + self.reference + ".fa"
+            ref = (
+                configuration.referencesPath
+                + self.reference
+                + "/"
+                + self.reference
+                + ".fa"
+            )
             pipedir = "".join(x for x in self.name if x.isalnum())
             if patientPath is None:
-                patientPath = cfg.patientPath
-            if cfg.testFlag:
+                patientPath = configuration.patientPath
+            if configuration.testFlag:
                 tmpdir = (
-                    cfg.testPath + "Pipelines/" + patientname + "/" + pipedir + "/tmp/"
+                    configuration.testPath
+                    + "Pipelines/"
+                    + patientname
+                    + "/"
+                    + pipedir
+                    + "/tmp/"
                 )
             else:
                 tmpdir = (
-                    cfg.resultsPath
+                    configuration.resultsPath
                     + "Pipelines/"
                     + patientname
                     + "/"
@@ -295,7 +306,7 @@ class Pipeline(object):
                 if first is True:
                     logger2.debug("First Step")
                     first = False
-                    if type(step.inputfile) == list:
+                    if isinstance(step.inputfile, list):
                         if any(
                             x in y
                             for y in [fastq1, fastq2]
@@ -304,19 +315,19 @@ class Pipeline(object):
                             if (fastq1 is not None) & (fastq2 is not None):
                                 inputfile = fastq1 + " " + fastq2
                             else:
-                                print(
+                                logger.warn(
                                     "WARNING: This pipeline was designed for Pair End \
                                     and you are running it as Single End"
                                 )
                                 inputfile = fastq1
-                    elif type(step.inputfile) == str:
+                    elif isinstance(step.inputfile, str):
                         if any(
                             x in y
                             for y in [fastq1]
                             for x in [".fastq", ".fastq.gz", ".fq", ".fq.gz"]
                         ):
                             if (fastq1 is not None) & (fastq2 is not None):
-                                print(
+                                logger.warn(
                                     "WARNING: This pipeline was designed for Single \
                                         End and you are running it as Pair End"
                                 )
@@ -326,7 +337,7 @@ class Pipeline(object):
                 # If it's not first step, input depends on output of previous
                 # step + patientname
                 else:
-                    if type(step.inputfile) == list:
+                    if isinstance(step.inputfile, str):
                         inputfile1 = step.inputfile[0].replace(
                             "patientname",
                             tmpdir + patientname + "/" + patientname,
@@ -336,12 +347,12 @@ class Pipeline(object):
                             tmpdir + patientname + "/" + patientname,
                         )
                         inputfile = inputfile1 + " " + inputfile2
-                    elif type(step.inputfile) == str:
+                    elif isinstance(step.inputfile, str):
                         inputfile = step.inputfile.replace(
                             "patientname", tmpdir + patientname
                         )
                 # replaces patient name in outputfiles
-                if type(step.outputfile) == str:
+                if isinstance(step.outputfile, str):
                     outputfile = step.outputfile.replace(
                         "patientname", tmpdir + patientname
                     )
@@ -359,7 +370,7 @@ class Pipeline(object):
                 if any(javacmd in step.command for javacmd in javacmds):
                     cmd = (
                         "java -jar -Xmx12G -Djava.io.tmpdir=%s " % "~/.tmp"
-                        + cfg.binPath
+                        + configuration.binPath
                         + step.command
                         + "/"
                         + step.command
@@ -370,7 +381,7 @@ class Pipeline(object):
                     )
                 else:
                     cmd = (
-                        cfg.binPath
+                        configuration.binPath
                         + step.command
                         + "/"
                         + step.command
@@ -383,13 +394,13 @@ class Pipeline(object):
                     cmdstr = cmd + " " + args + " " + inputfile + " " + outputfile
                 else:
                     cmdstr = cmd + " " + args + " " + " " + inputfile + " " + outputfile
-                    print(cmd)
+                    logger.info(f"Command is: {cmd}")
                 cmd = shlex.split(cmdstr)
 
                 logging.info("Subprocess: " + cmdstr)
                 logger2.info("Subprocess: " + cmdstr)
                 stdcmds = ["bwa", "bedtools", "snpEff", "SnpSift"]
-                print(cmd)
+                logger.info(f"Command is: {cmd}")
                 try:
                     if any(stdcmd in s for s in cmd for stdcmd in stdcmds):
                         output = cmd[-1]
@@ -445,16 +456,18 @@ class Pipeline(object):
                 else:
                     logging.info("Subprocess finished")
                     logger2.info("Subprocess finished")
-            if cfg.testFlag:
+            if configuration.testFlag:
                 if os.path.exists(tmpdir + patientname + "_MODApy.final.vcf"):
                     file = (
-                        cfg.testPath
+                        configuration.testPath
                         + patientname
                         + "_MODApy/"
                         + patientname
                         + "_MODApy.final.vcf"
                     )
-                    os.makedirs(cfg.testPath + patientname + "_MODApy", exist_ok=True)
+                    os.makedirs(
+                        configuration.testPath + patientname + "_MODApy", exist_ok=True
+                    )
                     shutil.move(tmpdir + patientname + "_MODApy.final.vcf", file)
                     logger2.info("Parsing final VCF file")
                     logging.info("Parsing final VCF file")
@@ -464,7 +477,7 @@ class Pipeline(object):
                 if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bam"):
                     shutil.move(
                         tmpdir + patientname + "_realigned_reads_recal.bam",
-                        cfg.testPath
+                        configuration.testPath
                         + patientname
                         + "_MODApy/"
                         + patientname
@@ -473,7 +486,7 @@ class Pipeline(object):
                 if os.path.exists(tmpdir + patientname + "_realigned_reads_recal.bai"):
                     shutil.move(
                         tmpdir + patientname + "_realigned_reads_recal.bai",
-                        cfg.testPath
+                        configuration.testPath
                         + patientname
                         + "_MODApy/"
                         + patientname
@@ -527,9 +540,9 @@ class Pipeline(object):
         """
         Method to print Pipeline Info
         """
-        print("Name:", self.name)
-        print("Reference:", self.reference)
-        print("URL:", self.url)
-        print("Description:", self.description)
-        print("Additional Files Required:", self.required_files)
-        print("Steps:", self.steps)
+        logger.info("Name:", self.name)
+        logger.info("Reference:", self.reference)
+        logger.info("URL:", self.url)
+        logger.info("Description:", self.description)
+        logger.info("Additional Files Required:", self.required_files)
+        logger.info("Steps:", self.steps)
