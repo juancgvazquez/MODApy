@@ -457,22 +457,24 @@ class ParsedVCF(pd.DataFrame):
             df["POS"] = df["POS"].astype(int)
             return df
 
-        print(f"Reading {vcf}...")
+        logger.info(f"Reading {vcf}...")
         df1, name, pVCF = read_vcf(vcf)
-        print(f"Splitting alternate alleles for {name}...")
+        logger.info(f"Splitting alternate alleles for {name}...")
         df1 = split_alternate_alleles(df1)
-        print(f"Handling annotations for {name}...")
+        logger.info(f"Handling annotations for {name}...")
         df1 = handle_annotations(df1, pVCF)
         if prioritized is True:
-            print(f"Prioritizing variants for {name}...")
+            logger.info(f"Prioritizing variants for {name}...")
             df1 = prioritize_variants(df1)
         elif isinstance(prioritized, dict):
-            print(f"Prioritizing variants for {name}...")
+            logger.info(
+                f"Prioritizing variants for {name}... with custom prioritization {prioritized}"
+            )
             df1 = prioritize_variants(df1, prioritized)
         df1 = format_ann_columns(df1, pVCF)
-        print(f"Formatting ANN columns for {name}...")
+        logger.info(f"Formatting ANN columns for {name}...")
         df1 = clean_df(df1)
-        print(f"Cleaning DataFrame for {name}...")
+        logger.info(f"Cleaning DataFrame for {name}...")
         df1 = df1.pipe(ParsedVCF)
         df1.name = name
         return df1
@@ -1143,7 +1145,15 @@ class ParsedVCF(pd.DataFrame):
                 for x in zip(self["RSID"], self["GENE_NAME"]):
                     if isinstance(x[0], str):
                         urlrs = "https://varsome.com/variant/hg19/%s"
-                        rsvalue = (x[0].replace(";", ",").split(","))[0]
+                        for rs in x[0].replace(";", ",").split(","):
+                            if rs.startswith("rs"):
+                                rsvalue = rs
+                                break
+                            elif rs.isdigit():
+                                rsvalue = rs
+                                break
+                            else:
+                                rsvalue = "."
                         datasheet.write_url(
                             "%s%i" % (chr(colid + 65), (row)),
                             urlrs % rsvalue,
