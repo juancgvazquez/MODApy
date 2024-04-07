@@ -1,7 +1,7 @@
 import logging
 import os
 
-from MODApy import cfg, vcfmgr
+from MODApy import configuration, vcfmgr
 from MODApy.utils import checkFile
 
 
@@ -15,7 +15,7 @@ def single(patient, panel):
         logger.info("Running %s on patient %s" % (str(panel), str(patient)))
         result = vcfmgr.ParsedVCF.from_vcf(patient).panel(panel)
         outpath = (
-            cfg.patientPath
+            configuration.patientPath
             + result.name
             + "/Panels/"
             + result.name
@@ -31,10 +31,10 @@ def single(patient, panel):
     except Exception as err:
         logger.error("Single analysis Failed")
         logger.debug(f"Error was: {err}", exc_info=True)
-        raise Exception
+        raise RuntimeError("Single analysis Failed")
 
 
-def duos(patient1, patient2, VennPlace=None, Panel=None, Filter=None):
+def duos(patient1, patient2, VennPlace=None, Panel=None, Filter=[None]):
     try:
         checkFile(patient1, ".vcf")
         checkFile(patient2, ".vcf")
@@ -43,7 +43,7 @@ def duos(patient1, patient2, VennPlace=None, Panel=None, Filter=None):
         result = pvcfs[0].duos(pvcfs[1], VENNPLACE=VennPlace)
         resultname = result.name
         outpath = (
-            cfg.resultsPath
+            configuration.resultsPath
             + "Duos/"
             + result.name.replace(":", "_")
             + "/"
@@ -80,13 +80,14 @@ def duos(patient1, patient2, VennPlace=None, Panel=None, Filter=None):
         result.vcf_to_excel(outpath)
         logger.info("Duos Analisis Complete")
         logger.info("File available at:%s" % outpath)
+        return outpath
     except Exception as err:
         logger.error("Duos Analisis Failed")
         logger.debug(f"Error was: {err}", exc_info=True)
-        raise Exception
+        raise RuntimeError("Duos Analisis Failed")
 
 
-def trios(patient1, patient2, patient3, VennPlace=None, Filter=None, Panel=None):
+def trios(patient1, patient2, patient3, VennPlace=None, Filter=[None], Panel=None):
     try:
         checkFile(patient1, ".vcf")
         checkFile(patient2, ".vcf")
@@ -99,7 +100,7 @@ def trios(patient1, patient2, patient3, VennPlace=None, Filter=None, Panel=None)
         result = pvcfs[0].duos(pvcfs[1]).duos(pvcfs[2], VENNPLACE=VennPlace)
         resultname = result.name
         outpath = (
-            cfg.resultsPath
+            configuration.resultsPath
             + "Trios/"
             + result.name.replace(":", "_")
             + "/"
@@ -137,7 +138,8 @@ def trios(patient1, patient2, patient3, VennPlace=None, Filter=None, Panel=None)
         result.vcf_to_excel(outpath)
         logger.info("Trios Analisis Complete")
         logger.info("File available at:%s" % outpath)
+        return outpath
     except Exception as err:
         logger.error("Trios Analisis Failed")
         logger.debug(f"Error was: {err}", exc_info=True)
-        raise Exception
+        raise RuntimeError("Trios Analisis Failed")

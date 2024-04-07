@@ -1,0 +1,255 @@
+##fileformat=VCFv4.1
+##ALT=<ID=*:DEL,Description="Represents any possible spanning deletion allele at this location">
+##ALT=<ID=NON_REF,Description="Represents any possible alternative allele at this location">
+##FILTER=<ID=LowQual,Description="Low quality">
+##FILTER=<ID=MG_INDEL_Filter,Description="QD < 2.0  ||  FS > 200.0  ||  ReadPosRankSum < -20.0">
+##FILTER=<ID=MG_SNP_Filter,Description="QD < 2.0  || FS > 60.0 || MQ < 40.0 ||  MQRankSum < -12.5  ||  ReadPosRankSum < -8.0">
+##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=MIN_DP,Number=1,Type=Integer,Description="Minimum DP observed within the GVCF block">
+##FORMAT=<ID=PGT,Number=1,Type=String,Description="Physical phasing haplotype information, describing how the alternate alleles are phased in relation to one another">
+##FORMAT=<ID=PID,Number=1,Type=String,Description="Physical phasing ID information, where each unique ID within a given sample (but not across samples) connects records within a phasing group">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=RGQ,Number=1,Type=Integer,Description="Unconditional reference genotype confidence, encoded as a phred quality -10*log10 p(genotype call is wrong)">
+##FORMAT=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">
+##GVCFBlock0-1=minGQ=0(inclusive),maxGQ=1(exclusive)
+##GVCFBlock1-2=minGQ=1(inclusive),maxGQ=2(exclusive)
+##GVCFBlock10-11=minGQ=10(inclusive),maxGQ=11(exclusive)
+##GVCFBlock11-12=minGQ=11(inclusive),maxGQ=12(exclusive)
+##GVCFBlock12-13=minGQ=12(inclusive),maxGQ=13(exclusive)
+##GVCFBlock13-14=minGQ=13(inclusive),maxGQ=14(exclusive)
+##GVCFBlock14-15=minGQ=14(inclusive),maxGQ=15(exclusive)
+##GVCFBlock15-16=minGQ=15(inclusive),maxGQ=16(exclusive)
+##GVCFBlock16-17=minGQ=16(inclusive),maxGQ=17(exclusive)
+##GVCFBlock17-18=minGQ=17(inclusive),maxGQ=18(exclusive)
+##GVCFBlock18-19=minGQ=18(inclusive),maxGQ=19(exclusive)
+##GVCFBlock19-20=minGQ=19(inclusive),maxGQ=20(exclusive)
+##GVCFBlock2-3=minGQ=2(inclusive),maxGQ=3(exclusive)
+##GVCFBlock20-21=minGQ=20(inclusive),maxGQ=21(exclusive)
+##GVCFBlock21-22=minGQ=21(inclusive),maxGQ=22(exclusive)
+##GVCFBlock22-23=minGQ=22(inclusive),maxGQ=23(exclusive)
+##GVCFBlock23-24=minGQ=23(inclusive),maxGQ=24(exclusive)
+##GVCFBlock24-25=minGQ=24(inclusive),maxGQ=25(exclusive)
+##GVCFBlock25-26=minGQ=25(inclusive),maxGQ=26(exclusive)
+##GVCFBlock26-27=minGQ=26(inclusive),maxGQ=27(exclusive)
+##GVCFBlock27-28=minGQ=27(inclusive),maxGQ=28(exclusive)
+##GVCFBlock28-29=minGQ=28(inclusive),maxGQ=29(exclusive)
+##GVCFBlock29-30=minGQ=29(inclusive),maxGQ=30(exclusive)
+##GVCFBlock3-4=minGQ=3(inclusive),maxGQ=4(exclusive)
+##GVCFBlock30-31=minGQ=30(inclusive),maxGQ=31(exclusive)
+##GVCFBlock31-32=minGQ=31(inclusive),maxGQ=32(exclusive)
+##GVCFBlock32-33=minGQ=32(inclusive),maxGQ=33(exclusive)
+##GVCFBlock33-34=minGQ=33(inclusive),maxGQ=34(exclusive)
+##GVCFBlock34-35=minGQ=34(inclusive),maxGQ=35(exclusive)
+##GVCFBlock35-36=minGQ=35(inclusive),maxGQ=36(exclusive)
+##GVCFBlock36-37=minGQ=36(inclusive),maxGQ=37(exclusive)
+##GVCFBlock37-38=minGQ=37(inclusive),maxGQ=38(exclusive)
+##GVCFBlock38-39=minGQ=38(inclusive),maxGQ=39(exclusive)
+##GVCFBlock39-40=minGQ=39(inclusive),maxGQ=40(exclusive)
+##GVCFBlock4-5=minGQ=4(inclusive),maxGQ=5(exclusive)
+##GVCFBlock40-41=minGQ=40(inclusive),maxGQ=41(exclusive)
+##GVCFBlock41-42=minGQ=41(inclusive),maxGQ=42(exclusive)
+##GVCFBlock42-43=minGQ=42(inclusive),maxGQ=43(exclusive)
+##GVCFBlock43-44=minGQ=43(inclusive),maxGQ=44(exclusive)
+##GVCFBlock44-45=minGQ=44(inclusive),maxGQ=45(exclusive)
+##GVCFBlock45-46=minGQ=45(inclusive),maxGQ=46(exclusive)
+##GVCFBlock46-47=minGQ=46(inclusive),maxGQ=47(exclusive)
+##GVCFBlock47-48=minGQ=47(inclusive),maxGQ=48(exclusive)
+##GVCFBlock48-49=minGQ=48(inclusive),maxGQ=49(exclusive)
+##GVCFBlock49-50=minGQ=49(inclusive),maxGQ=50(exclusive)
+##GVCFBlock5-6=minGQ=5(inclusive),maxGQ=6(exclusive)
+##GVCFBlock50-51=minGQ=50(inclusive),maxGQ=51(exclusive)
+##GVCFBlock51-52=minGQ=51(inclusive),maxGQ=52(exclusive)
+##GVCFBlock52-53=minGQ=52(inclusive),maxGQ=53(exclusive)
+##GVCFBlock53-54=minGQ=53(inclusive),maxGQ=54(exclusive)
+##GVCFBlock54-55=minGQ=54(inclusive),maxGQ=55(exclusive)
+##GVCFBlock55-56=minGQ=55(inclusive),maxGQ=56(exclusive)
+##GVCFBlock56-57=minGQ=56(inclusive),maxGQ=57(exclusive)
+##GVCFBlock57-58=minGQ=57(inclusive),maxGQ=58(exclusive)
+##GVCFBlock58-59=minGQ=58(inclusive),maxGQ=59(exclusive)
+##GVCFBlock59-60=minGQ=59(inclusive),maxGQ=60(exclusive)
+##GVCFBlock6-7=minGQ=6(inclusive),maxGQ=7(exclusive)
+##GVCFBlock60-70=minGQ=60(inclusive),maxGQ=70(exclusive)
+##GVCFBlock7-8=minGQ=7(inclusive),maxGQ=8(exclusive)
+##GVCFBlock70-80=minGQ=70(inclusive),maxGQ=80(exclusive)
+##GVCFBlock8-9=minGQ=8(inclusive),maxGQ=9(exclusive)
+##GVCFBlock80-90=minGQ=80(inclusive),maxGQ=90(exclusive)
+##GVCFBlock9-10=minGQ=9(inclusive),maxGQ=10(exclusive)
+##GVCFBlock90-99=minGQ=90(inclusive),maxGQ=99(exclusive)
+##GVCFBlock99-2147483647=minGQ=99(inclusive),maxGQ=2147483647(exclusive)
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##INFO=<ID=SAMPLES_AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=BaseQRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt Vs. Ref base qualities">
+##INFO=<ID=ClippingRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref number of hard clipped bases">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth; some reads may have been filtered">
+##INFO=<ID=DS,Number=0,Type=Flag,Description="Were any of the samples downsampled?">
+##INFO=<ID=END,Number=1,Type=Integer,Description="Stop position of the interval">
+##INFO=<ID=FS,Number=1,Type=Float,Description="Phred-scaled p-value using Fisher's exact test to detect strand bias">
+##INFO=<ID=HaplotypeScore,Number=1,Type=Float,Description="Consistency of the site with at most two segregating haplotypes">
+##INFO=<ID=InbreedingCoeff,Number=1,Type=Float,Description="Inbreeding coefficient as estimated from the genotype likelihoods per-sample when compared against the Hardy-Weinberg expectation">
+##INFO=<ID=MLEAC,Number=A,Type=Integer,Description="Maximum likelihood expectation (MLE) for the allele counts (not necessarily the same as the AC), for each ALT allele, in the same order as listed">
+##INFO=<ID=MLEAF,Number=A,Type=Float,Description="Maximum likelihood expectation (MLE) for the allele frequency (not necessarily the same as the AF), for each ALT allele, in the same order as listed">
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=MQRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities">
+##INFO=<ID=QD,Number=1,Type=Float,Description="Variant Confidence/Quality by Depth">
+##INFO=<ID=ReadPosRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias">
+##INFO=<ID=SOR,Number=1,Type=Float,Description="Symmetric Odds Ratio of 2x2 contingency table to detect strand bias">
+##INFO=<ID=set,Number=1,Type=String,Description="Source VCF for the merged record in CombineVariants">
+##contig=<ID=chr1,length=249250621,assembly=hg19>
+##reference=file:///ruby/Tools/chul/ExomePipeline/reference/ucsc.hg19.fasta
+##source=SelectVariants
+##SnpSiftVersion="SnpSift 4.1g (build 2015-05-17), by Pablo Cingolani"
+##SnpSiftCmd="SnpSift varType - -"
+##INFO=<ID=VARTYPE,Number=A,Type=Flag,Description="Variant types {SNP,MNP,INS,DEL,Mixed}">
+##INFO=<ID=SNP,Number=0,Type=Flag,Description="Variant is a SNP">
+##INFO=<ID=MNP,Number=0,Type=Flag,Description="Variant is an MNP">
+##INFO=<ID=INS,Number=0,Type=Flag,Description="Variant is an insertion">
+##INFO=<ID=DEL,Number=0,Type=Flag,Description="Variant is an deletion">
+##INFO=<ID=MIXED,Number=0,Type=Flag,Description="Variant is mixture of INS/DEL/SNP/MNP">
+##INFO=<ID=HOM,Number=0,Type=Flag,Description="Variant is homozygous">
+##INFO=<ID=HET,Number=0,Type=Flag,Description="Variant is heterozygous">
+##SnpSiftVersion="SnpSift 4.1g (build 2015-05-17), by Pablo Cingolani"
+##SnpSiftCmd="SnpSift annotate /ruby/Tools/chul/AnnoDB/hg19/dbSNP/00-All.vcf.gz - -info dbSNPBuildID"
+##INFO=<ID=dbSNPBuildID,Number=1,Type=Integer,Description="First dbSNP Build for RS">
+##SnpEffVersion="4.1g (build 2015-05-17), by Pablo Cingolani"
+##SnpEffCmd="SnpEff  hg19 -lof - "
+##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO' ">
+##INFO=<ID=LOF,Number=.,Type=String,Description="Predicted loss of function effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected' ">
+##INFO=<ID=NMD,Number=.,Type=String,Description="Predicted nonsense mediated decay effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected' ">
+##SnpSiftCmd="SnpSift annotate -name 1000Gp3_ /ruby/Tools/chul/AnnoDB/hg19/1KG/1kg.vcf.gz /ruby/Analysis/BI/Exome/1703KHF-0077/Analysis/TEST/VARIANT/in.vcf"
+##INFO=<ID=1000Gp3_VT,Number=.,Type=String,Description="indicates what type of variant the line represents">
+##INFO=<ID=1000Gp3_AMR_AF,Number=A,Type=Float,Description="Allele frequency in the AMR populations calculated from AC and AN, in the range (0,1)">
+##INFO=<ID=1000Gp3_IMPRECISE,Number=0,Type=Flag,Description="Imprecise structural variation">
+##INFO=<ID=1000Gp3_DP,Number=1,Type=Integer,Description="Total read depth; only low coverage data were counted towards the DP, exome data were not used">
+##INFO=<ID=1000Gp3_MC,Number=.,Type=String,Description="Merged calls.">
+##INFO=<ID=1000Gp3_EAS_AF,Number=A,Type=Float,Description="Allele frequency in the EAS populations calculated from AC and AN, in the range (0,1)">
+##INFO=<ID=1000Gp3_EUR_AF,Number=A,Type=Float,Description="Allele frequency in the EUR populations calculated from AC and AN, in the range (0,1)">
+##INFO=<ID=1000Gp3_MEINFO,Number=4,Type=String,Description="Mobile element info of the form NAME,START,END<POLARITY; If there is only 5' OR 3' support for this call, will be NULL NULL for START and END">
+##INFO=<ID=1000Gp3_SVLEN,Number=.,Type=Integer,Description="SV length. It is only calculated for structural variation MEIs. For other types of SVs, one may calculate the SV length by INFO:END-START+1, or by finding the difference between lengthes of REF and ALT alleles">
+##INFO=<ID=1000Gp3_EX_TARGET,Number=0,Type=Flag,Description="indicates whether a variant is within the exon pull down target boundaries">
+##INFO=<ID=1000Gp3_NS,Number=1,Type=Integer,Description="Number of samples with data">
+##INFO=<ID=1000Gp3_TSD,Number=1,Type=String,Description="Precise Target Site Duplication for bases, if unknown, value will be NULL">
+##INFO=<ID=1000Gp3_MSTART,Number=1,Type=Integer,Description="Mitochondrial start coordinate of inserted sequence">
+##INFO=<ID=1000Gp3_CIPOS,Number=2,Type=Integer,Description="Confidence interval around POS for imprecise variants">
+##INFO=<ID=1000Gp3_END,Number=1,Type=Integer,Description="End coordinate of this variant">
+##INFO=<ID=1000Gp3_AC,Number=A,Type=Integer,Description="Total number of alternate alleles in called genotypes">
+##INFO=<ID=1000Gp3_AA,Number=1,Type=String,Description="Ancestral Allele. Format: AA|REF|ALT|IndelType. AA: Ancestral allele, REF:Reference Allele, ALT:Alternate Allele, IndelType:Type of Indel (REF, ALT and IndelType are only defined for indels)">
+##INFO=<ID=1000Gp3_AF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1)">
+##INFO=<ID=1000Gp3_AFR_AF,Number=A,Type=Float,Description="Allele frequency in the AFR populations calculated from AC and AN, in the range (0,1)">
+##INFO=<ID=1000Gp3_MULTI_ALLELIC,Number=0,Type=Flag,Description="indicates whether a site is multi-allelic">
+##INFO=<ID=1000Gp3_AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=1000Gp3_CIEND,Number=2,Type=Integer,Description="Confidence interval around END for imprecise variants">
+##INFO=<ID=1000Gp3_MLEN,Number=1,Type=Integer,Description="Estimated length of mitochondrial insert">
+##INFO=<ID=1000Gp3_MEND,Number=1,Type=Integer,Description="Mitochondrial end coordinate of inserted sequence">
+##INFO=<ID=1000Gp3_CS,Number=1,Type=String,Description="Source call set.">
+##INFO=<ID=1000Gp3_SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=1000Gp3_SAS_AF,Number=A,Type=Float,Description="Allele frequency in the SAS populations calculated from AC and AN, in the range (0,1)">
+##SnpSiftCmd="SnpSift annotate -name ESP6500_ /ruby/Tools/chul/AnnoDB/hg19/ESP6500/ESP6500.vcf.gz /ruby/Analysis/BI/Exome/1703KHF-0077/Analysis/TEST/VARIANT/in.vcf"
+##INFO=<ID=ESP6500_EXOME_CHIP,Number=.,Type=String,Description="Whether a SNP is on the Illumina HumanExome Chip">
+##INFO=<ID=ESP6500_DP,Number=1,Type=Integer,Description="Average Sample Read Depth">
+##INFO=<ID=ESP6500_HGVS_CDNA_VAR,Number=.,Type=String,Description="HGVS Coding DNA Variant">
+##INFO=<ID=ESP6500_AA_AGE,Number=.,Type=String,Description="Esitmated Variant Age in kilo years for the African American Population">
+##INFO=<ID=ESP6500_DBSNP,Number=.,Type=String,Description="dbSNP version which established the rs_id">
+##INFO=<ID=ESP6500_EA_GTC,Number=.,Type=String,Description="European American Genotype Counts in the order of listed GTS">
+##INFO=<ID=ESP6500_FG,Number=.,Type=String,Description="functionGVS">
+##INFO=<ID=ESP6500_GTS,Number=.,Type=String,Description="Observed Genotypes. For INDELs, A1, A2, or An refers to the N-th alternate allele while R refers to the reference allele.">
+##INFO=<ID=ESP6500_GS,Number=.,Type=String,Description="granthamScore">
+##INFO=<ID=ESP6500_PH,Number=.,Type=String,Description="polyPhen2 result including prediction class and score">
+##INFO=<ID=ESP6500_CDS_SIZES,Number=.,Type=String,Description="Coding DNA Sizes">
+##INFO=<ID=ESP6500_GL,Number=.,Type=String,Description="geneList">
+##INFO=<ID=ESP6500_GTC,Number=.,Type=String,Description="Total Genotype Counts in the order of listed GTS">
+##INFO=<ID=ESP6500_EA_AGE,Number=.,Type=String,Description="Esitmated Variant Age in kilo years for the European American Population">
+##INFO=<ID=ESP6500_AA_AC,Number=.,Type=String,Description="African American Allele Count in the order of AltAlleles,RefAllele. For INDELs, A1, A2, or An refers to the N-th alternate allele while R refers to the reference allele.">
+##INFO=<ID=ESP6500_HGVS_PROTEIN_VAR,Number=.,Type=String,Description="HGVS Protein Variant">
+##INFO=<ID=ESP6500_AA,Number=1,Type=String,Description="chimpAllele">
+##INFO=<ID=ESP6500_GWAS_PUBMED,Number=.,Type=String,Description="PubMed records for GWAS hits">
+##INFO=<ID=ESP6500_GRCh38_POSITION,Number=.,Type=String,Description="GRCh38 chromosomal postion liftover from the original GRCh37 chromosomal position. A value of -1 means the GRCh37 position can not be mapped to the GRCh38 build.">
+##INFO=<ID=ESP6500_CA,Number=.,Type=String,Description="clinicalAssociation">
+##INFO=<ID=ESP6500_EA_AC,Number=.,Type=String,Description="European American Allele Count in the order of AltAlleles,RefAllele. For INDELs, A1, A2, or An refers to the N-th alternate allele while R refers to the reference allele.">
+##INFO=<ID=ESP6500_TAC,Number=.,Type=String,Description="Total Allele Count in the order of AltAlleles,RefAllele For INDELs, A1, A2, or An refers to the N-th alternate allele while R refers to the reference allele.">
+##INFO=<ID=ESP6500_MAF,Number=.,Type=String,Description="Minor Allele Frequency in percent in the order of EA,AA,All">
+##INFO=<ID=ESP6500_AA_GTC,Number=.,Type=String,Description="African American Genotype Counts in the order of listed GTS">
+##INFO=<ID=ESP6500_CG,Number=1,Type=Float,Description="consScoreGERP">
+##INFO=<ID=ESP6500_CP,Number=1,Type=Float,Description="scorePhastCons">
+##SnpSiftCmd="SnpSift annotate -name CLINVAR_ /ruby/Tools/chul/AnnoDB/hg19/clinvar/clinvar.vcf.gz /ruby/Analysis/BI/Exome/1703KHF-0077/Analysis/TEST/VARIANT/in.vcf"
+##INFO=<ID=CLINVAR_CLNDSDBID,Number=.,Type=String,Description="Variant disease database ID">
+##INFO=<ID=CLINVAR_VP,Number=1,Type=String,Description="Variation Property.  Documentation is at ftp://ftp.ncbi.nlm.nih.gov/snp/specs/dbSNP_BitField_latest.pdf">
+##INFO=<ID=CLINVAR_NOC,Number=0,Type=Flag,Description="Contig allele not present in variant allele list. The reference sequence allele at the mapped position is not present in the variant allele list, adjusted for orientation.">
+##INFO=<ID=CLINVAR_VLD,Number=0,Type=Flag,Description="Is Validated.  This bit is set if the variant has 2+ minor allele count based on frequency or genotype data.">
+##INFO=<ID=CLINVAR_NOV,Number=0,Type=Flag,Description="Rs cluster has non-overlapping allele sets. True when rs set has more than 2 alleles from different submissions and these sets share no alleles in common.">
+##INFO=<ID=CLINVAR_G5A,Number=0,Type=Flag,Description=">5% minor allele frequency in each and all populations">
+##INFO=<ID=CLINVAR_SYN,Number=0,Type=Flag,Description="Has synonymous A coding region variation where one allele in the set does not change the encoded amino acid. FxnCode = 3">
+##INFO=<ID=CLINVAR_VC,Number=1,Type=String,Description="Variation Class">
+##INFO=<ID=CLINVAR_CFL,Number=0,Type=Flag,Description="Has Assembly conflict. This is for weight 1 and 2 variant that maps to different chromosomes on different assemblies.">
+##INFO=<ID=CLINVAR_COMMON,Number=1,Type=Integer,Description="RS is a common SNP.  A common SNP is one that has at least one 1000Genomes population with a minor allele of frequency >= 1% and for which 2 or more founders contribute to that minor allele frequency.">
+##INFO=<ID=CLINVAR_GNO,Number=0,Type=Flag,Description="Genotypes available. The variant has individual genotype (in SubInd table).">
+##INFO=<ID=CLINVAR_CLNACC,Number=.,Type=String,Description="Variant Accession and Versions">
+##INFO=<ID=CLINVAR_DSS,Number=0,Type=Flag,Description="In donor splice-site FxnCode = 75">
+##INFO=<ID=CLINVAR_U5,Number=0,Type=Flag,Description="In 5' UTR Location is in an untranslated region (UTR). FxnCode = 55">
+##INFO=<ID=CLINVAR_OTH,Number=0,Type=Flag,Description="Has other variant with exactly the same set of mapped positions on NCBI refernce assembly.">
+##INFO=<ID=CLINVAR_ASP,Number=0,Type=Flag,Description="Is Assembly specific. This is set if the variant only maps to one assembly">
+##INFO=<ID=CLINVAR_CLNDBN,Number=.,Type=String,Description="Variant disease name">
+##INFO=<ID=CLINVAR_OM,Number=0,Type=Flag,Description="Has OMIM/OMIA">
+##INFO=<ID=CLINVAR_SAO,Number=1,Type=Integer,Description="Variant Allele Origin: 0 - unspecified, 1 - Germline, 2 - Somatic, 3 - Both">
+##INFO=<ID=CLINVAR_MUT,Number=0,Type=Flag,Description="Is mutation (journal citation, explicit fact): a low frequency variation that is cited in journal and other reputable sources">
+##INFO=<ID=CLINVAR_G5,Number=0,Type=Flag,Description=">5% minor allele frequency in 1+ populations">
+##INFO=<ID=CLINVAR_INT,Number=0,Type=Flag,Description="In Intron FxnCode = 6">
+##INFO=<ID=CLINVAR_CDA,Number=0,Type=Flag,Description="Variation is interrogated in a clinical diagnostic assay">
+##INFO=<ID=CLINVAR_KGPhase1,Number=0,Type=Flag,Description="1000 Genome phase 1 (incl. June Interim phase 1)">
+##INFO=<ID=CLINVAR_CLNDSDB,Number=.,Type=String,Description="Variant disease database name">
+##INFO=<ID=CLINVAR_KGPhase3,Number=0,Type=Flag,Description="1000 Genome phase 3">
+##INFO=<ID=CLINVAR_HD,Number=0,Type=Flag,Description="Marker is on high density genotyping kit (50K density or greater).  The variant may have phenotype associations present in dbGaP.">
+##INFO=<ID=CLINVAR_dbSNPBuildID,Number=1,Type=Integer,Description="First dbSNP Build for RS">
+##INFO=<ID=CLINVAR_PM,Number=0,Type=Flag,Description="Variant is Precious(Clinical,Pubmed Cited)">
+##INFO=<ID=CLINVAR_ASS,Number=0,Type=Flag,Description="In acceptor splice site FxnCode = 73">
+##INFO=<ID=CLINVAR_CLNHGVS,Number=.,Type=String,Description="Variant names from HGVS.    The order of these variants corresponds to the order of the info in the other clinical  INFO tags.">
+##INFO=<ID=CLINVAR_MTP,Number=0,Type=Flag,Description="Microattribution/third-party annotation(TPA:GWAS,PAGE)">
+##INFO=<ID=CLINVAR_SSR,Number=1,Type=Integer,Description="Variant Suspect Reason Codes (may be more than one value added together) 0 - unspecified, 1 - Paralog, 2 - byEST, 4 - oldAlign, 8 - Para_EST, 16 - 1kg_failed, 1024 - other">
+##INFO=<ID=CLINVAR_CLNALLE,Number=.,Type=Integer,Description="Variant alleles from REF or ALT columns.  0 is REF, 1 is the first ALT allele, etc.  This is used to match alleles with other corresponding clinical (CLN) INFO tags.  A value of -1 indicates that no allele was found to match a corresponding HGVS allele name.">
+##INFO=<ID=CLINVAR_CLNSRCID,Number=.,Type=String,Description="Variant Clinical Channel IDs">
+##INFO=<ID=CLINVAR_CAF,Number=.,Type=String,Description="An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter">
+##INFO=<ID=CLINVAR_S3D,Number=0,Type=Flag,Description="Has 3D structure - SNP3D table">
+##INFO=<ID=CLINVAR_TPA,Number=0,Type=Flag,Description="Provisional Third Party Annotation(TPA) (currently rs from PHARMGKB who will give phenotype data)">
+##INFO=<ID=CLINVAR_SLO,Number=0,Type=Flag,Description="Has SubmitterLinkOut - From SNP->SubSNP->Batch.link_out">
+##INFO=<ID=CLINVAR_R5,Number=0,Type=Flag,Description="In 5' gene region FxnCode = 15">
+##INFO=<ID=CLINVAR_NSN,Number=0,Type=Flag,Description="Has non-synonymous nonsense A coding region variation where one allele in the set changes to STOP codon (TER). FxnClass = 41">
+##INFO=<ID=CLINVAR_R3,Number=0,Type=Flag,Description="In 3' gene region FxnCode = 13">
+##INFO=<ID=CLINVAR_NSM,Number=0,Type=Flag,Description="Has non-synonymous missense A coding region variation where one allele in the set changes protein peptide. FxnClass = 42">
+##INFO=<ID=CLINVAR_CLNSRC,Number=.,Type=String,Description="Variant Clinical Chanels">
+##INFO=<ID=CLINVAR_NSF,Number=0,Type=Flag,Description="Has non-synonymous frameshift A coding region variation where one allele in the set changes all downstream amino acids. FxnClass = 44">
+##INFO=<ID=CLINVAR_WTD,Number=0,Type=Flag,Description="Is Withdrawn by submitter If one member ss is withdrawn by submitter, then this bit is set.  If all member ss' are withdrawn, then the rs is deleted to SNPHistory">
+##INFO=<ID=CLINVAR_CLNORIGIN,Number=.,Type=String,Description="Allele Origin. One or more of the following values may be added: 0 - unknown; 1 - germline; 2 - somatic; 4 - inherited; 8 - paternal; 16 - maternal; 32 - de-novo; 64 - biparental; 128 - uniparental; 256 - not-tested; 512 - tested-inconclusive; 1073741824 - other">
+##INFO=<ID=CLINVAR_LSD,Number=0,Type=Flag,Description="Submitted from a locus-specific database">
+##INFO=<ID=CLINVAR_CLNSIG,Number=.,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">
+##INFO=<ID=CLINVAR_PMC,Number=0,Type=Flag,Description="Links exist to PubMed Central article">
+##INFO=<ID=CLINVAR_U3,Number=0,Type=Flag,Description="In 3' UTR Location is in an untranslated region (UTR). FxnCode = 53">
+##INFO=<ID=CLINVAR_REF,Number=0,Type=Flag,Description="Has reference A coding region variation where one allele in the set is identical to the reference sequence. FxnCode = 8">
+##INFO=<ID=CLINVAR_CLNREVSTAT,Number=.,Type=String,Description="ClinVar Review Status, mult - Classified by multiple submitters, single - Classified by single submitter, not - Not classified by submitter, exp - Reviewed by expert panel, prof - Reviewed by professional society">
+##INFO=<ID=CLINVAR_RSPOS,Number=1,Type=Integer,Description="Chr position reported in dbSNP">
+##INFO=<ID=CLINVAR_RS,Number=1,Type=Integer,Description="dbSNP ID (i.e. rs number)">
+##INFO=<ID=CLINVAR_RV,Number=0,Type=Flag,Description="RS orientation is reversed">
+##INFO=<ID=CLINVAR_WGT,Number=1,Type=Integer,Description="Weight, 00 - unmapped, 1 - weight 1, 2 - weight 2, 3 - weight 3 or more">
+##INFO=<ID=CLINVAR_GENEINFO,Number=1,Type=String,Description="Pairs each of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:) and each pair is delimited by a vertical bar (|)">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	TEST3
+chr1	762273	rs3115849	G	A	1898.77	MG_SNP_Filter	AC=2;SAMPLES_AF=1.00;AN=2;DP=55;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=39.25;QD=34.52;SOR=2.345;set=FilteredInAll;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=103;ANN=A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047519.1|Noncoding||n.-1G>A|||||698|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047526.1|Noncoding||n.-1G>A|||||698|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_015368.2|Noncoding||n.-1G>A|||||698|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047520.1|Noncoding||n.-1G>A|||||698|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047521.1|Noncoding||n.-1G>A|||||698|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047522.1|Noncoding||n.-1G>A|||||698|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047523.1|Noncoding||n.-1G>A|||||698|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047524.1|Noncoding||n.-1G>A|||||698|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047525.1|Noncoding||n.-1G>A|||||905|,A|non_coding_exon_variant|MODIFIER|LINC00115|LINC00115|transcript|NR_024321.1|Noncoding|1/1|n.630C>T||||||;1000Gp3_AA=.|||;1000Gp3_AC=3665;1000Gp3_AF=0.731829;1000Gp3_AFR_AF=0.3903;1000Gp3_AMR_AF=0.8112;1000Gp3_AN=5008;1000Gp3_DP=14934;1000Gp3_EAS_AF=0.8879;1000Gp3_EUR_AF=0.8688;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.8354;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,55:55:99:1927,165,0
+chr1	762589	rs71507461	G	C	261.8	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=7;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=43.22;QD=34.24;SOR=2.584;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=130;ANN=C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047519.1|Noncoding||n.-1G>C|||||382|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047526.1|Noncoding||n.-1G>C|||||382|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_015368.2|Noncoding||n.-1G>C|||||382|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047520.1|Noncoding||n.-1G>C|||||382|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047521.1|Noncoding||n.-1G>C|||||382|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047522.1|Noncoding||n.-1G>C|||||382|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047523.1|Noncoding||n.-1G>C|||||382|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047524.1|Noncoding||n.-1G>C|||||382|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047525.1|Noncoding||n.-1G>C|||||589|,C|non_coding_exon_variant|MODIFIER|LINC00115|LINC00115|transcript|NR_024321.1|Noncoding|1/1|n.314C>G||||||;1000Gp3_AA=.|||;1000Gp3_AC=3764;1000Gp3_AF=0.751597;1000Gp3_AFR_AF=0.4584;1000Gp3_AMR_AF=0.8156;1000Gp3_AN=5008;1000Gp3_DP=15097;1000Gp3_EAS_AF=0.8879;1000Gp3_EUR_AF=0.8718;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.8384;1000Gp3_VT=SNP	GT:AD:DP:GQ:PGT:PID:PL	1/1:0,7:7:21:1|1:762589_G_C:290,21,0
+chr1	762592	rs71507462	C	G	261.8	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=5;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=44.60;QD=30.63;SOR=1.981;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=130;ANN=G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047519.1|Noncoding||n.-1C>G|||||379|,G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047526.1|Noncoding||n.-1C>G|||||379|,G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_015368.2|Noncoding||n.-1C>G|||||379|,G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047520.1|Noncoding||n.-1C>G|||||379|,G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047521.1|Noncoding||n.-1C>G|||||379|,G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047522.1|Noncoding||n.-1C>G|||||379|,G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047523.1|Noncoding||n.-1C>G|||||379|,G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047524.1|Noncoding||n.-1C>G|||||379|,G|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047525.1|Noncoding||n.-1C>G|||||586|,G|non_coding_exon_variant|MODIFIER|LINC00115|LINC00115|transcript|NR_024321.1|Noncoding|1/1|n.311G>C||||||;1000Gp3_AA=.|||;1000Gp3_AC=3764;1000Gp3_AF=0.751597;1000Gp3_AFR_AF=0.4584;1000Gp3_AMR_AF=0.8156;1000Gp3_AN=5008;1000Gp3_DP=14958;1000Gp3_EAS_AF=0.8879;1000Gp3_EUR_AF=0.8718;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.8384;1000Gp3_VT=SNP	GT:AD:DP:GQ:PGT:PID:PL	1/1:0,5:5:21:1|1:762589_G_C:290,21,0
+chr1	762601	rs71507463	T	C	196.9	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=5;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=44.60;QD=29.09;SOR=1.981;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=130;ANN=C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047519.1|Noncoding||n.-1T>C|||||370|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047526.1|Noncoding||n.-1T>C|||||370|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_015368.2|Noncoding||n.-1T>C|||||370|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047520.1|Noncoding||n.-1T>C|||||370|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047521.1|Noncoding||n.-1T>C|||||370|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047522.1|Noncoding||n.-1T>C|||||370|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047523.1|Noncoding||n.-1T>C|||||370|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047524.1|Noncoding||n.-1T>C|||||370|,C|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047525.1|Noncoding||n.-1T>C|||||577|,C|non_coding_exon_variant|MODIFIER|LINC00115|LINC00115|transcript|NR_024321.1|Noncoding|1/1|n.302A>G||||||;1000Gp3_AA=.|||;1000Gp3_AC=3764;1000Gp3_AF=0.751597;1000Gp3_AFR_AF=0.4584;1000Gp3_AMR_AF=0.8156;1000Gp3_AN=5008;1000Gp3_DP=14973;1000Gp3_EAS_AF=0.8879;1000Gp3_EUR_AF=0.8718;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.8384;1000Gp3_VT=SNP	GT:AD:DP:GQ:PGT:PID:PL	1/1:0,5:5:15:1|1:762589_G_C:225,15,0
+chr1	762632	rs3131948	T	A	83.28	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=3;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=42.18;QD=27.76;SOR=1.179;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=103;ANN=A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047519.1|Noncoding||n.-1T>A|||||339|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047526.1|Noncoding||n.-1T>A|||||339|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_015368.2|Noncoding||n.-1T>A|||||339|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047520.1|Noncoding||n.-1T>A|||||339|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047521.1|Noncoding||n.-1T>A|||||339|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047522.1|Noncoding||n.-1T>A|||||339|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047523.1|Noncoding||n.-1T>A|||||339|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047524.1|Noncoding||n.-1T>A|||||339|,A|upstream_gene_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047525.1|Noncoding||n.-1T>A|||||546|,A|non_coding_exon_variant|MODIFIER|LINC00115|LINC00115|transcript|NR_024321.1|Noncoding|1/1|n.271A>T||||||;1000Gp3_AA=.|||;1000Gp3_AC=3766;1000Gp3_AF=0.751997;1000Gp3_AFR_AF=0.4584;1000Gp3_AMR_AF=0.817;1000Gp3_AN=5008;1000Gp3_DP=15182;1000Gp3_EAS_AF=0.8879;1000Gp3_EUR_AF=0.8718;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.8395;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,3:3:9:111,9,0
+chr1	777232	rs112618790	C	T	233.77	PASS	AC=1;SAMPLES_AF=0.500;AN=2;BaseQRankSum=0.139;ClippingRankSum=-2.800e-02;DP=25;FS=0.000;MLEAC=1;MLEAF=0.500;MQ=58.62;MQRankSum=0.416;QD=9.35;ReadPosRankSum=-1.304e+00;SOR=0.941;set=variant;SNP;HET;VARTYPE=SNP;dbSNPBuildID=132;ANN=T|intron_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047519.1|Noncoding|2/5|n.288-5802C>T||||||,T|intron_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_015368.2|Noncoding|2/7|n.288-5802C>T||||||,T|intron_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047520.1|Noncoding|2/6|n.288-5802C>T||||||,T|intron_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047521.1|Noncoding|2/4|n.288-10075C>T||||||,T|intron_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047522.1|Noncoding|2/5|n.288-10075C>T||||||,T|intron_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047523.1|Noncoding|2/3|n.288-10075C>T||||||,T|intron_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047524.1|Noncoding|2/3|n.288-10819C>T||||||,T|intron_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047525.1|Noncoding|2/4|n.155-10075C>T||||||,T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047526.1|Noncoding|3/3|n.940C>T||||||;1000Gp3_AA=.|||;1000Gp3_AC=335;1000Gp3_AF=0.066893;1000Gp3_AFR_AF=0.0098;1000Gp3_AMR_AF=0.0346;1000Gp3_AN=5008;1000Gp3_DP=19344;1000Gp3_EAS_AF=0.0754;1000Gp3_EUR_AF=0.0755;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.1493;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	0/1:15,10:25:99:262,0,455
+chr1	792263	rs1044922	A	G	1010.77	MG_SNP_Filter	AC=2;SAMPLES_AF=1.00;AN=2;DP=33;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=38.66;QD=30.63;SOR=2.833;set=FilteredInAll;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=86;ANN=G|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047519.1|Noncoding|6/6|n.4213A>G||||||,G|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_015368.2|Noncoding|8/8|n.3919A>G||||||,G|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047520.1|Noncoding|7/7|n.4164A>G||||||,G|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047521.1|Noncoding|5/5|n.4060A>G||||||,G|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047522.1|Noncoding|6/6|n.4011A>G||||||,G|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047523.1|Noncoding|4/4|n.3964A>G||||||,G|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047524.1|Noncoding|4/4|n.3876A>G||||||,G|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047525.1|Noncoding|5/5|n.3927A>G||||||;1000Gp3_AA=.|||;1000Gp3_AC=3936;1000Gp3_AF=0.785942;1000Gp3_AFR_AF=0.4531;1000Gp3_AMR_AF=0.8703;1000Gp3_AN=5008;1000Gp3_DP=21301;1000Gp3_EAS_AF=0.8373;1000Gp3_EUR_AF=0.9722;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.9315;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,33:33:99:1039,99,0
+chr1	792480	rs2905036	C	T	3870.77	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=129;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=50.88;QD=30.24;SOR=1.224;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=101;ANN=T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047519.1|Noncoding|6/6|n.4430C>T||||||,T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_015368.2|Noncoding|8/8|n.4136C>T||||||,T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047520.1|Noncoding|7/7|n.4381C>T||||||,T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047521.1|Noncoding|5/5|n.4277C>T||||||,T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047522.1|Noncoding|6/6|n.4228C>T||||||,T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047523.1|Noncoding|4/4|n.4181C>T||||||,T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047524.1|Noncoding|4/4|n.4093C>T||||||,T|non_coding_exon_variant|MODIFIER|LINC01128|LINC01128|transcript|NR_047525.1|Noncoding|5/5|n.4144C>T||||||;1000Gp3_AA=.|||;1000Gp3_AC=4892;1000Gp3_AF=0.976837;1000Gp3_AFR_AF=0.9213;1000Gp3_AMR_AF=0.9899;1000Gp3_AN=5008;1000Gp3_DP=23912;1000Gp3_EAS_AF=1;1000Gp3_EUR_AF=0.995;1000Gp3_NS=2504;1000Gp3_SAS_AF=1;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,128:128:99:3899,384,0
+chr1	866319	rs9988021	G	A	1650.77	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=45;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=32.93;SOR=4.271;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=119;ANN=A|intron_variant|MODIFIER|SAMD11|SAMD11|transcript|NM_152486.2|Coding|3/13|c.255-100G>A||||||;1000Gp3_AA=a|||;1000Gp3_AC=4775;1000Gp3_AF=0.953474;1000Gp3_AFR_AF=0.8313;1000Gp3_AMR_AF=0.9914;1000Gp3_AN=5008;1000Gp3_DP=15665;1000Gp3_EAS_AF=0.998;1000Gp3_EUR_AF=1;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.998;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,45:45:99:1679,135,0
+chr1	866511	rs375757231,rs60722469;rs375757231	C	CCCCT	374.78	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=23;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=30.83;SOR=4.407;set=variant2;INS;HOM;VARTYPE=INS;dbSNPBuildID=138,129;ANN=CCCCT|intron_variant|MODIFIER|SAMD11|SAMD11|transcript|NM_152486.2|Coding|4/13|c.305+42_305+43insCCCT||||||;1000Gp3_AC=746;1000Gp3_AF=0.148962;1000Gp3_AFR_AF=0.0416;1000Gp3_AMR_AF=0.1902;1000Gp3_AN=5008;1000Gp3_DP=13303;1000Gp3_EAS_AF=0.1319;1000Gp3_EUR_AF=0.2376;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.1912;1000Gp3_VT=INDEL	GT:AD:DP:GQ:PL	1/1:0,8:8:26:403,26,0
+chr1	871334	rs4072383	G	T	226.8	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=7;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=32.40;SOR=2.584;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=108;ANN=T|intron_variant|MODIFIER|SAMD11|SAMD11|transcript|NM_152486.2|Coding|5/13|c.430+58G>T||||||;1000Gp3_AA=g|||;1000Gp3_AC=2493;1000Gp3_AF=0.497804;1000Gp3_AFR_AF=0.1982;1000Gp3_AMR_AF=0.5865;1000Gp3_AN=5008;1000Gp3_DP=12318;1000Gp3_EAS_AF=0.4921;1000Gp3_EUR_AF=0.7097;1000Gp3_MULTI_ALLELIC=true;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.6278;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,7:7:21:255,21,0
+chr1	876499	rs4372192	A	G	599.77	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=19;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=31.57;SOR=1.609;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=111;ANN=G|downstream_gene_variant|MODIFIER|NOC2L|NOC2L|transcript|NM_015658.3|Coding||c.*2309T>C|||||3084|,G|intron_variant|MODIFIER|SAMD11|SAMD11|transcript|NM_152486.2|Coding|7/13|c.707-25A>G||||||;1000Gp3_AA=N|||;1000Gp3_AC=4573;1000Gp3_AF=0.913139;1000Gp3_AFR_AF=0.8737;1000Gp3_AMR_AF=0.9207;1000Gp3_AN=5008;1000Gp3_DP=13739;1000Gp3_EAS_AF=0.9206;1000Gp3_EUR_AF=0.9503;1000Gp3_EX_TARGET=true;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.9151;1000Gp3_VT=SNP;ESP6500_AA=G;ESP6500_AA_AC=3853,509;ESP6500_AA_AGE=.;ESP6500_AA_GTC=1713,427,41;ESP6500_CA=.;ESP6500_CDS_SIZES=NM_152486.2:2046;ESP6500_CG=0.8;ESP6500_CP=0.1;ESP6500_DBSNP=dbSNP_111;ESP6500_DP=9;ESP6500_EA_AC=8004,532;ESP6500_EA_AGE=.;ESP6500_EA_GTC=3774,456,38;ESP6500_EXOME_CHIP=no;ESP6500_FG=NM_152486.2:intron;ESP6500_GL=SAMD11;ESP6500_GRCh38_POSITION=1:941119;ESP6500_GS=.;ESP6500_GTC=5487,883,79;ESP6500_GTS=GG,GA,AA;ESP6500_GWAS_PUBMED=.;ESP6500_HGVS_CDNA_VAR=NM_152486.2:c.707-25A>G;ESP6500_HGVS_PROTEIN_VAR=.;ESP6500_MAF=6.2324,11.669,8.071;ESP6500_PH=.;ESP6500_TAC=11857,1041	GT:AD:DP:GQ:PL	1/1:0,19:19:57:628,57,0
+chr1	877715	rs6605066	C	G	129.03	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=4;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=32.26;SOR=3.258;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=116;ANN=G|downstream_gene_variant|MODIFIER|NOC2L|NOC2L|transcript|NM_015658.3|Coding||c.*2309G>C|||||1868|,G|intron_variant|MODIFIER|SAMD11|SAMD11|transcript|NM_152486.2|Coding|9/13|c.986-75C>G||||||;1000Gp3_AA=g|||;1000Gp3_AC=4447;1000Gp3_AF=0.887979;1000Gp3_AFR_AF=0.7935;1000Gp3_AMR_AF=0.9092;1000Gp3_AN=5008;1000Gp3_DP=6485;1000Gp3_EAS_AF=0.9256;1000Gp3_EUR_AF=0.9443;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.9039;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,4:4:12:157,12,0
+chr1	877831	rs6672356	T	C	185.8	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=7;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=26.54;SOR=0.941;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=116;ANN=C|missense_variant|MODERATE|SAMD11|SAMD11|transcript|NM_152486.2|Coding|10/14|c.1027T>C|p.Trp343Arg|1107/2554|1027/2046|343/681||,C|downstream_gene_variant|MODIFIER|NOC2L|NOC2L|transcript|NM_015658.3|Coding||c.*2309A>G|||||1752|;1000Gp3_AA=N|||;1000Gp3_AC=5008;1000Gp3_AF=1;1000Gp3_AFR_AF=1;1000Gp3_AMR_AF=1;1000Gp3_AN=5008;1000Gp3_DP=6579;1000Gp3_EAS_AF=1;1000Gp3_EUR_AF=1;1000Gp3_EX_TARGET=true;1000Gp3_NS=2504;1000Gp3_SAS_AF=1;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,7:7:21:214,21,0
+chr1	879065	.	C	G	188.77	PASS	AC=1;SAMPLES_AF=0.500;AN=2;BaseQRankSum=1.58;ClippingRankSum=2.17;DP=10;FS=5.229;MLEAC=1;MLEAF=0.500;MQ=60.00;MQRankSum=0.296;QD=18.88;ReadPosRankSum=0.546;SOR=3.383;set=variant;SNP;HET;VARTYPE=SNP;ANN=G|downstream_gene_variant|MODIFIER|NOC2L|NOC2L|transcript|NM_015658.3|Coding||c.*2309G>C|||||518|,G|intron_variant|MODIFIER|SAMD11|SAMD11|transcript|NM_152486.2|Coding|12/13|c.1690-13C>G||||||	GT:AD:DP:GQ:PL	0/1:3,7:10:56:217,0,56
+chr1	879317	rs7523549	C	T	641.77	PASS	AC=1;SAMPLES_AF=0.500;AN=2;BaseQRankSum=1.22;ClippingRankSum=-1.615e+00;DP=67;FS=3.403;MLEAC=1;MLEAF=0.500;MQ=60.00;MQRankSum=0.425;QD=9.58;ReadPosRankSum=-2.420e-01;SOR=0.694;set=variant;SNP;HET;VARTYPE=SNP;dbSNPBuildID=116;ANN=T|synonymous_variant|LOW|SAMD11|SAMD11|transcript|NM_152486.2|Coding|14/14|c.1830C>T|p.Tyr610Tyr|1910/2554|1830/2046|610/681||,T|downstream_gene_variant|MODIFIER|NOC2L|NOC2L|transcript|NM_015658.3|Coding||c.*2309G>A|||||266|;1000Gp3_AA=c|||;1000Gp3_AC=457;1000Gp3_AF=0.091254;1000Gp3_AFR_AF=0.2156;1000Gp3_AMR_AF=0.0778;1000Gp3_AN=5008;1000Gp3_DP=13897;1000Gp3_EAS_AF=0.0665;1000Gp3_EUR_AF=0.0398;1000Gp3_EX_TARGET=true;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.0112;1000Gp3_VT=SNP;ESP6500_AA=C;ESP6500_AA_AC=838,3566;ESP6500_AA_AGE=.;ESP6500_AA_GTC=65,708,1429;ESP6500_CA=.;ESP6500_CDS_SIZES=NM_152486.2:2046;ESP6500_CG=5.4;ESP6500_CP=1.0;ESP6500_DBSNP=dbSNP_116;ESP6500_DP=26;ESP6500_EA_AC=232,8352;ESP6500_EA_AGE=.;ESP6500_EA_GTC=5,222,4065;ESP6500_EXOME_CHIP=no;ESP6500_FG=NM_152486.2:coding-synonymous;ESP6500_GL=SAMD11;ESP6500_GRCh38_POSITION=1:943937;ESP6500_GS=.;ESP6500_GTC=70,930,5494;ESP6500_GTS=TT,TC,CC;ESP6500_GWAS_PUBMED=.;ESP6500_HGVS_CDNA_VAR=NM_152486.2:c.1830C>T;ESP6500_HGVS_PROTEIN_VAR=NM_152486.2:p.(Y610);ESP6500_MAF=2.7027,19.0282,8.2384;ESP6500_PH=.;ESP6500_TAC=1070,11918	GT:AD:DP:GQ:PL	0/1:43,24:67:99:670,0,1266
+chr1	879676	rs6605067	G	A	56.74	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=2;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=28.37;SOR=2.303;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=116;ANN=A|3_prime_UTR_variant|MODIFIER|SAMD11|SAMD11|transcript|NM_152486.2|Coding|14/14|c.*143G>A|||||143|,A|3_prime_UTR_variant|MODIFIER|NOC2L|NOC2L|transcript|NM_015658.3|Coding|19/19|c.*398C>T|||||398|;1000Gp3_AA=g|||;1000Gp3_AC=4437;1000Gp3_AF=0.885982;1000Gp3_AFR_AF=0.7867;1000Gp3_AMR_AF=0.9006;1000Gp3_AN=5008;1000Gp3_DP=17901;1000Gp3_EAS_AF=0.9137;1000Gp3_EUR_AF=0.9473;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.9182;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,2:2:6:84,6,0
+chr1	879687	rs2839	T	C	53.74	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=2;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=26.87;SOR=2.303;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=36;ANN=C|3_prime_UTR_variant|MODIFIER|SAMD11|SAMD11|transcript|NM_152486.2|Coding|14/14|c.*154T>C|||||154|,C|3_prime_UTR_variant|MODIFIER|NOC2L|NOC2L|transcript|NM_015658.3|Coding|19/19|c.*387A>G|||||387|;1000Gp3_AA=N|||;1000Gp3_AC=4613;1000Gp3_AF=0.921126;1000Gp3_AFR_AF=0.9062;1000Gp3_AMR_AF=0.9193;1000Gp3_AN=5008;1000Gp3_DP=17750;1000Gp3_EAS_AF=0.9137;1000Gp3_EUR_AF=0.9523;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.9182;1000Gp3_VT=SNP	GT:AD:DP:GQ:PL	1/1:0,2:2:6:81,6,0
+chr1	888659	rs3748597	T	C	6444.77	PASS	AC=2;SAMPLES_AF=1.00;AN=2;DP=150;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=57.33;QD=29.43;SOR=0.895;set=variant;SNP;HOM;VARTYPE=SNP;dbSNPBuildID=107;ANN=C|missense_variant|MODERATE|NOC2L|NOC2L|transcript|NM_015658.3|Coding|9/19|c.898A>G|p.Ile300Val|957/2800|898/2250|300/749||;1000Gp3_AA=C|||;1000Gp3_AC=4621;1000Gp3_AF=0.922724;1000Gp3_AFR_AF=0.907;1000Gp3_AMR_AF=0.9193;1000Gp3_AN=5008;1000Gp3_DP=17128;1000Gp3_EAS_AF=0.9206;1000Gp3_EUR_AF=0.9533;1000Gp3_EX_TARGET=true;1000Gp3_NS=2504;1000Gp3_SAS_AF=0.9172;1000Gp3_VT=SNP;ESP6500_AA=C;ESP6500_AA_AC=3989,415;ESP6500_AA_AGE=203.1+/-225.7;ESP6500_AA_GTC=1806,377,19;ESP6500_CA=.;ESP6500_CDS_SIZES=NM_015658.3:2250;ESP6500_CG=4.3;ESP6500_CP=0.6;ESP6500_DBSNP=dbSNP_107;ESP6500_DP=47;ESP6500_EA_AC=8070,530;ESP6500_EA_AGE=147.1+/-202.6;ESP6500_EA_GTC=3797,476,27;ESP6500_EXOME_CHIP=yes;ESP6500_FG=NM_015658.3:missense;ESP6500_GL=NOC2L;ESP6500_GRCh38_POSITION=1:953279;ESP6500_GS=29;ESP6500_GTC=5603,853,46;ESP6500_GTS=CC,CT,TT;ESP6500_GWAS_PUBMED=.;ESP6500_HGVS_CDNA_VAR=NM_015658.3:c.898A>G;ESP6500_HGVS_PROTEIN_VAR=NM_015658.3:p.(I300V);ESP6500_MAF=6.1628,9.4233,7.267;ESP6500_PH=benign:0.0;ESP6500_TAC=12059,945	GT:AD:DP:GQ:PGT:PID:PL	1/1:0,150:150:99:1|1:888639_T_C:6473,466,0
