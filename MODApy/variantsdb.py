@@ -349,7 +349,7 @@ class VariantsDB(pd.DataFrame):
         self.pipe(VariantsDB)
         return self
 
-    def annotate_excel(self, df, fileName):
+    def annotate_excel(self, df, fileName, annotate_patients=True):
         logger.info("Annotating Excel file")
         cols_to_drop = ["FREQ", "ALLELE_FREQ", "VARDB_FREQ"]
         df.drop(columns=[x for x in cols_to_drop if x in df.columns], inplace=True)
@@ -362,7 +362,7 @@ class VariantsDB(pd.DataFrame):
         df["VARDB_FREQ"] = pd.to_numeric(df["VARDB_FREQ"], errors="coerce")
         df["VARDB_FREQ"].round(6)
         if "_MODApy" in fileName:
-            foldername = fileName.split("_MODApy")[0]
+            foldername = fileName.split("_MODApy")[0] + "_MODApy"
         elif "_" in fileName:
             foldername = fileName.split("_")[0]
         else:
@@ -374,6 +374,9 @@ class VariantsDB(pd.DataFrame):
             + fileName.rsplit(".", maxsplit=1)[0].replace(".annotated", "")
             + ".annotated.xlsx"
         )
+        if annotate_patients is True:
+            patdf = self.annotate_patients_with_variants(df)
+            df = df.merge(patdf, on=["CHROM", "POS", "REF", "ALT"], how="left")
         firstcols = [
             "GENE_NAME",
             "AMINOCHANGE",
@@ -541,3 +544,50 @@ class VariantsDB(pd.DataFrame):
         output.save()
         logger.info("File saved to %s" % outpath)
         return outpath
+
+    def annotate_patients_with_variants(self, paneldf, columns=None):
+        if columns is None:
+            columns = ['CHROM', 'POS', 'REF', 'ALT']
+        logger.info("Annotating Patients with Variants")
+        patsdf = paneldf[columns].merge(
+            self.reset_index().drop(columns=['FREQ', 'ALLELE_FREQ']),
+            on=["CHROM", "POS", "REF", "ALT"],
+            how="left",
+        )
+        patsdf.drop(columns='index', inplace=True)
+        patsdf['PATS_WITH_VARIANTS'] = pd.Series(
+            list(
+                np.where(
+                    ~patsdf.drop(
+                        columns=[
+                            'CHROM',
+                            'POS',
+                            'REF',
+                            'ALT',
+                            'HGVS.C',
+                            'HGVS.P',
+                            'GENE_NAME',
+                        ]
+                    ).eq('.'),
+                    patsdf.drop(
+                        columns=[
+                            'CHROM',
+                            'POS',
+                            'REF',
+                            'ALT',
+                            'HGVS.C',
+                            'HGVS.P',
+                            'GENE_NAME',
+                        ]
+                    ).columns,
+                    'to_delete',
+                )
+            )
+        )
+        patsdf['PATS_WITH_VARIANTS'] = patsdf['PATS_WITH_VARIANTS'].apply(
+            lambda x: x.tolist()
+        )
+        patsdf['PATS_WITH_VARIANTS'] = patsdf['PATS_WITH_VARIANTS'].apply(
+            lambda row: [pat for pat in row if pat != 'to_delete']
+        )
+        return patsdf[columns + ['PATS_WITH_VARIANTS']]
