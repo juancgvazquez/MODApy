@@ -542,27 +542,27 @@ class Parser(object):
             logger.info("Annotating VARDB Freq")
             fileName = outpath.rsplit("/", maxsplit=1)[1]
             patient = pd.read_excel(outpath)
-            columns = [
-                "CHROM",
-                "POS",
-                "REF",
-                "ALT",
-                "GENE_NAME",
-                "HGVS.C",
-                "HGVS.P",
-                "FREQ",
-                "ALLELE_FREQ",
-            ]
+            # columns = [
+            #    "CHROM",
+            #    "POS",
+            #    "REF",
+            #    "ALT",
+            #    "GENE_NAME",
+            #    "HGVS.C",
+            #    "HGVS.P",
+            #    "FREQ",
+            #    "ALLELE_FREQ",
+            # ]
             db = variantsdb.VariantsDB.from_csvdb(
-                variantsdb.variantsDBPath.rsplit("/", maxsplit=1)[0],
-                columns=columns,
+                configuration.variantsDBPath.rsplit("/", maxsplit=1)[0],
+                #    columns=columns,
             )
             patient = db.annotate_excel(patient, fileName)
             logger.info("Single Analisis Complete")
             logger.info("File available at:%s" % outpath)
         except Exception as err:
             logger.info("Single Analisis Failed")
-            logger.debug(f"Error was: {err}")
+            logger.debug(f"Error was: {err}", exc_info=True)
 
         return 0
 

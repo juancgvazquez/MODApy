@@ -468,7 +468,8 @@ class ParsedVCF(pd.DataFrame):
             df1 = prioritize_variants(df1)
         elif isinstance(prioritized, dict):
             logger.info(
-                f"Prioritizing variants for {name}... with custom prioritization {prioritized}"
+                f"""Prioritizing variants for {name}...
+                with custom prioritization {prioritized}"""
             )
             df1 = prioritize_variants(df1, prioritized)
         df1 = format_ann_columns(df1, pVCF)
