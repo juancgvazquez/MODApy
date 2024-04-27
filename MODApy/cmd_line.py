@@ -517,11 +517,18 @@ class Parser(object):
             help="Patient File Path - It needs to match exactly to the one found \
               inside Patients folder",
         )
+        parser.add_argument(
+            "-annotate_patients",
+            action="store_true",
+            default=False,
+            help="Keep Temp files, otherwise just creates annotated vcf file.",
+        )
         # ignore first argument
         try:
             args = parser.parse_args(argv[2:])
             panel = configuration.panelsPath + args.Panel + ".xlsx"
             patient = configuration.patientPath + args.Patient
+            annotate_patients = args.annotate_patients
             checkFile(patient, ".vcf")
             checkFile(panel, ".xlsx")
             logger.info(
@@ -542,22 +549,25 @@ class Parser(object):
             logger.info("Annotating VARDB Freq")
             fileName = outpath.rsplit("/", maxsplit=1)[1]
             patient = pd.read_excel(outpath)
-            # columns = [
-            #    "CHROM",
-            #    "POS",
-            #    "REF",
-            #    "ALT",
-            #    "GENE_NAME",
-            #    "HGVS.C",
-            #    "HGVS.P",
-            #    "FREQ",
-            #    "ALLELE_FREQ",
-            # ]
+            if annotate_patients is False:
+                columns = [
+                    "CHROM",
+                    "POS",
+                    "REF",
+                    "ALT",
+                    "GENE_NAME",
+                    "HGVS.C",
+                    "HGVS.P",
+                    "FREQ",
+                    "ALLELE_FREQ",
+                ]
+            else:
+                columns = None
             db = variantsdb.VariantsDB.from_csvdb(
                 configuration.variantsDBPath.rsplit("/", maxsplit=1)[0],
-                #    columns=columns,
+                columns=columns,
             )
-            patient = db.annotate_excel(patient, fileName)
+            patient = db.annotate_excel(patient, fileName, annotate_patients)
             logger.info("Single Analisis Complete")
             logger.info("File available at:%s" % outpath)
         except Exception as err:
