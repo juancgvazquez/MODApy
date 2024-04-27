@@ -521,7 +521,7 @@ class Parser(object):
             "-annotate_patients",
             action="store_true",
             default=False,
-            help="Keep Temp files, otherwise just creates annotated vcf file.",
+            help="Annotates patient list per variant in the panel file.",
         )
         # ignore first argument
         try:
