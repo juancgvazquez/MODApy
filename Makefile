@@ -21,11 +21,11 @@ publish:
 	git commit
 	git push
 	python3 setup.py sdist bdist_wheel
-	twine upload dist/*
+	twine upload dist/* --repository MODApy
 
 publish_no_git:
 	python3 setup.py sdist bdist_wheel
-	twine upload dist/*
+	twine upload dist/* --repository MODApy
 
 publish_test:
 	python3 setup.py sdist bdist_wheel
