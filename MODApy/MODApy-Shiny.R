@@ -8,15 +8,15 @@ library(shinycssloaders)
 library(stringr)
 library(shinyFiles)
 #python config -------------------------------------------------------------------
-modapydir ='/Users/juanvazquez/Charly/Dev/modapy/.venv/lib/python3.10/site-packages/MODApy/'
+modapydir ='./'
 cfgpath = paste0(modapydir,'config.ini')
 logfile = paste0(modapydir,'logs/currentrun.log')
 pipelog = paste0(modapydir,'logs/pipe_run.log')
 pipeflag = paste0(modapydir,'logs/pipe.flag')
 dlog = paste0(modapydir,'logs/downloads.log')
 cfg = read.ini(cfgpath)
-use_virtualenv("/Users/juanvazquez/Charly/Dev/modapy/.venv/")
-use_python("/Users/juanvazquez/Charly/Dev/modapy/.venv/bin/python3")
+use_virtualenv("../.venv")
+use_python("../.venv/bin/python3")
 py_config()
 MODApy<-import('MODApy')
 
@@ -76,7 +76,12 @@ getcommand <- function(input){
             }
           },
           Single={
-            cmd = paste("single -Panel", input$Panel, "-Patient", paste(input$PatientPanel, "/",input$PatientPanel,".final.vcf", sep=""))
+            if(input$annotate_patient_list){
+              cmd = paste("single -Panel", input$Panel, "-Patient", paste(input$PatientPanel, "/",input$PatientPanel,".final.vcf",  ' -annotate_patients', sep=""))
+            }
+            else{
+              cmd = paste("single -Panel", input$Panel, "-Patient", paste(input$PatientPanel, "/",input$PatientPanel,".final.vcf", sep=""))
+            }
           },
           Duos={
             cmd = paste("duos -Patient1", paste(input$Patient1D, "/",input$Patient1D,".final.vcf", sep=""), "-Patient2", paste(input$Patient2D, "/",input$Patient2D,".final.vcf", sep=""), '--Filter')
@@ -134,8 +139,9 @@ ui <- tagList(shinyjs::useShinyjs(),
                                                                     br(),
                                                                     div(style="display: inline-block;vertical-align:center; width: 150px;",h4('Panel:')),
                                                                     div(style="display: inline-block;vertical-align:top; width: 300px;",selectInput(inputId = "Panel", label = NULL, choices = panels)),
-                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus'))))
-                                                  ),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 50px;",actionButton('newpanel',label=NULL,icon=icon('plus')))),
+                                                                    div(style="display: inline-block;vertical-align:top; width: 500px;",checkboxInput(inputId = 'annotate_patient_list', label='Annotate patients list per variant (warning: memory intensive)', value = FALSE, width = NULL)),
+                                                                    br()),
                                                   tabPanel("Duos",
                                                            fluidRow(style='padding-left:20px;',
                                                                     br(),
@@ -235,28 +241,28 @@ ui <- tagList(shinyjs::useShinyjs(),
                                   #selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
                                   # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
                          ),
-                         tabPanel("Mitocondrial",
-                                  sidebarPanel(width=3,
-                                               h2('Select Patient'),
-                                               div(style="display: inline-block;vertical-align:top; width: 300px;",
-                                                   selectInput(inputId = "Mitofqfile", label = NULL, choices = mitopatientsfastq)),
-                                               #fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
-                                               actionButton("runMitocondrialfq",'Run Pipeline'),
-                                               actionButton("runMitocondriallog",'Check Status')
-                                  ),
-                                  mainPanel(
-                                    sidebarPanel(
-                                      h2('Reference'),
-                                      selectInput('reference','Select Reference',choices = c('Mitocondrial NC_012920')),
-                                    ),
-                                    mainPanel(
-                                      h2("Mitocondrial Diagram (WIP)"),
-                                      img(src='',width=700,align='center')
-                                    ))
-                                  #selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
-                                  #selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
-                                  # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
-                         ),
+                         #tabPanel("Mitocondrial",
+                         #         sidebarPanel(width=3,
+                         #                      h2('Select Patient'),
+                         #                      div(style="display: inline-block;vertical-align:top; width: 300px;",
+                         #                          selectInput(inputId = "Mitofqfile", label = NULL, choices = mitopatientsfastq)),
+                         #                      #fileInput('fquploaded','Choose File to Upload',accept=c('fq.gzip','fastq.gzip','.fastq','.fq')),
+                         #                      actionButton("runMitocondrialfq",'Run Pipeline'),
+                         #                      actionButton("runMitocondriallog",'Check Status')
+                         #         ),
+                         #         mainPanel(
+                         #           sidebarPanel(
+                         #             h2('Reference'),
+                         #             selectInput('reference','Select Reference',choices = c('Mitocondrial NC_012920')),
+                         #           ),
+                         #           mainPanel(
+                         #             h2("Mitocondrial Diagram (WIP)"),
+                         #             img(src='',width=700,align='center')
+                         #           ))
+                         #         #selectInput(inputId = "Pipeline", label = "Pipelines", choices = list.files(path=cfg$PATHS$pipelinespath)),
+                         #         #selectInput(inputId = "PatientPipe", label = "Patient", choices = list.dirs(
+                         #         # path = cfg$PATHS$patientpath ,full.names = FALSE,recursive = FALSE))
+                         #),
                          tabPanel('Utils',
                                   actionButton("customDuos",label='VCF-DIFF'),
                                   verbatimTextOutput('filepaths')
