@@ -339,7 +339,7 @@ class Parser(object):
             args = parser.parse_args(argv[2:])
             pipe = args.Pipeline
 
-            checkFile(pipe, args.Pipeline.split(".")[-1])
+            checkFile(pipe, '.' + args.Pipeline.split(".")[-1])
 
             newpipe = pipeline.Pipeline.from_json(pipe)
             patientPath = args.FQ[0].rsplit("/", maxsplit=1)[0] + "/"
@@ -437,7 +437,7 @@ class Parser(object):
         args = parser.parse_args(argv[2:])
         pipe = configuration.pipelinesPath + args.Pipeline
 
-        checkFile(pipe, args.Pipeline.split(".")[-1])
+        checkFile(pipe, '.' + args.Pipeline.split(".")[-1])
 
         newpipe = pipeline.Pipeline.from_json(pipe)
 
@@ -568,8 +568,17 @@ class Parser(object):
                 columns=columns,
             )
             patient = db.annotate_excel(patient, fileName, annotate_patients)
+            annotated_outpath = (
+                configuration.patientPath
+                + result.name
+                + "/"
+                + result.name
+                + "_"
+                + args.Panel
+                + ".annotated.xlsx"
+            )
             logger.info("Single Analisis Complete")
-            logger.info("File available at:%s" % outpath)
+            logger.info("File available at:%s" % annotated_outpath)
         except Exception as err:
             logger.info("Single Analisis Failed")
             logger.debug(f"Error was: {err}", exc_info=True)

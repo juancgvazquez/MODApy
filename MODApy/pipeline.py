@@ -337,7 +337,7 @@ class Pipeline(object):
                 # If it's not first step, input depends on output of previous
                 # step + patientname
                 else:
-                    if isinstance(step.inputfile, str):
+                    if isinstance(step.inputfile, list):
                         inputfile1 = step.inputfile[0].replace(
                             "patientname",
                             tmpdir + patientname + "/" + patientname,
