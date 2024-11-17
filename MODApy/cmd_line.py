@@ -221,7 +221,7 @@ class Parser(object):
             help="Adds data from variantsdb to analysis done in modapy. Must \
                 supply path to excel output from modapy",
         )
-        parser.add_argument("Filetype", help="DB filetype (csv or parquet)")
+        parser.add_argument("Filetype", help="DB filetype (csv or parquet)", default="csv")
         parser.add_argument(
             "-nonprioritized",
             action="store_false",
