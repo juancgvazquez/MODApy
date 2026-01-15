@@ -66,7 +66,7 @@ def duos(patient1, patient2, VennPlace=None, Panel=None, Filter=[None]):
                         "--Filter accepts only two arguments. \
                             Usage: --Filter COLUMN_NAME TEXT_TO_FILTER"
                     )
-                    exit(1)
+                    raise ValueError("--Filter requires 2 arguments")
                 else:
                     x = x.split()
                     if x[1] == "Empty":
@@ -125,7 +125,7 @@ def trios(patient1, patient2, patient3, VennPlace=None, Filter=[None], Panel=Non
                         "--Filter accepts only two arguments. \
                             Usage: --Filter COLUMN_NAME TEXT_TO_FILTER"
                     )
-                    exit(1)
+                    raise ValueError("--Filter requires 2 arguments")
                 else:
                     x = x.split()
                     if x[1] == "Empty":

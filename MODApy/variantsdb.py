@@ -3,6 +3,13 @@ import logging
 import os
 
 from MODApy.cfg import configuration
+from MODApy.exceptions import (
+    DatabaseError,
+    FileFormatError,
+    FileNotFoundError,
+    PatientAlreadyExistsError,
+    PatientNotFoundError,
+)
 from MODApy.vcfmgr import ParsedVCF
 
 import cyvcf2
@@ -37,10 +44,10 @@ class VariantsDB(pd.DataFrame):
                 logger.error("There was an error parsing Excel File")
                 logger.debug("", exc_info=True)
                 logger.debug(str(e))
-                exit(1)
+                raise FileFormatError(f"Error parsing Excel file: {e}")
         else:
             logger.error("Path to Excel file incorrect.")
-            exit(1)
+            raise FileNotFoundError(f"Path {excelpath} does not exist")
         db.set_index(
             ["CHROM", "POS", "REF", "ALT", "GENE_NAME", "HGVS.C", "HGVS.P"],
             inplace=True,
@@ -63,10 +70,10 @@ class VariantsDB(pd.DataFrame):
                 logger.error("There was an error parsing CSV File")
                 logger.debug("", exc_info=True)
                 logger.debug(str(e))
-                exit(1)
+                raise FileFormatError(f"Error parsing CSV file: {e}")
         else:
             logger.error("Path to CSV file incorrect.")
-            exit(1)
+            raise FileNotFoundError(f"Path {csvpath} does not exist")
         db.set_index(
             ["CHROM", "POS", "REF", "ALT", "GENE_NAME", "HGVS.C", "HGVS.P"],
             inplace=True,
@@ -130,7 +137,7 @@ class VariantsDB(pd.DataFrame):
                     logger.info("Adding Patients: {}".format([x for x in addpatnames]))
                 else:
                     logger.error("No Patients to Add")
-                    exit(1)
+                    raise PatientNotFoundError("No Patients to Add")
                 patientslist = [x for x in vcfspath for y in addpatnames if y in x]
             else:
                 patientslist = vcfspath
@@ -235,10 +242,10 @@ class VariantsDB(pd.DataFrame):
                 patientslist = patientLister(db)
             else:
                 logger.error("configuration.variantsDBPath must be a xlsx or csv file")
-                exit(1)
+                raise DatabaseError("variantsDBPath must be a xlsx or csv file")
         except Exception as e:
             logger.debug(str(e))
-            exit()
+            raise e
         sublists = [
             patientslist[i : i + int(configuration.cfg["GENERAL"]["cores"])]
             for i in range(
@@ -253,7 +260,7 @@ class VariantsDB(pd.DataFrame):
     def addPatientToDB(self, patient):
         if patient.rsplit("/")[-1].strip(".final.vcf") in self.columns:
             logger.error("Patient already is in DB")
-            exit(1)
+            raise PatientAlreadyExistsError(f"Patient {patient} already in DB")
         if isinstance(patient, str):
             pvcf = ParsedVCF.from_vcf(patient)
         elif isinstance(patient, ParsedVCF):
@@ -261,7 +268,7 @@ class VariantsDB(pd.DataFrame):
         else:
             logger.error("Patient must be either a path to vcf or a ParsedVCF object")
             logger.debug("", exc_info=True)
-            exit(1)
+            raise ValueError("Patient must be either a path to vcf or a ParsedVCF object")
         pvcf = pvcf[
             [
                 "CHROM",
@@ -289,7 +296,7 @@ class VariantsDB(pd.DataFrame):
     def remove_patient(self, patient_id):
         if patient_id not in self.columns:
             logger.error("Patient {} not in DB".format(patient_id))
-            return self
+            raise PatientNotFoundError(f"Patient {patient_id} not in DB")
         
         logger.info("Removing patient {}".format(patient_id))
         self.drop(columns=[patient_id], inplace=True)

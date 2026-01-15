@@ -2,6 +2,12 @@ import logging
 from typing import Optional
 
 from MODApy import configuration, pipeline, vcfanalysis
+from MODApy.exceptions import (
+    FileFormatError,
+    FileNotFoundError,
+    MODApyError,
+    PatientNotFoundError,
+)
 from MODApy.utils import checkFile
 
 from fastapi import FastAPI, HTTPException, status
@@ -123,10 +129,19 @@ async def single(data: Single):
             status_code=status.HTTP_202_ACCEPTED,
             content=f"Job Queued. Job id is {job_id}",
         )
-    except Exception as err:
-        logger.error("Api error on Single")
-        logger.debug(f"Error was: {err}", exc_info=True)
+    except (PatientNotFoundError, FileNotFoundError) as err:
+        logger.error(f"Not found error on Single: {err}")
         raise HTTPException(status_code=404, detail=str(err))
+    except (FileFormatError, ValueError) as err:
+        logger.error(f"Validation error on Single: {err}")
+        raise HTTPException(status_code=400, detail=str(err))
+    except MODApyError as err:
+        logger.error(f"MODApy error on Single: {err}")
+        raise HTTPException(status_code=500, detail=str(err))
+    except Exception as err:
+        logger.error("Unexpected error on Single")
+        logger.debug(f"Error was: {err}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/modaapi/duos")
@@ -157,10 +172,19 @@ async def duos(data: Duos):
             status_code=status.HTTP_202_ACCEPTED,
             content=f"Job Queued. Job id is {job_id}",
         )
-    except Exception as err:
-        logger.error("Api error on Duos")
-        logger.debug(f"Error was: {err}", exc_info=True)
+    except (PatientNotFoundError, FileNotFoundError) as err:
+        logger.error(f"Not found error on Duos: {err}")
         raise HTTPException(status_code=404, detail=str(err))
+    except (FileFormatError, ValueError) as err:
+        logger.error(f"Validation error on Duos: {err}")
+        raise HTTPException(status_code=400, detail=str(err))
+    except MODApyError as err:
+        logger.error(f"MODApy error on Duos: {err}")
+        raise HTTPException(status_code=500, detail=str(err))
+    except Exception as err:
+        logger.error("Unexpected error on Duos")
+        logger.debug(f"Error was: {err}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/modaapi/trios")
@@ -193,10 +217,19 @@ async def trios(data: Trios):
             status_code=status.HTTP_202_ACCEPTED,
             content=f"Job Queued. Job id is {job_id}",
         )
-    except Exception as err:
-        logger.error("Api error on Trios")
-        logger.debug(f"Error was: {err}", exc_info=True)
+    except (PatientNotFoundError, FileNotFoundError) as err:
+        logger.error(f"Not found error on Trios: {err}")
         raise HTTPException(status_code=404, detail=str(err))
+    except (FileFormatError, ValueError) as err:
+        logger.error(f"Validation error on Trios: {err}")
+        raise HTTPException(status_code=400, detail=str(err))
+    except MODApyError as err:
+        logger.error(f"MODApy error on Trios: {err}")
+        raise HTTPException(status_code=500, detail=str(err))
+    except Exception as err:
+        logger.error("Unexpected error on Trios")
+        logger.debug(f"Error was: {err}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/modaapi/pipeline")
@@ -253,7 +286,16 @@ async def run_pipeline(data: Pipeline):
                 status_code=status.HTTP_202_ACCEPTED,
                 content=f"Job Queued. Job id is {job_id}",
             )
-    except Exception as err:
-        logger.error("Api error on Pipeline")
-        logger.debug(f"Error was: {err}", exc_info=True)
+    except (PatientNotFoundError, FileNotFoundError) as err:
+        logger.error(f"Not found error on Pipeline: {err}")
         raise HTTPException(status_code=404, detail=str(err))
+    except (FileFormatError, ValueError) as err:
+        logger.error(f"Validation error on Pipeline: {err}")
+        raise HTTPException(status_code=400, detail=str(err))
+    except MODApyError as err:
+        logger.error(f"MODApy error on Pipeline: {err}")
+        raise HTTPException(status_code=500, detail=str(err))
+    except Exception as err:
+        logger.error("Unexpected error on Pipeline")
+        logger.debug(f"Error was: {err}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

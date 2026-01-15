@@ -6,6 +6,7 @@ import re
 from collections import OrderedDict
 
 from MODApy.cfg import configuration
+from MODApy.exceptions import PanelError
 from MODApy.utils import aminoChange, divide
 
 import cyvcf2
@@ -502,7 +503,7 @@ class ParsedVCF(pd.DataFrame):
         """
         if len(vcfs) < 1:
             logger.error("No vcfs provided!")
-            exit(1)
+            raise ValueError("No vcfs provided!")
         elif len(vcfs) == 1:
             pvcfs = list()
             pvcfs.append(ParsedVCF.from_vcf(vcfs[0], prioritized=prioritized))
@@ -511,6 +512,7 @@ class ParsedVCF(pd.DataFrame):
                 [x + "" for x in vcfs]
             except Exception:
                 logger.error("All mp_parser args must be strings")
+                raise TypeError("All mp_parser args must be strings")
             else:
                 logger.info("Starting Multi-Parser")
                 if cores is None:
@@ -632,7 +634,7 @@ class ParsedVCF(pd.DataFrame):
         except Exception:
             logger.error("There was an error parsing GeneList")
             logger.debug("", exc_info=True)
-            exit(1)
+            raise ValueError("Error parsing GeneList from panel file")
         panel_df = pd.DataFrame()
         for gene in geneSymbolList:
             panel_df = panel_df.append(self.loc[self["GENE_NAME"] == gene])
@@ -640,6 +642,7 @@ class ParsedVCF(pd.DataFrame):
         panel_df.name = self.name
         if len(panel_df) < 1:
             logger.error("After running Panel, resulting Dataframe holds no variants")
+            raise PanelError("No variants found for genes in panel")
         return panel_df
 
     def duos(self, vcf2, VENNPLACE=None):
@@ -753,7 +756,7 @@ class ParsedVCF(pd.DataFrame):
                 currently combine more than one duos (resulting"
                 "in a trios). Both arguments provided where duos or trios"
             )
-            exit(1)
+            raise ValueError("Cannot combine more than one duo/trio")
         elif "VENN" in self.columns:
             logger.info(
                 "Running TRIOS analysis on %s" % ":".join([self.name, pvcf2.name])
@@ -848,10 +851,9 @@ class ParsedVCF(pd.DataFrame):
                     ]
                 else:
                     logger.error(
-                        "VENNPLACE can only be A, B or A:B for a trios analysis"
+                        "VENNPLACE can only be A, B or A:B for a duos analysis"
                     )
-                    logger.debug("", exc_info=True)
-                    exit(1)
+                    raise ValueError("VENNPLACE can only be A, B or A:B for a duos analysis")
         if indicator == "TRIOS":
             mergedVCF["PATIENT"] = None
             mergedVCF["PATIENT"] = np.where(
@@ -928,8 +930,7 @@ class ParsedVCF(pd.DataFrame):
                         "VENNPLACE can only be A, B, C, A:B, A:C, B:C or A:B:C \
                             in a trios analysis"
                     )
-                    logger.debug("", exc_info=True)
-                    exit(1)
+                    raise ValueError("VENNPLACE can only be A, B, C, A:B, A:C, B:C or A:B:C in a trios analysis")
         if len(mergedVCF) < 1:
             logger.error(
                 "After running Duos/Trios, resulting Dataframe does not \
