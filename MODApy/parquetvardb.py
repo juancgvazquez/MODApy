@@ -3,6 +3,7 @@ import os
 
 from MODApy.cfg import configuration
 from MODApy.vcfmgr import ParsedVCF
+from MODApy.exceptions import PatientNotFoundError
 
 import cyvcf2
 
@@ -119,9 +120,9 @@ class ParquetVarDB(pd.DataFrame):
                 ]
                 if len(addpatnames) >= 1:
                     logger.info("Adding Patients: {}".format([x for x in addpatnames]))
-                else:
+                if len(addpatnames) == 0:
                     logger.error("No Patients to Add")
-                    exit(1)
+                    raise PatientNotFoundError("No Patients to Add")
                 patientslist = [x for x in vcfspath for y in addpatnames if y in x]
             else:
                 patientslist = vcfspath

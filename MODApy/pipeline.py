@@ -6,6 +6,7 @@ import shutil
 import subprocess
 
 from MODApy import configuration, vcfmgr
+from MODApy.exceptions import PipelineError
 
 import xmltodict
 
@@ -302,6 +303,10 @@ class Pipeline(object):
             if startStep > 0:
                 first = False
             logger2.info(f"STARTSTEP {startStep}")
+            for x in self.required_files:
+                if not os.path.exists(x):
+                    logger.error("Required file %s not found" % x)
+                    raise PipelineError("Required file %s not found" % x)
             for step in self.steps[startStep:endStep]:
                 if first is True:
                     logger2.debug("First Step")

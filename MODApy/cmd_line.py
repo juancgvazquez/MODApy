@@ -17,6 +17,7 @@ from MODApy import (
     vcfmgr,
 )
 from MODApy.cfg import configuration
+from MODApy.exceptions import MODApyError
 from MODApy.modaapi import app
 from MODApy.utils import checkFile
 from MODApy.version import __version__
@@ -72,7 +73,7 @@ class Parser(object):
         if not hasattr(self, args.command):
             logger.error("Unrecognized commands")
             parser.print_help()
-            exit(1)
+            raise ValueError(f"Unrecognized command: {args.command}")
 
         # goes to each command
         getattr(self, args.command)()
@@ -362,7 +363,7 @@ class Parser(object):
                     "Only Two FASTQ files allowed. The Input for FastQ Files was: ",
                     str(args.FQ),
                 )
-                return exit(1)
+                raise ValueError("Only Two FASTQ files allowed")
             elif len(args.FQ) == 2:
                 fq1 = args.FQ[0]
                 fq2 = args.FQ[1]
@@ -459,7 +460,7 @@ class Parser(object):
                 "Only Two FASTQ files allowed. The Input for FastQ Files was: ",
                 str(args.FQ),
             )
-            return exit(1)
+            raise ValueError("Only Two FASTQ files allowed")
 
         elif len(args.FQ) == 2:
             fq1 = configuration.patientPath + args.FQ[0]
@@ -663,7 +664,7 @@ class Parser(object):
                             "--Filter accepts only two arguments. \
                             Usage: --Filter COLUMN_NAME TEXT_TO_FILTER"
                         )
-                        exit(1)
+                        raise ValueError("--Filter requires 2 arguments")
                     else:
                         x = x.split()
                         if x[1] == "Empty":
@@ -802,7 +803,7 @@ class Parser(object):
                             "--Filter accepts only two arguments. \
                                 Usage: --Filter COLUMN_NAME TEXT_TO_FILTER"
                         )
-                        exit(1)
+                        raise ValueError("--Filter requires 2 arguments")
                     else:
                         x = x.split()
                         if x[1] == "Empty":
@@ -822,9 +823,15 @@ class Parser(object):
 
 
 def main():
-
-    configuration.setup_logging()
-    Parser()
+    try:
+        Parser()
+    except MODApyError as e:
+        logger.error(str(e))
+        exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        logger.debug("", exc_info=True)
+        exit(1)
 
 
 if __name__ == "__main__":
