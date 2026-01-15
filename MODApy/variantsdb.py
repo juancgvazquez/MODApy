@@ -286,6 +286,16 @@ class VariantsDB(pd.DataFrame):
         db = db.calcfreqs()
         return db
 
+    def remove_patient(self, patient_id):
+        if patient_id not in self.columns:
+            logger.error("Patient {} not in DB".format(patient_id))
+            return self
+        
+        logger.info("Removing patient {}".format(patient_id))
+        self.drop(columns=[patient_id], inplace=True)
+        self = self.calcfreqs()
+        return self
+
     def to_VarDBXLS(self):
         logger.info("Writing DB to Excel")
         self.reset_index(inplace=True)
