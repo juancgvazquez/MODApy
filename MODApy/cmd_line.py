@@ -217,6 +217,10 @@ class Parser(object):
             help="Adds a single patient to DB. Must supply path to vcf",
         )
         parser.add_argument(
+            "-removePatientFromDB",
+            help="Removes a patient from the DB. Must supply patient ID",
+        )
+        parser.add_argument(
             "-annotate",
             help="Adds data from variantsdb to analysis done in modapy. Must \
                 supply path to excel output from modapy",
@@ -268,6 +272,15 @@ class Parser(object):
                 db = variantsdb.VariantsDB.from_csvdb(variantsdb.variantsDBPath)
                 db = db.addPatientToDB(patient)
                 db.to_VarDBCSV()
+            if args.removePatientFromDB:
+                patient_id = args.removePatientFromDB
+                logger.info(f"Removing patient {patient_id} from database")
+                db = variantsdb.VariantsDB.from_csvdb(
+                    configuration.variantsDBPath.rsplit("/", maxsplit=1)[0]
+                )
+                db = db.remove_patient(patient_id)
+                db.to_VarDBCSV()
+                logger.info(f"Patient {patient_id} removed successfully")
             if args.annotate:
                 fileName = args.annotate.rsplit("/", maxsplit=1)[1]
                 patient = pd.read_excel(args.annotate)
