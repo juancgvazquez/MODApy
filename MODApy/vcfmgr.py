@@ -384,9 +384,10 @@ class ParsedVCF(pd.DataFrame):
                 df.drop(columns="HET", inplace=True, errors="ignore")
                 df.rename(columns={"HOM": "ZIGOSITY"}, inplace=True)
             if "ESP6500_MAF" in df.columns:
-                df[["ESP6500_MAF_EA", "ESP6500_MAF_AA", "ESP6500_MAF_ALL"]] = df[
-                    "ESP6500_MAF"
-                ].str.split(",", expand=True)
+                df[["ESP6500_MAF_EA", 
+                    "ESP6500_MAF_AA", 
+                    "ESP6500_MAF_ALL"]] = df["ESP6500_MAF"].str.split(",", 
+                        expand=True).reindex(columns=range(3)).ffill(axis=1)
                 df["ESP6500_MAF_EA"] = df["ESP6500_MAF_EA"].apply(divide, args=(100,))
                 df["ESP6500_MAF_AA"] = df["ESP6500_MAF_AA"].apply(divide, args=(100,))
                 df["ESP6500_MAF_ALL"] = df["ESP6500_MAF_ALL"].apply(divide, args=(100,))
