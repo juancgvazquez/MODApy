@@ -165,6 +165,10 @@ class VariantsDB(pd.DataFrame):
             for df in pvcfs:
                 if "ZIGOSITY" not in df.columns:
                     df["ZIGOSITY"] = "UNKWN"
+                df['CHROM'] = df['CHROM'].astype(str)
+                df['CHROM'] = np.where(df['CHROM'].str.startswith('chr'),
+                                       df['CHROM'],
+                                       'chr' + df['CHROM'])
             pvcfs = [
                 x.rename(columns={"ZIGOSITY": x.name})
                 for x in pvcfs
@@ -172,7 +176,7 @@ class VariantsDB(pd.DataFrame):
             ]
             logger.info("Merging parsed patients toDB")
             if db is not None:
-                db.drop(columns=["level_0", "index"], errors="ignore", inplace=True)
+                db.drop(columns=["level_0", "index",'ALLELLE_FREQ','FREQ'], errors="ignore", inplace=True)
                 db = db.reset_index()
                 pvcfs.insert(0, db)
                 db.drop(columns=["level_0", "index"], inplace=True, errors="ignore")
@@ -190,6 +194,10 @@ class VariantsDB(pd.DataFrame):
                 )
                 for x in pvcfs
             ]
+            for df in pvcfs:
+                for col in df.columns:
+                    if col not in ['CHROM','POS','REF','ALT','GENE_NAME','HGVS.C','HGVS.P']:
+                        df[col] = df[col].astype('category')
             tempdb1 = pd.concat(pvcfs, axis=1, join="outer")
             tempdb1 = (
                 tempdb1.reset_index()
@@ -208,14 +216,26 @@ class VariantsDB(pd.DataFrame):
                 for x in pvcfs
             ]
             pvcfs.insert(0, tempdb1)
-            pvcfs = [x.set_index(["CHROM", "POS", "REF", "ALT"]) for x in pvcfs]
+            for i in range(len(pvcfs)):
+                logger.info(f'df number {i}')
+                obj_cols = pvcfs[i].select_dtypes(include=['object']).columns
+                data_array = pvcfs[i][obj_cols].values
+                logger.info('moving to nan')
+                data_array[data_array == "."] = np.nan
+                logger.info('groupby')
+                pvcfs[i] = (
+                pvcfs[i].groupby(['CHROM', 'POS', 'REF', 'ALT'], sort=False)
+                        .first())
             db = pd.concat(pvcfs, axis=1, join="outer")
             del tempdb1
             del pvcfs
             colslist = ["GENE_NAME", "HGVS.C", "HGVS.P"]
             for col in colslist:
                 db[col] = db[col].apply(lambda x: " | ".join(set(x.split(" | "))))
-            db = db.reset_index().set_index(
+            db.index.names = ["CHROM", "POS", "REF", "ALT"]
+            db = db.reset_index()
+            db = db.rename(columns={"level_0": "CHROM", "level_1": "POS", "level_2":"REF","level_3":"ALT"})
+            db = db.set_index(
                 ["CHROM", "POS", "REF", "ALT", "GENE_NAME", "HGVS.C", "HGVS.P"]
             )
             db.drop(
